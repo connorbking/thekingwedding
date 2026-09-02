@@ -1,0 +1,8 @@
+/como/save-the-date  /como/index.html  200
+/como/rsvp           /como/index.html  200
+/como/faq            /como/index.html  200
+/jersey/save-the-date /jersey/index.html 200
+/jersey/rsvp          /jersey/index.html 200
+/jersey/faq           /jersey/index.html 200
+/como/*   /como/index.html   200
+/jersey/* /jersey/index.html 200

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/como/save-the-date", "destination": "/como/index.html" },
+    { "source": "/como/rsvp", "destination": "/como/index.html" },
+    { "source": "/como/faq", "destination": "/como/index.html" },
+    { "source": "/como/**", "destination": "/como/index.html" },
+    { "source": "/jersey/save-the-date", "destination": "/jersey/index.html" },
+    { "source": "/jersey/rsvp", "destination": "/jersey/index.html" },
+    { "source": "/jersey/faq", "destination": "/jersey/index.html" },
+    { "source": "/jersey/**", "destination": "/jersey/index.html" }
+  ]
+}

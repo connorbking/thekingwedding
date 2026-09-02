@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <g fill="none" stroke="#5c1218" stroke-width="0.7" opacity="0.28">
+    <circle cx="90" cy="90" r="22"/>
+    <circle cx="90" cy="90" r="10"/>
+    <circle cx="0" cy="0" r="16"/>
+    <circle cx="180" cy="0" r="16"/>
+    <circle cx="0" cy="180" r="16"/>
+    <circle cx="180" cy="180" r="16"/>
+    <circle cx="90" cy="0" r="14"/>
+    <circle cx="90" cy="180" r="14"/>
+    <circle cx="0" cy="90" r="14"/>
+    <circle cx="180" cy="90" r="14"/>
+    <path d="M90 50c12 10 28 10 40 0M90 130c12-10 28-10 40 0M50 90c10 12 10 28 0 40M130 90c-10 12-10 28 0 40"/>
+  </g>
+  <g fill="#5c1218" opacity="0.18">
+    <circle cx="90" cy="90" r="2.2"/>
+    <circle cx="45" cy="45" r="1.6"/>
+    <circle cx="135" cy="45" r="1.6"/>
+    <circle cx="45" cy="135" r="1.6"/>
+    <circle cx="135" cy="135" r="1.6"/>
+  </g>
+</svg>

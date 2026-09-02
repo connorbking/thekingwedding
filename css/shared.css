@@ -1,0 +1,480 @@
+:root {
+  --cream: #f4efe4;
+  --ivory: #fbf7ef;
+  --ink: #1c1412;
+  --muted: rgba(244, 239, 228, 0.72);
+  --gold: #c4a46a;
+  --bronze: #8d6233;
+  --wine: #5c1218;
+  --wine-deep: #3f0b10;
+  --olive: #5e5c43;
+  --forest: #1c3826;
+  --forest-deep: #12261a;
+  --lining: #5c0a16;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  --serif: "Cormorant Garamond", "Palatino Linotype", Palatino, serif;
+  --display: "Cinzel", "Times New Roman", serif;
+  --script: "Great Vibes", "Snell Roundhand", cursive;
+  --ease: cubic-bezier(0.22, 0.82, 0.24, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--cream);
+  background: #110d0b;
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  min-height: 100%;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 0;
+}
+
+.skip:focus {
+  left: 16px;
+  top: 16px;
+  z-index: 50;
+  background: var(--ivory);
+  color: var(--ink);
+  padding: 8px 12px;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  z-index: 5;
+}
+
+.wordmark {
+  font-family: var(--display);
+  letter-spacing: 0.28em;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.1rem;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.nav-links a {
+  opacity: 0.78;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid transparent;
+}
+
+.nav-links a:hover,
+.nav-links a.is-active {
+  opacity: 1;
+  border-bottom-color: var(--gold);
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.script {
+  font-family: var(--script);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.85rem 1.8rem;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ivory);
+  background: var(--wine);
+  transition: transform 0.25s var(--ease), filter 0.25s var(--ease);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.btn--olive {
+  background: var(--olive);
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid rgba(244, 239, 228, 0.35);
+}
+
+[data-view] {
+  display: none;
+}
+
+[data-view].is-active {
+  display: block;
+}
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 6, 5, 0.28), rgba(8, 6, 5, 0.18) 40%, rgba(8, 6, 5, 0.45)),
+    var(--hero-image, none) center / cover no-repeat;
+  z-index: -1;
+}
+
+.hero-copy {
+  text-align: center;
+  padding: 0.5rem 1.25rem 0;
+}
+
+.hero-copy h1 {
+  font-family: var(--script);
+  font-size: clamp(3.4rem, 12vw, 6.4rem);
+  margin-top: 0.4rem;
+}
+
+.hero-copy h1 span {
+  font-size: 0.72em;
+  color: #d7b48a;
+}
+
+.hero-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 1rem 1rem 2.5rem;
+}
+
+.hero-note {
+  text-align: center;
+  font-style: italic;
+  margin: 0 1.5rem 2.4rem;
+  color: var(--muted);
+}
+
+.band {
+  padding: 4.5rem 1.25rem;
+  text-align: center;
+}
+
+.band--lace {
+  color: var(--wine-deep);
+  background:
+    linear-gradient(rgba(251, 247, 239, 0.9), rgba(251, 247, 239, 0.92)),
+    url("/img/lace.svg") center / 180px repeat,
+    var(--ivory);
+}
+
+.band--wine {
+  color: var(--cream);
+  background:
+    linear-gradient(rgba(60, 10, 16, 0.82), rgba(40, 8, 12, 0.88)),
+    url("/img/texture_jersey.png") center / cover no-repeat;
+}
+
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.6rem, 3vw, 1.4rem);
+  margin-bottom: 1.2rem;
+}
+
+.countdown-cell {
+  min-width: 3.2rem;
+}
+
+.countdown-cell strong {
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 5vw, 2.1rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.countdown-cell span {
+  font-family: var(--display);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.til {
+  font-family: var(--display);
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+.til em {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--script);
+  font-style: normal;
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.center-copy {
+  margin: 1.4rem auto 0;
+  max-width: 28rem;
+  font-style: italic;
+}
+
+.address-form,
+.rsvp-card,
+.faq-list {
+  max-width: 36rem;
+  margin: 2.4rem auto 0;
+  text-align: left;
+}
+
+.address-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 720px) {
+  .form-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.address-form label,
+.guest-row label {
+  display: grid;
+  gap: 0.35rem;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.address-form input,
+.address-form select {
+  width: 100%;
+  border: 1px solid rgba(92, 18, 24, 0.22);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  padding: 0.75rem 0.8rem;
+  border-radius: 2px;
+}
+
+.band--wine .address-form input,
+.band--wine .address-form select {
+  background: rgba(251, 247, 239, 0.92);
+  border-color: rgba(244, 239, 228, 0.16);
+}
+
+.guest-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guest-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.guest-remove {
+  width: 2.4rem;
+  height: 2.6rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.form-actions {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  margin-top: 0.4rem;
+}
+
+.guest-cap,
+.form-error,
+.fine-print {
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.form-error {
+  color: #8a1a24;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
+}
+
+.form-success {
+  max-width: 28rem;
+  margin: 2rem auto 0;
+  font-size: 1.25rem;
+}
+
+.site-footer {
+  padding: 4.5rem 1.25rem 2rem;
+  text-align: center;
+  background:
+    linear-gradient(rgba(20, 8, 10, 0.72), rgba(20, 8, 10, 0.82)),
+    var(--footer-image, url("/img/texture_jersey.png")) center / cover no-repeat;
+}
+
+.site-footer .script {
+  display: block;
+  font-size: clamp(3rem, 10vw, 5rem);
+  margin-top: 0.4rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 2rem;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.rsvp-page,
+.faq-page {
+  min-height: 100vh;
+  padding: 0 1.25rem 4rem;
+}
+
+.rsvp-card,
+.faq-list {
+  background: rgba(251, 247, 239, 0.92);
+  color: var(--wine-deep);
+  padding: 2rem 1.4rem;
+}
+
+.rsvp-card h2,
+.faq-page h2 {
+  font-family: var(--script);
+  font-size: 3rem;
+  text-align: center;
+}
+
+.rsvp-card p + p,
+.faq-list h2 {
+  margin-top: 1rem;
+}
+
+.rsvp-card p {
+  margin-top: 1rem;
+}
+
+.rsvp-card .btn {
+  margin-top: 1.4rem;
+}
+
+.faq-list details {
+  border-bottom: 1px solid rgba(92, 18, 24, 0.16);
+  padding: 0.9rem 0;
+}
+
+.faq-list summary {
+  cursor: pointer;
+  font-family: var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.faq-list details p {
+  padding-top: 0.6rem;
+}
+
+@media (max-width: 640px) {
+  .nav-links {
+    gap: 0.7rem;
+    font-size: 0.56rem;
+  }
+
+  .guest-row {
+    grid-template-columns: 1fr;
+  }
+}
