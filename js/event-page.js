@@ -4,11 +4,11 @@ import { initCountdown } from "./countdown.js";
 import { initAddressForm } from "./form.js";
 import { resolveGuest } from "./guests.js";
 
-const guest = resolveGuest();
-
 initRouter({ base: document.body.dataset.base || "/" });
 initEnvelope();
 initCountdown();
+
+const guest = await resolveGuest(document.body.dataset.event);
 initAddressForm({
   event: document.body.dataset.event,
   guest,

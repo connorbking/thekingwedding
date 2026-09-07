@@ -1,4 +1,4 @@
-import { GAS_URL } from "./config.js";
+import { API } from "./config.js";
 import { extraGuestSlots } from "./guests.js";
 
 function rowTemplate(index) {
@@ -84,19 +84,16 @@ function serialize(form, eventName, guest) {
   };
 }
 
-async function postToSheet(payload) {
-  if (!GAS_URL) {
-    const error = new Error("The Google Sheet connection has not been configured yet.");
-    error.code = "not-configured";
-    throw error;
-  }
-
-  await fetch(GAS_URL, {
+async function postSubmission(payload) {
+  const response = await fetch(API.submissions, {
     method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Something went wrong sending your address.");
+  }
 }
 
 export function initAddressForm({ event, guest }) {
@@ -143,14 +140,12 @@ export function initAddressForm({ event, guest }) {
     if (errorNode) errorNode.textContent = "";
 
     try {
-      await postToSheet(payload);
+      await postSubmission(payload);
       form.hidden = true;
       document.querySelector("[data-form-success]")?.removeAttribute("hidden");
     } catch (error) {
       if (errorNode) {
-        errorNode.textContent = GAS_URL
-          ? "Something went wrong sending your address. Please try again, or email us directly."
-          : "Address collection is almost ready. Your details were not stored yet — please try again after we connect the guest list, or email us.";
+        errorNode.textContent = error.message || "Something went wrong sending your address. Please try again.";
       }
     } finally {
       button.disabled = false;

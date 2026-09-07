@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Host desk · The King Wedding</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <header class="admin-top">
+      <a class="wordmark" href="/">The King Wedding</a>
+      <div class="admin-who" data-who hidden>
+        <span data-admin-email></span>
+        <button class="btn btn--ghost" type="button" data-logout>Log out</button>
+      </div>
+    </header>
+
+    <section class="admin-card admin-login" data-login>
+      <p class="eyebrow">Private</p>
+      <h1>Host desk</h1>
+      <p>For Alyssa and Connor — sign in with the Google account we listed as a host. The first time, enable Google under Firebase Authentication.</p>
+      <div class="form-actions">
+        <button class="btn btn--google" type="button" data-google-login>Continue with Google</button>
+      </div>
+      <p class="admin-error" data-login-error></p>
+    </section>
+
+    <section class="admin-card" data-desk hidden>
+      <p class="eyebrow">Guest list</p>
+      <h1>Save the Dates</h1>
+      <p class="admin-lede">People who shared an address, and the household codes you send them.</p>
+
+      <div class="stats">
+        <div class="stat"><strong data-stat-total>0</strong><span>All replies</span></div>
+        <div class="stat"><strong data-stat-como>0</strong><span>Lake Como</span></div>
+        <div class="stat"><strong data-stat-jersey>0</strong><span>Whippany</span></div>
+      </div>
+
+      <div class="tabs">
+        <button type="button" class="is-active" data-tab="replies">Replies</button>
+        <button type="button" data-tab="invites">Invite codes</button>
+      </div>
+
+      <div data-panel="replies">
+        <div class="admin-toolbar">
+          <select data-filter-event>
+            <option value="">Both celebrations</option>
+            <option value="como">Lake Como</option>
+            <option value="jersey">Whippany</option>
+          </select>
+          <input type="search" data-filter-query placeholder="Search name, email, code">
+          <button class="btn btn--olive" type="button" data-export>Export CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Event</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Address</th>
+                <th>Party</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody data-submissions></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div data-panel="invites" hidden>
+        <form class="invite-form" data-invite-form>
+          <div class="form-grid form-grid--2">
+            <label>Code <input name="code" required placeholder="ROSSI"></label>
+            <label>Greeting <input name="greeting" required placeholder="The Rossi Family"></label>
+            <label>Max party <input name="maxParty" type="number" min="1" max="20" value="2" required></label>
+            <label>Events
+              <select name="events">
+                <option value="como,jersey">Both</option>
+                <option value="como">Lake Como only</option>
+                <option value="jersey">Whippany only</option>
+              </select>
+            </label>
+          </div>
+          <label>Notes <input name="notes" placeholder="Optional"></label>
+          <button class="btn" type="submit">Add invite code</button>
+          <p class="admin-error" data-invite-error></p>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Greeting</th>
+                <th>Party</th>
+                <th>Events</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody data-invites></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

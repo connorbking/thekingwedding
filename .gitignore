@@ -3,5 +3,6 @@ Thumbs.db
 *.log
 node_modules
 .wrangler
+.dev.vars
 .vercel
 .idea

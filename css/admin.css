@@ -1,0 +1,195 @@
+body.admin {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(20, 8, 10, 0.72), rgba(12, 8, 8, 0.88)),
+    url("/img/texture_jersey.png") center / cover no-repeat;
+}
+
+.admin-shell {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.5rem 0 4rem;
+}
+
+.admin-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+
+.admin-card {
+  background: rgba(251, 247, 239, 0.94);
+  color: var(--wine-deep);
+  padding: 1.6rem;
+}
+
+.admin-login {
+  max-width: 26rem;
+  margin: 12vh auto 0;
+}
+
+.admin-login h1,
+.admin-card h1 {
+  font-family: var(--script);
+  font-size: 3rem;
+  text-align: center;
+}
+
+.admin-login p,
+.admin-lede {
+  text-align: center;
+  font-style: italic;
+  margin: 0.6rem 0 1.4rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
+}
+
+.stat {
+  background: var(--wine-deep);
+  color: var(--cream);
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.8rem;
+}
+
+.stat span {
+  font-family: var(--display);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.admin-toolbar input,
+.admin-toolbar select,
+.admin-login label,
+.invite-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-login input,
+.invite-form input,
+.invite-form select {
+  width: 100%;
+  border: 1px solid rgba(92, 18, 24, 0.22);
+  background: #fff;
+  color: var(--ink);
+  padding: 0.7rem 0.8rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--wine-deep);
+  font-family: var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+}
+
+.tabs button.is-active {
+  border-bottom-color: var(--wine);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.98rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.4rem;
+  border-bottom: 1px solid rgba(92, 18, 24, 0.12);
+  vertical-align: top;
+}
+
+th {
+  font-family: var(--display);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.row-detail {
+  color: rgba(63, 11, 16, 0.75);
+  font-size: 0.92rem;
+}
+
+.danger {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--wine);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.invite-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-bottom: 1.4rem;
+}
+
+.admin-error {
+  color: #8a1a24;
+  min-height: 1.2em;
+}
+
+.admin-who {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.admin-who span {
+  font-size: 0.92rem;
+  opacity: 0.8;
+}
+
+.btn--google {
+  width: 100%;
+  background: var(--wine-deep);
+}
+
+@media (max-width: 720px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
