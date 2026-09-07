@@ -22,14 +22,18 @@ export const EVENTS = {
 };
 
 /**
- * Personalized Save the Date links:
- *   https://theking.wedding/como/save-the-date?code=ROSSI
+ * Local mock codes — lookup happens in js/guests.js from this object.
+ * Cloudflare D1 is not used locally.
  *
- * maxParty includes the person filling the form.
- * Without a matching code, guests may add a +1 only.
+ *   BOTH     — Lake Como + New Jersey
+ *   KING     — Lake Como + New Jersey (larger party)
+ *   NJ       — New Jersey only
+ *   SMITH    — New Jersey only
  */
 export const GUEST_CODES = {
-  // https://theking.wedding/como/save-the-date?code=DEMO
-  DEMO: { greeting: "our honored guests", maxParty: 4 },
-  // KINGFAM: { greeting: "The King Family", maxParty: 6 },
+  BOTH: { greeting: "our honored guests", maxParty: 4, events: ["como", "jersey"] },
+  DEMO: { greeting: "our honored guests", maxParty: 4, events: ["como", "jersey"] },
+  KING: { greeting: "the King family", maxParty: 6, events: ["como", "jersey"] },
+  NJ: { greeting: "our New Jersey guests", maxParty: 2, events: ["jersey"] },
+  SMITH: { greeting: "the Smith family", maxParty: 2, events: ["jersey"] },
 };

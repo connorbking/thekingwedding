@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/img/**", "destination": "/public/:splat" },
     { "source": "/como/save-the-date", "destination": "/como/index.html" },
     { "source": "/como/rsvp", "destination": "/como/index.html" },
     { "source": "/como/faq", "destination": "/como/index.html" },
