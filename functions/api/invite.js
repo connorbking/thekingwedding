@@ -1,5 +1,5 @@
 import { json } from "../lib/http.js";
-import { lookupInvite, lookupInviteByName, sheetConfigured } from "../lib/sheets.js";
+import { lookupInvite, lookupInviteByName, listGuests, sheetConfigured } from "../lib/sheets.js";
 
 function invitePayload(invite, fallbackCode = "") {
   return {
@@ -18,6 +18,13 @@ export async function onRequestGet(context) {
   const first = (url.searchParams.get("first") || "").trim();
   const last = (url.searchParams.get("last") || "").trim();
   const event = (url.searchParams.get("event") || "").trim().toLowerCase();
+
+  if (url.searchParams.get("warm")) {
+    if (sheetConfigured(context.env)) {
+      await listGuests(context.env).catch(() => {});
+    }
+    return json({ ok: true });
+  }
 
   if (!code && !(first && last)) return json({ found: false });
   if (!sheetConfigured(context.env)) {

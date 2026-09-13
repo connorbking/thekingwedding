@@ -114,7 +114,7 @@ function fillDownParty(rows) {
 }
 
 export async function listGuests(env) {
-  const data = await callSheet(env, { method: "GET", action: "list" });
+  const data = await sheetList(env);
   return {
     ...data,
     submissions: fillDownParty(data.submissions || []).map(formatGuest),
@@ -192,8 +192,19 @@ function partyFromGuests(guests, code, event = "") {
   );
 }
 
-async function namedGuests(env) {
+const GUEST_CACHE_MS = 120000;
+let guestCache = { at: 0, data: null };
+
+async function sheetList(env) {
+  const now = Date.now();
+  if (guestCache.data && now - guestCache.at < GUEST_CACHE_MS) return guestCache.data;
   const data = await callSheet(env, { method: "GET", action: "list" });
+  guestCache = { at: now, data };
+  return data;
+}
+
+async function namedGuests(env) {
+  const data = await sheetList(env);
   return fillDownParty(data.submissions || []).map(formatGuest).filter(hasName);
 }
 
@@ -212,7 +223,7 @@ export async function lookupInviteByName(env, firstName, lastName, event = "") {
       action: "invite",
       body: { first: firstName, last: lastName, event },
     });
-    if (direct.found || direct.ambiguous) return direct;
+    if (direct.byName || direct.found || direct.ambiguous) return direct;
   } catch {
     // Older script versions only listed the sheet; fall through.
   }
