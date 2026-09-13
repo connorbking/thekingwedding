@@ -117,7 +117,12 @@ http
         res.writeHead(404, { "Content-Type": "text/plain" }).end("Not found");
         return;
       }
-      res.writeHead(200, { "Content-Type": types[path.extname(filePath)] || "application/octet-stream" }).end(data);
+      const ext = path.extname(filePath);
+      const headers = { "Content-Type": types[ext] || "application/octet-stream" };
+      if (ext === ".html" || ext === ".js" || ext === ".css" || ext === ".png") {
+        headers["Cache-Control"] = "no-store";
+      }
+      res.writeHead(200, headers).end(data);
     });
   })
   .listen(port, "127.0.0.1", () => {
