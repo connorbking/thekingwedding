@@ -4,9 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Save the Date · Lake Como</title>
-  <meta name="description" content="Save the date for Alyssa and Connor in Lake Como, Italy — Saturday, September 11, 2027.">
-  <meta property="og:image" content="/img/bg_como.png">
-  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="A private invitation from Alyssa and Connor.">
+  <meta property="og:image" content="/public/bg_como.png">
+  <script>
+    document.documentElement.classList.add("invite-pending");
+    (function () {
+      var q = new URLSearchParams(location.search).get("code");
+      if (q && q.trim()) return;
+      try {
+        var stored = JSON.parse(sessionStorage.getItem("king.invite") || "null");
+        if (stored && Array.isArray(stored.events) && stored.events.indexOf("como") !== -1) return;
+      } catch (e) {}
+      location.replace("/");
+    })();
+  </script>
+  <style>html.invite-pending body { visibility: hidden; }</style>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
@@ -20,11 +34,12 @@
   <section class="view is-active" data-view="save-the-date">
     <header class="hero hero--como">
       <nav class="site-nav">
-        <a class="wordmark" href="/">The King Wedding</a>
+        <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
         <div class="nav-links">
           <a href="/como/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
           <a href="/como/rsvp" data-route data-nav="rsvp">RSVP</a>
           <a href="/como/faq" data-route data-nav="faq">FAQ</a>
+          <a href="/" data-not-you>Not you?</a>
         </div>
       </nav>
       <div class="hero-copy">
@@ -105,17 +120,18 @@
     <footer class="site-footer">
       <p class="eyebrow">All of our love,</p>
       <span class="script">Alyssa &amp; Connor</span>
-      <a class="back-link" href="/">&lt; Back to invitation</a>
+      <a class="back-link" href="/?gate=1" data-home-link>&lt; Back to invitation</a>
     </footer>
   </section>
 
   <section class="view rsvp-page" data-view="rsvp">
     <nav class="site-nav">
-      <a class="wordmark" href="/">The King Wedding</a>
+      <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
       <div class="nav-links">
         <a href="/como/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
         <a href="/como/rsvp" data-route data-nav="rsvp">RSVP</a>
         <a href="/como/faq" data-route data-nav="faq">FAQ</a>
+        <a href="/" data-not-you>Not you?</a>
       </div>
     </nav>
     <div class="rsvp-card">
@@ -128,11 +144,12 @@
 
   <section class="view faq-page" data-view="faq">
     <nav class="site-nav">
-      <a class="wordmark" href="/">The King Wedding</a>
+      <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
       <div class="nav-links">
         <a href="/como/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
         <a href="/como/rsvp" data-route data-nav="rsvp">RSVP</a>
         <a href="/como/faq" data-route data-nav="faq">FAQ</a>
+        <a href="/" data-not-you>Not you?</a>
       </div>
     </nav>
     <div class="faq-list">
@@ -141,9 +158,9 @@
         <summary>When and where?</summary>
         <p>Saturday, September 11, 2027 on Lake Como, Italy. The precise venue will be on your formal invitation.</p>
       </details>
-      <details>
+      <details data-dual-only>
         <summary>Is this the only celebration?</summary>
-        <p>No. We are also gathering in our backyard in Whippany, New Jersey on October 2, 2027. You may have been invited to one or both.</p>
+        <p>No. We are also gathering in our backyard in Whippany, New Jersey on October 2, 2027. You may open that invitation from the gate.</p>
       </details>
       <details>
         <summary>Travel and lodging</summary>
@@ -155,7 +172,7 @@
       </details>
       <details>
         <summary>May I bring additional guests?</summary>
-        <p>The Save the Date link we send you is sized to your household. A generic link allows a +1. If someone is missing, please write us.</p>
+        <p>The Save the Date we sent you is sized to your household. If someone is missing, please write us.</p>
       </details>
       <details>
         <summary>Gifts</summary>

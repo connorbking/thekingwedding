@@ -230,7 +230,7 @@ p {
   color: var(--wine-deep);
   background:
     linear-gradient(rgba(251, 247, 239, 0.9), rgba(251, 247, 239, 0.92)),
-    url("/img/lace.svg") center / 180px repeat,
+    url("/public/lace.svg") center / 180px repeat,
     var(--ivory);
 }
 
@@ -238,7 +238,7 @@ p {
   color: var(--cream);
   background:
     linear-gradient(rgba(60, 10, 16, 0.82), rgba(40, 8, 12, 0.88)),
-    url("/img/texture_jersey.png") center / cover no-repeat;
+    url("/public/texture_jersey.png") center / cover no-repeat;
 }
 
 .countdown {
@@ -399,7 +399,7 @@ p {
   text-align: center;
   background:
     linear-gradient(rgba(20, 8, 10, 0.72), rgba(20, 8, 10, 0.82)),
-    var(--footer-image, url("/img/texture_jersey.png")) center / cover no-repeat;
+    var(--footer-image, url("/public/texture_jersey.png")) center / cover no-repeat;
 }
 
 .site-footer .script {
