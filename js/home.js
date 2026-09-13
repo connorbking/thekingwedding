@@ -1,6 +1,7 @@
 import { CONTACT_EMAIL, EVENTS } from "./config.js";
 import {
   findGuest,
+  findGuestByName,
   rememberGuest,
   eventHref,
   isDualGuest,
@@ -11,6 +12,14 @@ const chooser = document.querySelector("[data-chooser]");
 const continuePanel = document.querySelector("[data-continue]");
 const form = document.querySelector("[data-code-form]");
 const errorNode = document.querySelector("[data-code-error]");
+
+function missingMessage() {
+  return `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
+}
+
+function ambiguousMessage() {
+  return `More than one guest matches that name. Please write us at ${CONTACT_EMAIL} and we will send you the right door.`;
+}
 
 function doorMarkup(eventKey, code) {
   const event = EVENTS[eventKey];
@@ -63,26 +72,28 @@ function admit(guest, { autoNavigate }) {
 
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const guest = await findGuest(form.code.value);
-  if (!guest) {
-    if (errorNode) {
-      errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
-    }
-    return;
-  }
   if (errorNode) errorNode.textContent = "";
-  admit(guest, { autoNavigate: true });
+  try {
+    const guest = await findGuestByName(form.firstName.value, form.lastName.value);
+    if (!guest) {
+      if (errorNode) errorNode.textContent = missingMessage();
+      return;
+    }
+    admit(guest, { autoNavigate: true });
+  } catch (error) {
+    if (errorNode) {
+      errorNode.textContent = error.ambiguous ? ambiguousMessage() : missingMessage();
+    }
+  }
 });
 
 const params = new URLSearchParams(window.location.search);
 const fromQuery = await findGuest(params.get("code"));
 
 if (fromQuery) {
-  form.code.value = fromQuery.code;
   if (params.get("gate") === "1") {
     admit(fromQuery, { autoNavigate: false });
   }
 } else if (params.get("code") && errorNode) {
-  form.code.value = params.get("code");
-  errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
+  errorNode.textContent = missingMessage();
 }

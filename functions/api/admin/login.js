@@ -15,7 +15,9 @@ export async function onRequestPost(context) {
     return json({ error: "Google sign-in could not be verified." }, 401);
   }
   if (!isAllowedAdmin(context.env, user.email)) {
-    return json({ error: "This Google account is not on the host list." }, 403);
+    return json({
+      error: `${user.email} is not on the host list.`,
+    }, 403);
   }
   if (!context.env.ADMIN_SESSION_SECRET) {
     return json({ error: "Admin session secret is not configured." }, 500);

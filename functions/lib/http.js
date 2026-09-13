@@ -21,7 +21,7 @@ export function cookieHeader(name, value, { maxAge, secure }) {
   return parts.join("; ");
 }
 
-export async function readJson(request, maxBytes = 20_000) {
+export async function readJson(request, maxBytes = 60_000) {
   const raw = await request.text();
   if (raw.length > maxBytes) {
     const error = new Error("Payload too large");

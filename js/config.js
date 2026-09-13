@@ -25,18 +25,19 @@ export const EVENTS = {
 };
 
 /**
- * Local mock codes — lookup happens in js/guests.js from this object.
- * Cloudflare D1 is not used locally.
- *
- *   BOTH     — Lake Como + New Jersey
- *   KING     — Lake Como + New Jersey (larger party)
- *   NJ       — New Jersey only
- *   SMITH    — New Jersey only
+ * Local fallbacks when the Google Sheet API is unavailable.
+ * Live lookups use Group Code on the guest spreadsheet.
  */
 export const GUEST_CODES = {
-  BOTH: { greeting: "our honored guests", maxParty: 4, events: ["como", "jersey"] },
-  DEMO: { greeting: "our honored guests", maxParty: 4, events: ["como", "jersey"] },
-  KING: { greeting: "the King family", maxParty: 6, events: ["como", "jersey"] },
-  NJ: { greeting: "our New Jersey guests", maxParty: 2, events: ["jersey"] },
-  SMITH: { greeting: "the Smith family", maxParty: 2, events: ["jersey"] },
+  DEMO: {
+    greeting: "the Demo family",
+    maxParty: 4,
+    events: ["como", "jersey"],
+    guests: [
+      { first_name: "Demo", last_name: "Guest" },
+      { first_name: "Plus", last_name: "One" },
+    ],
+  },
 };
+
+export const LOCAL_PEOPLE = [{ firstName: "Demo", lastName: "Guest", code: "DEMO" }];

@@ -6,14 +6,5 @@
   "pages_build_output_dir": ".",
   "observability": {
     "enabled": true
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "theking-wedding",
-      "database_id": "fab7dc9d-c85d-43dd-b96d-d0df6802d011",
-      "preview_database_id": "theking-wedding-local",
-      "migrations_dir": "migrations"
-    }
-  ]
+  }
 }

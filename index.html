@@ -51,9 +51,13 @@
       </div>
 
       <form class="name-form" id="invite" data-code-form>
-        <label class="visually-hidden" for="code">enter your code please</label>
         <div class="name-input-wrap">
-          <input class="name-input" id="code" name="code" required autocomplete="name" spellcheck="false" placeholder="enter your code please">
+          <div class="name-fields">
+            <label class="visually-hidden" for="firstName">First name</label>
+            <input class="name-input" id="firstName" name="firstName" required autocomplete="given-name" spellcheck="false" placeholder="first name">
+            <label class="visually-hidden" for="lastName">Last name</label>
+            <input class="name-input" id="lastName" name="lastName" required autocomplete="family-name" spellcheck="false" placeholder="last name">
+          </div>
           <p class="form-error" data-code-error></p>
         </div>
       </form>

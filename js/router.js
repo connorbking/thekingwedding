@@ -1,4 +1,4 @@
-import { resolveGuest, withCode } from "./guests.js";
+import { currentInviteCode, withCode } from "./guests.js";
 
 const VIEW_IDS = ["save-the-date", "rsvp", "faq"];
 
@@ -14,8 +14,7 @@ function viewFromPath(pathname, base) {
 
 function urlForView(base, view) {
   const prefix = base.endsWith("/") ? base.slice(0, -1) : base;
-  const guest = resolveGuest();
-  return withCode(`${prefix}/${view}`, guest?.code);
+  return withCode(`${prefix}/${view}`, currentInviteCode());
 }
 
 function showView(view) {
