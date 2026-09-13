@@ -167,11 +167,12 @@ function hidePrimaryFields(form) {
     if (!input) return;
     input.required = false;
   });
-  const nameGrid = form.querySelector(".form-grid");
-  if (nameGrid) {
-    nameGrid.classList.add("is-hidden-primary");
-    nameGrid.hidden = true;
-  }
+  form.querySelectorAll(".form-grid").forEach((grid) => {
+    if (grid.querySelector("[name='firstName']")) {
+      grid.classList.add("is-hidden-primary");
+      grid.hidden = true;
+    }
+  });
 }
 
 function hideAddressFields(form) {
@@ -209,11 +210,15 @@ function householdAddress(members) {
 }
 
 function namedMember(member) {
-  return Boolean(String(member.first_name || member.firstName || "").trim() || String(member.last_name || member.lastName || "").trim());
+  return Boolean(
+    String(member.first_name || member.firstName || "").trim() &&
+    String(member.last_name || member.lastName || "").trim()
+  );
 }
 
 function renderParty(form, guest, eventName) {
   const members = (guest.members || []).filter(namedMember).map((member) => ({ ...member }));
+  if (!members.length) members.push({ first_name: "", last_name: "" });
   const address = householdAddress(members);
 
   if (form.dataset.formKind !== "rsvp") form.dataset.formKind = "address";
@@ -230,7 +235,8 @@ function renderParty(form, guest, eventName) {
     fillInput(form, "city", address.city);
     fillInput(form, "region", address.region);
     fillInput(form, "postal", address.postal);
-    if (!form.querySelector("[data-address-cap]")) {
+    fillInput(form, "country", address.country || form.country?.value);
+    if (!form.dataset.household && !form.querySelector("[data-address-cap]")) {
       const cap = document.createElement("p");
       cap.className = "guest-cap";
       cap.setAttribute("data-address-cap", "");
@@ -317,17 +323,22 @@ async function postSubmission(payload) {
 }
 
 function bindForm(form, eventName, guest) {
-  const partyMode = Boolean(guest.code && (guest.personalized || guest.members?.length));
+  const partyMode = Boolean(guest.code && (guest.personalized || guest.members?.length || form.dataset.household));
   if (partyMode) {
     renderParty(form, guest, eventName);
     const submit = form.querySelector("[type='submit']");
     if (submit && form.dataset.formKind === "rsvp") submit.textContent = "Send RSVP";
-    else if (submit) submit.textContent = "Save our details";
+    else if (submit && !form.classList.contains("find-invite") && submit.classList.contains("btn")) {
+      submit.textContent = "Save our details";
+    }
   } else if (form.dataset.formKind === "rsvp") {
     hideAddressFields(form);
     ensureRsvpField(form, eventName);
   }
   updateCap(form, guest);
+
+  if (form.dataset.bound === "true") return;
+  form.dataset.bound = "true";
 
   form.addEventListener("click", (eventClick) => {
     if (eventClick.target.closest("[data-add-guest]")) {
@@ -373,6 +384,7 @@ function bindForm(form, eventName, guest) {
     }
 
     const payload = partyMode ? serializeParty(form, eventName, guest) : serialize(form, eventName, guest);
+    if (form.dataset.household === "true") payload.kind = "address";
     if (!partyMode && collectExtras(form).length > extraGuestSlots(guest)) {
       form.querySelector("[data-form-error]").textContent = "This invitation cannot include that many additional guests.";
       return;
@@ -414,15 +426,21 @@ function mountRsvpForm(guest) {
   const intro = card.querySelector("[data-rsvp-intro]");
   if (intro) intro.hidden = !hasParty;
   if (!hasParty) return;
-
   if (card.querySelector("[data-address-form]")) return;
-  const source = document.querySelector("[data-address-form]");
-  if (!source) return;
 
   const host = card.querySelector("[data-rsvp-form-host]") || card;
-  const clone = source.cloneNode(true);
-  clone.dataset.formKind = "rsvp";
-  host.appendChild(clone);
+  const form = document.createElement("form");
+  form.className = "address-form";
+  form.dataset.formKind = "rsvp";
+  form.setAttribute("data-address-form", "");
+  form.innerHTML = `
+    <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
+    <div class="form-actions">
+      <button class="btn" type="submit">Send RSVP</button>
+    </div>
+    <p class="form-error" data-form-error></p>
+  `;
+  host.appendChild(form);
   if (!card.querySelector("[data-form-success]")) {
     const done = document.createElement("p");
     done.className = "form-success";
@@ -437,4 +455,11 @@ export function initAddressForm({ event, guest }) {
   applyGreeting(guest);
   mountRsvpForm(guest);
   document.querySelectorAll("[data-address-form]").forEach((form) => bindForm(form, event, guest));
+}
+
+export function initHouseholdForm({ guest, form }) {
+  if (!form) return;
+  form.dataset.formKind = "address";
+  form.dataset.household = "true";
+  bindForm(form, guest.events?.[0] || "jersey", guest);
 }

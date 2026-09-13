@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/css/themes.css">
 </head>
 <body data-theme="como" data-event="como" data-base="/como" data-title-base="Lake Como · The King Wedding">
-  <a class="skip" href="#address">Skip to address form</a>
+  <a class="skip" href="#countdown">Skip to countdown</a>
 
   <section class="view is-active" data-view="save-the-date">
     <header class="hero hero--como">
@@ -77,7 +77,7 @@
       <p class="hero-note">Formal invitation to follow</p>
     </header>
 
-    <section class="band band--lace" id="address">
+    <section class="band band--lace" id="countdown">
       <div class="countdown" data-countdown="2027-09-11T16:00:00+02:00">
         <div class="countdown-cell"><strong data-unit="months">00</strong><span>Months</span></div>
         <div class="countdown-cell"><strong data-unit="days">00</strong><span>Days</span></div>
@@ -87,34 +87,11 @@
       </div>
       <p class="til">Til the <em>Big Day</em></p>
       <p data-greeting hidden></p>
-      <p class="center-copy">Please share your mailing address so we can send a paper invitation at the beginning of next year.</p>
-
-      <form class="address-form" data-address-form>
-        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
-        <div class="form-grid form-grid--2">
-          <label>First name <input name="firstName" required autocomplete="given-name"></label>
-          <label>Last name <input name="lastName" required autocomplete="family-name"></label>
-          <label>Phone <input name="phone" type="tel" required autocomplete="tel"></label>
-          <label>Email <input name="email" type="email" required autocomplete="email"></label>
-        </div>
-        <label>Street address <input name="street" required autocomplete="address-line1"></label>
-        <label>Apartment or unit <input name="apt" autocomplete="address-line2"></label>
-        <div class="form-grid form-grid--2">
-          <label>City <input name="city" required autocomplete="address-level2"></label>
-          <label>State or region <input name="region" required autocomplete="address-level1"></label>
-          <label>Postal code <input name="postal" required autocomplete="postal-code"></label>
-          <label>Country <input name="country" required autocomplete="country-name" value="United States"></label>
-        </div>
-        <div data-guest-list class="guest-list"></div>
-        <p class="guest-cap" data-guest-cap></p>
-        <div class="form-actions">
-          <button type="button" class="btn btn--ghost" data-add-guest style="color:var(--wine-deep);border-color:rgba(92,18,24,.3)">Add a family member</button>
-          <button class="btn" type="submit">Share your address</button>
-        </div>
-        <p class="form-error" data-form-error></p>
-        <p class="fine-print">We can’t wait to celebrate together. Please write if you have any questions.</p>
-      </form>
-      <p class="form-success" data-form-success hidden>Thank you. We have your address for the Lake Como invitation.</p>
+      <p class="center-copy">Your household mailing details live with your invitation. Update them once, then RSVP for Lake Como here.</p>
+      <p class="form-actions" style="justify-items:center">
+        <a class="btn" href="/?gate=1" data-home-link>Update household details</a>
+        <a class="btn btn--ghost" href="/como/rsvp" data-route style="color:var(--wine-deep);border-color:rgba(92,18,24,.3)">RSVP</a>
+      </p>
     </section>
 
     <footer class="site-footer">
@@ -138,8 +115,8 @@
     <div class="rsvp-card">
       <p class="eyebrow">Lake Como · 11.09.2027</p>
       <h2>RSVP</h2>
-      <p data-generic-rsvp>Formal invitations will follow at the beginning of next year, and that is when we will collect a final RSVP. For now, please share your mailing address on the Save the Date so we know where to write you.</p>
-      <p data-generic-rsvp-cta><a class="btn" href="/como/save-the-date" data-route>Share your address</a></p>
+      <p data-generic-rsvp>Formal invitations will follow at the beginning of next year. Household mailing details are updated from your invitation; this page is only for Lake Como replies.</p>
+      <p data-generic-rsvp-cta><a class="btn" href="/?gate=1" data-home-link>Update household details</a></p>
       <p data-rsvp-intro hidden>Please reply for everyone in your party.</p>
       <div data-rsvp-form-host></div>
     </div>

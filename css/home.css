@@ -156,8 +156,169 @@ html:has(body.landing-body) {
   overflow: hidden;
 }
 
-.invitation-gate [hidden] {
-  display: none !important;
+html:has(body.landing-body.is-open) {
+  height: auto;
+  overflow: auto;
+}
+
+.landing-body.is-open {
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  overflow: auto;
+}
+
+.landing-body.is-open .invitation-gate {
+  width: min(100%, 720px);
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  justify-content: flex-start;
+  padding-top: 5vh;
+  padding-bottom: 5rem;
+}
+
+.household-desk {
+  width: min(100%, 640px);
+  margin-top: 8px;
+  text-align: left;
+}
+
+.household-kicker,
+.household-label {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold-muted);
+}
+
+.household-title {
+  margin: 0 0 18px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  color: #e4c79d;
+  text-align: center;
+}
+
+.event-doors {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+@media (min-width: 640px) {
+  .event-doors:has(.event-door:nth-child(2)) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.event-door {
+  padding: 16px 18px 18px;
+  border: 1px solid rgba(228, 199, 157, 0.55);
+  border-radius: 8px;
+  background: rgba(18, 23, 25, 0.32);
+  backdrop-filter: blur(4px);
+}
+
+.event-door .eyebrow {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold-muted);
+}
+
+.event-door h3 {
+  margin: 6px 0 2px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: #e4c79d;
+}
+
+.event-door .place {
+  margin: 0 0 12px;
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.event-party {
+  margin: 0 0 14px;
+  padding-left: 1.1rem;
+  font-family: "Bodoni Moda", serif;
+  font-size: 16px;
+  font-style: italic;
+  color: #e4c79d;
+}
+
+.event-door-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.event-door-links a {
+  color: var(--gold-light);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(224, 198, 159, 0.45);
+}
+
+.event-door-links a:hover {
+  color: #fff6df;
+  border-bottom-color: #fff6df;
+}
+
+.household-form {
+  max-width: none;
+  margin: 0;
+  color: #e4c79d;
+}
+
+.household-form label {
+  color: var(--gold-muted);
+}
+
+.household-form input {
+  border-color: rgba(228, 199, 157, 0.55);
+  background: rgba(18, 23, 25, 0.28);
+  color: #e4c79d;
+}
+
+.household-form .party-member {
+  border-bottom-color: rgba(228, 199, 157, 0.22);
+}
+
+.household-form .guest-cap,
+.household-form .form-error {
+  color: var(--gold-muted);
+}
+
+.household-form .form-success {
+  color: #e4c79d;
+}
+
+.household-reset {
+  display: block;
+  margin: 18px auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold-muted);
+  font-family: "Bodoni Moda", serif;
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.household-reset:hover {
+  color: var(--gold-light);
 }
 
 .monogram {
@@ -330,6 +491,7 @@ html:has(body.landing-body) {
 }
 
 .find-invite {
+  position: relative;
   display: block;
   width: 100%;
   margin-top: 12px;
@@ -345,13 +507,129 @@ html:has(body.landing-body) {
   color: #e4c79d;
   cursor: pointer;
   backdrop-filter: blur(2px);
+  isolation: isolate;
+  transition:
+    box-shadow 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    background 0.35s ease,
+    transform 0.2s ease;
+}
+
+.find-invite::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 244, 214, 0.32) 50%,
+    transparent 70%
+  );
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, background-position 0.7s ease;
 }
 
 .find-invite:hover,
 .find-invite:focus-visible {
   outline: none;
-  border-color: var(--gold-light);
-  color: var(--gold-light);
+  border-color: #fff1c9;
+  color: #fff8e8;
+  background: rgba(52, 40, 18, 0.58);
+  box-shadow:
+    0 0 14px 2px rgba(255, 213, 106, 0.55),
+    0 0 36px 6px rgba(214, 183, 137, 0.5),
+    0 0 70px 10px rgba(255, 154, 50, 0.28),
+    inset 0 0 18px rgba(255, 236, 180, 0.22);
+}
+
+.find-invite:hover::before,
+.find-invite:focus-visible::before {
+  opacity: 1;
+  background-position: -40% 0;
+}
+
+.find-invite:active {
+  transform: scale(0.97);
+}
+
+.find-invite.is-striking {
+  animation: invite-strike 0.62s ease-out;
+}
+
+.find-invite.is-loading {
+  pointer-events: none;
+  color: transparent;
+  box-shadow:
+    0 0 14px 2px rgba(255, 213, 106, 0.4),
+    0 0 32px rgba(214, 183, 137, 0.28);
+}
+
+.find-invite.is-loading::before {
+  opacity: 0;
+}
+
+.find-invite.is-loading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: -0.575rem 0 0 -0.575rem;
+  border: 2px solid rgba(228, 199, 157, 0.28);
+  border-top-color: #fff6df;
+  border-radius: 50%;
+  animation: invite-spin 0.7s linear infinite;
+}
+
+@keyframes invite-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes invite-strike {
+  0% {
+    transform: scale(0.96);
+    box-shadow:
+      0 0 0 0 rgba(255, 213, 106, 0.55),
+      inset 0 0 0 rgba(255, 244, 214, 0);
+  }
+  35% {
+    transform: scale(1.045);
+    box-shadow:
+      0 0 18px 4px rgba(255, 213, 106, 0.55),
+      0 0 46px rgba(255, 154, 50, 0.38),
+      inset 0 0 22px rgba(255, 244, 214, 0.28);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 10px rgba(255, 213, 106, 0.28),
+      0 0 28px rgba(214, 183, 137, 0.32);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .find-invite,
+  .find-invite::before {
+    transition: none;
+  }
+
+  .find-invite.is-striking {
+    animation: none;
+  }
+
+  .find-invite.is-loading::after {
+    animation: none;
+    border-top-color: rgba(228, 199, 157, 0.28);
+    box-shadow: inset 0 0 0 2px #fff6df;
+  }
 }
 
 .form-error {

@@ -1,16 +1,19 @@
 import { CONTACT_EMAIL, EVENTS } from "./config.js";
+import { initHouseholdForm } from "./form.js";
 import {
   findGuest,
   findGuestByName,
   rememberGuest,
+  clearGuest,
   eventHref,
-  isDualGuest,
 } from "./guests.js";
 
 const sealed = document.querySelector("[data-sealed]");
 const chooser = document.querySelector("[data-chooser]");
 const continuePanel = document.querySelector("[data-continue]");
+const household = document.querySelector("[data-household]");
 const form = document.querySelector("[data-code-form]");
+const householdForm = document.querySelector("[data-household-form]");
 const errorNode = document.querySelector("[data-code-error]");
 
 function missingMessage() {
@@ -21,79 +24,115 @@ function ambiguousMessage() {
   return `More than one guest matches that name. Please write us at ${CONTACT_EMAIL} and we will send you the right door.`;
 }
 
-function doorMarkup(eventKey, code) {
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function memberName(member) {
+  return `${member.first_name || member.firstName || ""} ${member.last_name || member.lastName || ""}`.trim();
+}
+
+function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
   if (!event) return "";
   const title = eventKey === "como" ? "Lake Como" : "Whippany";
   const region = eventKey === "como" ? "Italy" : "New Jersey";
+  const people = (guest.members || [])
+    .map(memberName)
+    .filter(Boolean)
+    .map((name) => `<li>${escapeHtml(name)}</li>`)
+    .join("");
   return `
-    <a href="${eventHref(eventKey, code)}">
+    <article class="event-door">
       <p class="eyebrow">${event.display}</p>
-      <h2>${title}</h2>
+      <h3>${title}</h3>
       <p class="place">${region}</p>
-    </a>
+      <p class="household-label">Your party</p>
+      <ul class="event-party">${people || "<li>Your household</li>"}</ul>
+      <div class="event-door-links">
+        <a href="${eventHref(eventKey, guest.code)}">Save the Date</a>
+        <a href="${eventHref(eventKey, guest.code, "rsvp")}">RSVP</a>
+      </div>
+    </article>
   `;
 }
 
-function showChooser(guest) {
-  sealed.hidden = true;
-  continuePanel.hidden = true;
-  chooser.hidden = false;
-  const doors = chooser.querySelector("[data-chooser-doors]");
-  if (doors) {
-    doors.innerHTML = guest.events.map((key) => doorMarkup(key, guest.code)).join("");
-  }
-}
-
-function showContinue(guest) {
-  sealed.hidden = true;
-  chooser.hidden = true;
-  continuePanel.hidden = false;
-  const link = continuePanel.querySelector("[data-continue-link]");
-  if (link) link.href = eventHref(guest.events[0], guest.code);
-}
-
-function goToEvent(guest) {
-  window.location.assign(eventHref(guest.events[0], guest.code));
-}
-
-function admit(guest, { autoNavigate }) {
+function showHousehold(guest) {
   rememberGuest(guest);
-  if (isDualGuest(guest)) {
-    showChooser(guest);
-    return;
+  document.body.classList.add("is-open");
+  sealed.hidden = true;
+  if (chooser) chooser.hidden = true;
+  if (continuePanel) continuePanel.hidden = true;
+  household.hidden = false;
+
+  const greeting = household.querySelector("[data-household-greeting]");
+  if (greeting) {
+    greeting.textContent = guest.greeting ? `Dear ${guest.greeting}` : "Welcome";
   }
-  if (autoNavigate) {
-    goToEvent(guest);
-    return;
+
+  const doors = household.querySelector("[data-event-doors]");
+  if (doors) {
+    doors.innerHTML = guest.events.map((key) => doorMarkup(key, guest)).join("");
   }
-  showContinue(guest);
+
+  const success = household.querySelector("[data-household-success]");
+  if (success) success.hidden = true;
+  if (householdForm) {
+    householdForm.hidden = false;
+    initHouseholdForm({ guest, form: householdForm });
+  }
 }
+
+const findInvite = form?.querySelector(".find-invite");
+
+findInvite?.addEventListener("click", () => {
+  findInvite.classList.remove("is-striking");
+  void findInvite.offsetWidth;
+  findInvite.classList.add("is-striking");
+});
 
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (errorNode) errorNode.textContent = "";
+  if (findInvite) {
+    findInvite.disabled = true;
+    findInvite.setAttribute("aria-busy", "true");
+    findInvite.classList.add("is-loading");
+  }
   try {
     const guest = await findGuestByName(form.firstName.value, form.lastName.value);
     if (!guest) {
       if (errorNode) errorNode.textContent = missingMessage();
       return;
     }
-    admit(guest, { autoNavigate: true });
+    showHousehold(guest);
   } catch (error) {
     if (errorNode) {
       errorNode.textContent = error.ambiguous ? ambiguousMessage() : missingMessage();
     }
+  } finally {
+    if (findInvite) {
+      findInvite.disabled = false;
+      findInvite.removeAttribute("aria-busy");
+      findInvite.classList.remove("is-loading");
+    }
   }
+});
+
+household?.querySelector("[data-not-you]")?.addEventListener("click", () => {
+  clearGuest();
+  window.location.assign("/");
 });
 
 const params = new URLSearchParams(window.location.search);
 const fromQuery = await findGuest(params.get("code"));
 
 if (fromQuery) {
-  if (params.get("gate") === "1") {
-    admit(fromQuery, { autoNavigate: false });
-  }
+  showHousehold(fromQuery);
 } else if (params.get("code") && errorNode) {
   errorNode.textContent = missingMessage();
 }

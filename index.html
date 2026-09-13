@@ -72,6 +72,34 @@
       <a class="enter-link" data-continue-link href="#">Continue</a>
     </div>
 
+    <section class="household-desk" data-household hidden>
+      <p class="household-kicker" data-household-greeting></p>
+      <h2 class="household-title">Your invitation</h2>
+      <div class="event-doors" data-event-doors></div>
+      <form class="household-form address-form" data-household-form>
+        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
+        <label class="visually-hidden">First name <input name="firstName"></label>
+        <label class="visually-hidden">Last name <input name="lastName"></label>
+        <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
+        <label class="visually-hidden">Email <input name="email" type="email"></label>
+        <p class="household-label">Mailing address</p>
+        <label>Street address <input name="street" required autocomplete="address-line1"></label>
+        <label>Apartment or unit <input name="apt" autocomplete="address-line2"></label>
+        <div class="form-grid form-grid--2">
+          <label>City <input name="city" required autocomplete="address-level2"></label>
+          <label>State or region <input name="region" required autocomplete="address-level1"></label>
+          <label>Postal code <input name="postal" required autocomplete="postal-code"></label>
+          <label>Country <input name="country" required autocomplete="country-name" value="United States"></label>
+        </div>
+        <div class="form-actions">
+          <button class="find-invite" type="submit">Save our details</button>
+        </div>
+        <p class="form-error" data-form-error></p>
+      </form>
+          <p class="form-success" data-form-success data-household-success hidden>Thank you. We have your household details for every celebration.</p>
+      <button class="household-reset" type="button" data-not-you>Not you?</button>
+    </section>
+
     <div class="fleur-rule" aria-hidden="true">
       <span></span>
       <b>⚜</b>

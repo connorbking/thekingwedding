@@ -84,33 +84,11 @@
       </figure>
       <p class="til" style="margin-top:0">Formal invitations <em>to come</em></p>
       <p data-greeting hidden></p>
-      <p class="center-copy">Please share your mailing address below so that we can send invitations.</p>
-
-      <form class="address-form" data-address-form>
-        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
-        <div class="form-grid form-grid--2">
-          <label>First name <input name="firstName" required autocomplete="given-name"></label>
-          <label>Last name <input name="lastName" required autocomplete="family-name"></label>
-          <label>Phone <input name="phone" type="tel" required autocomplete="tel"></label>
-          <label>Email <input name="email" type="email" required autocomplete="email"></label>
-        </div>
-        <label>Street address <input name="street" required autocomplete="address-line1"></label>
-        <label>Apartment or unit <input name="apt" autocomplete="address-line2"></label>
-        <div class="form-grid form-grid--2">
-          <label>City <input name="city" required autocomplete="address-level2"></label>
-          <label>State or region <input name="region" required autocomplete="address-level1"></label>
-          <label>Postal code <input name="postal" required autocomplete="postal-code"></label>
-          <label>Country <input name="country" required autocomplete="country-name" value="United States"></label>
-        </div>
-        <div data-guest-list class="guest-list"></div>
-        <p class="guest-cap" data-guest-cap></p>
-        <div class="form-actions">
-          <button type="button" class="btn btn--ghost" data-add-guest>Add a family member</button>
-          <button class="btn btn--olive" type="submit">Send my address</button>
-        </div>
-        <p class="form-error" data-form-error style="color:#f3d4c8"></p>
-      </form>
-      <p class="form-success" data-form-success hidden>Thank you. We have your address for the Whippany invitation.</p>
+      <p class="center-copy">Your household mailing details live with your invitation. Update them once, then RSVP for Whippany here.</p>
+      <p class="form-actions" style="justify-items:center">
+        <a class="btn btn--olive" href="/?gate=1" data-home-link>Update household details</a>
+        <a class="btn btn--ghost" href="/jersey/rsvp" data-route>RSVP</a>
+      </p>
     </section>
 
     <footer class="site-footer">
@@ -136,8 +114,8 @@
     <div class="rsvp-card">
       <p class="eyebrow">Whippany · 10.02.2027</p>
       <h2>RSVP</h2>
-      <p data-generic-rsvp>A formal invitation will follow, and that is when we will ask for a final RSVP. Please send your mailing address on the Save the Date so we can write you at the beginning of next year.</p>
-      <p data-generic-rsvp-cta><a class="btn btn--olive" href="/jersey/save-the-date" data-route>Send my address</a></p>
+      <p data-generic-rsvp>Household mailing details are updated from your invitation. This page is only for Whippany replies.</p>
+      <p data-generic-rsvp-cta><a class="btn btn--olive" href="/?gate=1" data-home-link>Update household details</a></p>
       <p data-rsvp-intro hidden>Please reply for everyone in your party.</p>
       <div data-rsvp-form-host></div>
     </div>
