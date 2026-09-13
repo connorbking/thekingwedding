@@ -787,6 +787,81 @@ function updateParty_(sheet, data) {
   return { ok: true, party: party, groupCode: groupCode };
 }
 
+function normalizePersonName_(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/['’`]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/^\s+|\s+$/g, "");
+}
+
+function householdKey_(row) {
+  const code = String(row.group_code || row.access_code || "").trim().toUpperCase();
+  if (code) return "code:" + code;
+  const party = String(row.party || "").trim().toLowerCase();
+  if (party) return "party:" + party;
+  return "solo:" + String(row.id || "");
+}
+
+function partyRecord_(party, event) {
+  if (!party.length) return { found: false, byName: true };
+
+  const members = party.filter(function (row) {
+    return String(row.first_name || "").trim() || String(row.last_name || "").trim();
+  });
+  const events = [];
+  members.forEach(function (row) {
+    (row.events || []).forEach(function (key) {
+      if (events.indexOf(key) === -1) events.push(key);
+    });
+  });
+  if (event && events.indexOf(event) === -1) return { found: false, byName: true };
+
+  const coded = party.filter(function (row) {
+    return row.group_code;
+  })[0];
+  const named = party.filter(function (row) {
+    return row.party;
+  })[0];
+  const code = (coded && coded.group_code) || formatCode_((named && named.party) || "");
+
+  return {
+    found: true,
+    byName: true,
+    code: code,
+    greeting: (named && named.party) || "",
+    maxParty: Math.min(12, Math.max(members.length + 4, 2)),
+    events: events,
+    guests: members,
+  };
+}
+
+function lookupInviteByName_(sheet, firstName, lastName, event) {
+  const first = normalizePersonName_(firstName);
+  const last = normalizePersonName_(lastName);
+  if (!first || !last) return { found: false, byName: true };
+
+  const guests = list_(sheet);
+  const hits = guests.filter(function (row) {
+    return normalizePersonName_(row.first_name) === first && normalizePersonName_(row.last_name) === last;
+  });
+  if (!hits.length) return { found: false, byName: true };
+
+  const keys = [];
+  hits.forEach(function (row) {
+    const key = householdKey_(row);
+    if (keys.indexOf(key) === -1) keys.push(key);
+  });
+  if (keys.length !== 1) return { found: true, ambiguous: true, byName: true };
+
+  return partyRecord_(
+    guests.filter(function (row) {
+      return householdKey_(row) === keys[0];
+    }),
+    event
+  );
+}
+
 function lookupInvite_(sheet, code, event) {
   const wanted = String(code || "").trim().toUpperCase();
   if (!wanted) return { found: false };
@@ -827,6 +902,11 @@ function doGet(e) {
       return json_({ submissions: list_(sheet) });
     }
     if (action === "invite") {
+      const first = String(params.first || "").trim();
+      const last = String(params.last || "").trim();
+      if (first && last) {
+        return json_(lookupInviteByName_(sheet, first, last, String(params.event || "").toLowerCase()));
+      }
       return json_(lookupInvite_(sheet, params.code, String(params.event || "").toLowerCase()));
     }
     return json_({ ok: true, service: "theking.wedding" });
