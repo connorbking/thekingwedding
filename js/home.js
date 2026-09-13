@@ -1,59 +1,88 @@
-function probeImage(src) {
-  return new Promise((resolve) => {
-    const image = new Image();
-    image.onload = () => resolve(true);
-    image.onerror = () => resolve(false);
-    image.src = `${src}?v=1`;
-  });
+import { CONTACT_EMAIL, EVENTS } from "./config.js";
+import {
+  findGuest,
+  rememberGuest,
+  eventHref,
+  isDualGuest,
+} from "./guests.js";
+
+const sealed = document.querySelector("[data-sealed]");
+const chooser = document.querySelector("[data-chooser]");
+const continuePanel = document.querySelector("[data-continue]");
+const form = document.querySelector("[data-code-form]");
+const errorNode = document.querySelector("[data-code-error]");
+
+function doorMarkup(eventKey, code) {
+  const event = EVENTS[eventKey];
+  if (!event) return "";
+  const title = eventKey === "como" ? "Lake Como" : "Whippany";
+  const region = eventKey === "como" ? "Italy" : "New Jersey";
+  return `
+    <a href="${eventHref(eventKey, code)}">
+      <p class="eyebrow">${event.display}</p>
+      <h2>${title}</h2>
+      <p class="place">${region}</p>
+    </a>
+  `;
 }
 
-async function loadPhotos() {
-  const grid = document.querySelector("[data-photo-grid]");
-  if (!grid) return;
-
-  const found = [];
-  for (let index = 1; index <= 8; index += 1) {
-    const candidates = [
-      `/img/engagement/${index}.jpg`,
-      `/img/engagement/${index}.jpeg`,
-      `/img/engagement/${index}.png`,
-    ];
-    let match = "";
-    for (const src of candidates) {
-      if (await probeImage(src)) {
-        match = src;
-        break;
-      }
-    }
-    if (match) found.push(match);
+function showChooser(guest) {
+  sealed.hidden = true;
+  continuePanel.hidden = true;
+  chooser.hidden = false;
+  const doors = chooser.querySelector("[data-chooser-doors]");
+  if (doors) {
+    doors.innerHTML = guest.events.map((key) => doorMarkup(key, guest.code)).join("");
   }
-
-  if (!found.length) return;
-
-  grid.innerHTML = found
-    .map(
-      (src, index) =>
-        `<figure class="shot ${index === 0 ? "shot--wide" : ""}">
-          <img src="${src}" alt="Alyssa and Connor">
-        </figure>`
-    )
-    .join("");
 }
 
-function loadVideo() {
-  const wrap = document.querySelector("[data-video-wrap]");
-  const video = wrap?.querySelector("video");
-  const source = video?.querySelector("source");
-  if (!wrap || !video || !source) return;
-
-  const test = document.createElement("video");
-  test.preload = "metadata";
-  test.src = source.getAttribute("src");
-  test.addEventListener("loadeddata", () => {
-    wrap.hidden = false;
-  });
-  test.addEventListener("error", () => {});
+function showContinue(guest) {
+  sealed.hidden = true;
+  chooser.hidden = true;
+  continuePanel.hidden = false;
+  const link = continuePanel.querySelector("[data-continue-link]");
+  if (link) link.href = eventHref(guest.events[0], guest.code);
 }
 
-loadPhotos();
-loadVideo();
+function goToEvent(guest) {
+  window.location.assign(eventHref(guest.events[0], guest.code));
+}
+
+function admit(guest, { autoNavigate }) {
+  rememberGuest(guest);
+  if (isDualGuest(guest)) {
+    showChooser(guest);
+    return;
+  }
+  if (autoNavigate) {
+    goToEvent(guest);
+    return;
+  }
+  showContinue(guest);
+}
+
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const guest = await findGuest(form.code.value);
+  if (!guest) {
+    if (errorNode) {
+      errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
+    }
+    return;
+  }
+  if (errorNode) errorNode.textContent = "";
+  admit(guest, { autoNavigate: true });
+});
+
+const params = new URLSearchParams(window.location.search);
+const fromQuery = await findGuest(params.get("code"));
+
+if (fromQuery) {
+  form.code.value = fromQuery.code;
+  if (params.get("gate") === "1") {
+    admit(fromQuery, { autoNavigate: false });
+  }
+} else if (params.get("code") && errorNode) {
+  form.code.value = params.get("code");
+  errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
+}

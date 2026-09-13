@@ -1,11 +1,11 @@
 body[data-theme="como"] {
-  --hero-image: url("/img/bg_como.png");
-  --footer-image: url("/img/texture_jersey.png");
+  --hero-image: url("/public/bg_como.png");
+  --footer-image: url("/public/texture_jersey.png");
 }
 
 body[data-theme="jersey"] {
-  --hero-image: url("/img/bg_jersey.png");
-  --footer-image: url("/img/bg_jersey.png");
+  --hero-image: url("/public/bg_jersey.png");
+  --footer-image: url("/public/bg_jersey.png");
 }
 
 .hero--como .hero-copy h1,

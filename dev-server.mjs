@@ -19,6 +19,7 @@ const types = {
 };
 
 function rewrite(pathname) {
+  if (pathname.startsWith("/img/")) return `/public/${pathname.slice(5)}`;
   if (pathname.startsWith("/como/") && pathname !== "/como/index.html") return "/como/index.html";
   if (pathname.startsWith("/jersey/") && pathname !== "/jersey/index.html") return "/jersey/index.html";
   if (pathname === "/como") return "/como/index.html";

@@ -33,21 +33,16 @@ function updateCap(form, guest) {
   const used = form.querySelectorAll("[data-guest-row]").length;
   const remaining = extraGuestSlots(guest) - used;
   if (cap) {
-    if (guest.personalized) {
-      cap.textContent = remaining > 0
-        ? `You may add ${remaining} more family member${remaining === 1 ? "" : "s"} on this invitation.`
-        : extraGuestSlots(guest) === 0
-          ? "This invitation is reserved for you."
-          : "Your invitation is full.";
-    } else {
-      cap.textContent = remaining > 0
-        ? "You may add one additional guest."
-        : extraGuestSlots(guest) === 0
-          ? "This invitation is reserved for you."
-          : "A +1 has been added. Personalized links allow a larger family party.";
-    }
+    cap.textContent = remaining > 0
+      ? `You may add ${remaining} more family member${remaining === 1 ? "" : "s"} on this invitation.`
+      : extraGuestSlots(guest) === 0
+        ? "This invitation is reserved for you."
+        : "Your invitation is full.";
   }
-  if (addBtn) addBtn.disabled = remaining <= 0;
+  if (addBtn) {
+    addBtn.disabled = remaining <= 0;
+    addBtn.hidden = extraGuestSlots(guest) === 0;
+  }
 }
 
 function applyGreeting(guest) {

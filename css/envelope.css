@@ -57,7 +57,7 @@
   height: 100%;
   background:
     linear-gradient(rgba(251, 247, 239, 0.92), rgba(247, 240, 227, 0.94)),
-    url("/img/lace.svg") center / 140px repeat,
+    url("/public/lace.svg") center / 140px repeat,
     #f4ead6;
   border: 10px solid #f7f1e6;
   box-shadow:
@@ -148,7 +148,7 @@
   inset: 12% 18% 28%;
   background:
     radial-gradient(circle at 50% 80%, transparent 42%, rgba(196, 164, 106, 0.16) 43%, transparent 46%),
-    url("/img/lace.svg") center / 90px repeat;
+    url("/public/lace.svg") center / 90px repeat;
   opacity: 0.35;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   mix-blend-mode: screen;

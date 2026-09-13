@@ -17,7 +17,8 @@ export async function onRequestGet(context) {
 
   const events = String(invite.events || "")
     .split(",")
-    .map((item) => item.trim());
+    .map((item) => item.trim())
+    .filter(Boolean);
   if (event && !events.includes(event)) return json({ found: false });
 
   return json({
@@ -25,5 +26,6 @@ export async function onRequestGet(context) {
     code: invite.code,
     greeting: invite.greeting,
     maxParty: Number(invite.max_party) || 2,
+    events,
   });
 }

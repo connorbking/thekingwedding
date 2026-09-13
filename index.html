@@ -4,78 +4,99 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alyssa & Connor · The King Wedding</title>
-  <meta name="description" content="Alyssa and Connor are getting married in 2027 — Lake Como on September 11 and Whippany, New Jersey on October 2.">
+  <meta name="description" content="Alyssa and Connor are getting married in 2027. Enter your name to continue.">
   <meta property="og:title" content="Alyssa & Connor · The King Wedding">
-  <meta property="og:description" content="Two celebrations, one promise. Lake Como and Whippany, 2027.">
-  <meta property="og:image" content="/img/bg_como.png">
-  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <meta property="og:description" content="Some stories are meant for the right people.">
+  <meta property="og:image" content="/public/landing.png">
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
   <link rel="stylesheet" href="/css/home.css">
 </head>
-<body>
-  <a class="skip" href="#story">Skip to story</a>
-  <header class="home-hero">
-    <nav class="site-nav" style="position:absolute;top:0;left:0;right:0;">
-      <span class="wordmark">The King Wedding</span>
-      <div class="nav-links">
-        <a href="#story">Our story</a>
-        <a href="#celebrations">Celebrations</a>
-      </div>
-    </nav>
-    <div>
-      <p class="eyebrow">Twenty twenty-seven</p>
-      <h1>Alyssa <span>&amp;</span> Connor</h1>
-      <p>are getting married</p>
-      <a class="scroll-cue" href="#story">The story so far</a>
+<body class="landing-body">
+  <div class="landing-photo" aria-hidden="true">
+    <div class="landing-scene">
+      <div class="landing-overlay"></div>
+      <div class="water-flow"></div>
+      <span class="candle-flame" style="left: 89.77%; top: 5.3%"></span>
+      <span class="candle-flame" style="left: 92.72%; top: 7.2%"></span>
+      <span class="candle-flame" style="left: 94.88%; top: 15.95%"></span>
+      <span class="candle-flame" style="left: 97.72%; top: 15.15%"></span>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="story" id="story">
-      <div class="story-inner">
-        <header>
-          <p class="eyebrow">The engagement</p>
-          <h2>A promise, then a party — twice</h2>
-          <p>On an evening that still feels a little unreal, Connor asked Alyssa to spend the rest of this life with him. We want the people we love in both of the places that feel like ours: a gathering on Lake Como, and a backyard celebration at home in Whippany.</p>
-        </header>
+  <main class="invitation-gate" data-gate-stage>
+    <div class="monogram" aria-hidden="true">
+      <span>A</span>
+      <span class="monogram-rule">⚜</span>
+      <span>C</span>
+    </div>
 
-        <div class="photo-grid" data-photo-grid>
-          <figure class="shot shot--wide placeholder-shot" style="--shot-image:url('/img/bg_como.png')"></figure>
-          <figure class="shot placeholder-shot" style="--shot-image:url('/img/bg_jersey.png')"></figure>
-          <figure class="shot placeholder-shot" style="--shot-image:url('/img/texture_jersey.png')"></figure>
-        </div>
+    <h1 class="names">
+      <span>Alyssa</span>
+      <span class="and">and</span>
+      <span>Connor</span>
+    </h1>
 
-        <div class="video-frame" data-video-wrap hidden>
-          <video controls playsinline>
-            <source src="/img/engagement/video.mp4" type="video/mp4">
-          </video>
-        </div>
+    <p class="date">Wedding Festivities</p>
+
+    <div data-sealed>
+      <div class="lock-wrapper">
+        <button class="lock-hotspot" type="submit" form="invite" aria-label="Enter your name">
+          <img class="lock" src="/public/lock.png" alt="">
+        </button>
+        <div class="lock-glow" aria-hidden="true"></div>
       </div>
-    </section>
 
-    <section class="split" id="celebrations">
-      <a class="split-panel split-panel--como" href="/como/save-the-date">
-        <div>
-          <p class="eyebrow">September 11, 2027</p>
-          <h2>Lake Como</h2>
-          <p>Italy</p>
-          <span class="split-cta">Open invitation</span>
+      <form class="name-form" id="invite" data-code-form>
+        <label class="visually-hidden" for="code">enter your code please</label>
+        <div class="name-input-wrap">
+          <input class="name-input" id="code" name="code" required autocomplete="name" spellcheck="false" placeholder="enter your code please">
+          <p class="form-error" data-code-error></p>
         </div>
-      </a>
-      <a class="split-panel split-panel--jersey" href="/jersey/save-the-date">
-        <div>
-          <p class="eyebrow">October 2, 2027</p>
-          <h2>Whippany</h2>
-          <p>New Jersey</p>
-          <span class="split-cta">Open invitation</span>
-        </div>
-      </a>
-    </section>
+      </form>
+    </div>
+
+    <div class="chooser-links" data-chooser hidden>
+      <div data-chooser-doors></div>
+    </div>
+
+    <div data-continue hidden>
+      <a class="enter-link" data-continue-link href="#">Continue</a>
+    </div>
+
+    <div class="fleur-rule" aria-hidden="true">
+      <span></span>
+      <b>⚜</b>
+      <span></span>
+    </div>
+
+    <p class="secret-caps">Some stories are meant</p>
+    <p class="secret-italic">for the right people</p>
+
+    <div class="fleur-rule fleur-rule--faint" aria-hidden="true">
+      <span></span>
+      <b>⚜</b>
+      <span></span>
+    </div>
   </main>
 
+  <svg class="water-filter" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
+    <filter id="lake-ripple" x="0%" y="0%" width="100%" height="100%">
+      <feImage href="/public/engagement/water-overlay.png" xlink:href="/public/engagement/water-overlay.png" preserveAspectRatio="none" result="lakemask"/>
+      <feMorphology in="lakemask" operator="erode" radius="16" result="inset"/>
+      <feGaussianBlur in="inset" stdDeviation="6" result="softedge"/>
+      <feComposite in="SourceGraphic" in2="inset" operator="in" result="wateronly"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.009 0.024" numOctaves="2" seed="2" stitchTiles="stitch" result="noise"/>
+      <feOffset in="noise" result="shifted">
+        <animate attributeName="dx" dur="28s" from="0" to="512" repeatCount="indefinite"/>
+      </feOffset>
+      <feDisplacementMap in="wateronly" in2="shifted" scale="11" xChannelSelector="R" yChannelSelector="G" result="rippled"/>
+      <feComposite in="rippled" in2="softedge" operator="in"/>
+    </filter>
+  </svg>
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>

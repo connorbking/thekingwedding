@@ -1,3 +1,4 @@
+/img/*               /public/:splat     200
 /como/save-the-date  /como/index.html  200
 /como/rsvp           /como/index.html  200
 /como/faq            /como/index.html  200
