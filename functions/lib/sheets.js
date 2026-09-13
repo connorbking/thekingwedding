@@ -206,6 +206,17 @@ export async function lookupInviteByName(env, firstName, lastName, event = "") {
   const last = normalizePersonName(lastName);
   if (!first || !last) return { found: false };
 
+  try {
+    const direct = await callSheet(env, {
+      method: "GET",
+      action: "invite",
+      body: { first: firstName, last: lastName, event },
+    });
+    if (direct.found || direct.ambiguous) return direct;
+  } catch {
+    // Older script versions only listed the sheet; fall through.
+  }
+
   const guests = await namedGuests(env);
   const hits = guests.filter((row) => namesMatch(row, first, last));
   if (!hits.length) return { found: false };

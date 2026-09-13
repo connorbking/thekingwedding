@@ -6,3 +6,8 @@ node_modules
 .dev.vars
 .vercel
 .idea
+
+# Local guest list only — never commit the sheet or the reader
+local/
+*.xlsx
+*.xls

@@ -64,14 +64,15 @@ function eventsFrom(match) {
 }
 
 function guestFromMatch(code, match) {
+  const members = Array.isArray(match?.guests) ? match.guests : match?.members || [];
   const events = eventsFrom(match);
-  if (!events.length) return null;
+  if (!events.length && !members.length && !match?.greeting) return null;
   return {
     code,
     personalized: true,
     greeting: match.greeting || "",
     maxParty: Math.max(1, Number(match.maxParty) || DEFAULT_PARTY_SIZE),
-    members: Array.isArray(match.guests) ? match.guests : match.members || [],
+    members,
     events,
   };
 }
@@ -109,7 +110,7 @@ export function clearGuest() {
   sessionStorage.removeItem(INVITE_STORAGE_KEY);
 }
 
-function readStoredGuest() {
+export function readStoredGuest() {
   try {
     const stored = JSON.parse(sessionStorage.getItem(INVITE_STORAGE_KEY) || "null");
     if (!stored?.code && !stored?.members?.length) return null;
@@ -121,14 +122,18 @@ function readStoredGuest() {
 
 async function inviteFromApi(params) {
   const response = await fetch(`${API.invite}?${params}`);
-  if (!response.ok) return null;
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   if (data.ambiguous) {
     const error = new Error("ambiguous");
     error.ambiguous = true;
     throw error;
   }
-  if (!data.found) return null;
+  if (data.error && !data.found) {
+    const error = new Error(data.error);
+    error.lookupError = true;
+    throw error;
+  }
+  if (!response.ok || !data.found) return null;
   return guestFromMatch(data.code || params.get("code") || "", data);
 }
 
@@ -142,7 +147,7 @@ export async function findGuest(rawCode, eventName = "") {
     const match = await inviteFromApi(params);
     if (match) return match;
   } catch (error) {
-    if (error.ambiguous) throw error;
+    if (error.ambiguous || error.lookupError) throw error;
   }
 
   return localMatch(code);
@@ -159,7 +164,7 @@ export async function findGuestByName(firstName, lastName, eventName = "") {
     const match = await inviteFromApi(params);
     if (match) return match;
   } catch (error) {
-    if (error.ambiguous) throw error;
+    if (error.ambiguous || error.lookupError) throw error;
   }
 
   const local = LOCAL_PEOPLE.find(

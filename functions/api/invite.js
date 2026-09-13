@@ -20,7 +20,9 @@ export async function onRequestGet(context) {
   const event = (url.searchParams.get("event") || "").trim().toLowerCase();
 
   if (!code && !(first && last)) return json({ found: false });
-  if (!sheetConfigured(context.env)) return json({ found: false });
+  if (!sheetConfigured(context.env)) {
+    return json({ found: false, error: "The Google Sheet connection is not set yet." }, 503);
+  }
 
   try {
     if (first && last) {
