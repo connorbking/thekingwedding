@@ -23,12 +23,20 @@ async function callSheet(env, { method = "POST", action, body }) {
     });
   }
 
-  const response = await fetch(target.toString(), {
-    method,
-    redirect: "follow",
-    headers: method === "GET" ? {} : { "Content-Type": "text/plain;charset=utf-8" },
-    body: method === "GET" ? undefined : JSON.stringify({ action, ...body }),
-  });
+  let response;
+  try {
+    response = await fetch(target.toString(), {
+      method,
+      redirect: "follow",
+      signal: AbortSignal.timeout(20000),
+      headers: method === "GET" ? {} : { "Content-Type": "text/plain;charset=utf-8" },
+      body: method === "GET" ? undefined : JSON.stringify({ action, ...body }),
+    });
+  } catch {
+    const error = new Error("The guest list took too long to respond. Please try again.");
+    error.status = 504;
+    throw error;
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.error) {

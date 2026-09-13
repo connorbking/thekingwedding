@@ -15,9 +15,9 @@ export async function onRequestPost(context) {
   if (parsed.error) return json({ error: parsed.error }, 400);
 
   const { submission } = parsed;
-  let maxParty = 2;
+  let maxParty = Number(body.maxParty) || 2;
 
-  if (submission.accessCode && sheetConfigured(context.env)) {
+  if (submission.kind === "rsvp" && submission.accessCode && sheetConfigured(context.env)) {
     try {
       const invite = await lookupInvite(context.env, submission.accessCode, submission.event);
       if (invite?.found) {

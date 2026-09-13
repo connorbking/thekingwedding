@@ -605,7 +605,9 @@ function parse_(e) {
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
+  if (!lock.tryLock(10000)) {
+    return json_({ error: "The guest list is busy. Please try again." });
+  }
   try {
     const data = parse_(e);
     const sheet = sheet_();
@@ -619,6 +621,8 @@ function doPost(e) {
       return json_(updateParty_(sheet, data));
     }
     return json_(upsert_(sheet, data));
+  } catch (error) {
+    return json_({ error: error.message || "The guest list could not be updated." });
   } finally {
     lock.releaseLock();
   }
@@ -699,9 +703,9 @@ function findInGroup_(values, map, codes, groupCode, guest) {
 function stampHouseholdAddress_(sheet, values, map, width, codes, groupCode, party, address) {
   if (!address.street && !address.city) return;
   for (let i = 0; i < values.length; i += 1) {
-    const sameCode = groupCode && codes[i] === groupCode;
+    const rowCode = formatCode_(cell_(values[i], map, "group code"));
+    const sameCode = groupCode && rowCode === groupCode;
     const sameParty =
-      !groupCode &&
       party &&
       sameText_(cell_(values[i], map, "party"), party) &&
       (cell_(values[i], map, "first name") || cell_(values[i], map, "last name"));

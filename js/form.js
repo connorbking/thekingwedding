@@ -461,6 +461,7 @@ function serializeParty(form, eventName, guest) {
     party: guest.greeting || "",
     greeting: guest.greeting || "",
     personalized: true,
+    maxParty: guest.maxParty,
     firstName: primary.firstName || "",
     lastName: primary.lastName || "",
     phone: primary.phone || "",
@@ -510,6 +511,7 @@ async function postSubmission(payload) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(25000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -618,7 +620,10 @@ function bindForm(form, eventName, guest) {
       }
     } catch (error) {
       if (errorNode) {
-        errorNode.textContent = error.message || "Something went wrong sending your address. Please try again.";
+        const timedOut = error.name === "TimeoutError" || error.name === "AbortError";
+        errorNode.textContent = timedOut
+          ? "Saving took too long. Please try again."
+          : error.message || "Something went wrong sending your address. Please try again.";
       }
     } finally {
       button.disabled = false;
