@@ -65,6 +65,7 @@ export async function appendGuest(env, submission) {
       city: submission.city,
       region: submission.region,
       postal: submission.postal,
+      country: submission.country,
       accessCode: submission.accessCode,
       groupCode: submission.accessCode,
       additionalGuests: extras,

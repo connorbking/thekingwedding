@@ -318,11 +318,13 @@ function fillGuest_(row, map, data, options) {
     if (phone) setCell_(row, map, "phone", phone);
     if (email) setCell_(row, map, "email", email);
   }
-  if (street) setCell_(row, map, "street address 1", street);
-  if (apt) setCell_(row, map, "street address 2", apt);
-  if (city) setCell_(row, map, "city", city);
-  if (region) setCell_(row, map, "state/province", region);
-  if (postal) setCell_(row, map, "zip/postal code", postal);
+  if (opts.forceAddress || street || city || region || postal) {
+    if (opts.forceAddress || street) setCell_(row, map, "street address 1", street);
+    if (opts.forceAddress || apt || street) setCell_(row, map, "street address 2", apt);
+    if (opts.forceAddress || city) setCell_(row, map, "city", city);
+    if (opts.forceAddress || region) setCell_(row, map, "state/province", region);
+    if (opts.forceAddress || postal) setCell_(row, map, "zip/postal code", postal);
+  }
   if (party && !String(cell_(row, map, "party") || "").trim()) {
     setCell_(row, map, "party", party);
   }
@@ -533,7 +535,7 @@ function upsert_(sheet, data) {
     info.width,
     match,
     Object.assign({}, data, primary, household),
-    { contact: true }
+    { contact: true, forceAddress: isAddress }
   );
   if (match === -1 && primaryIndex !== -1) codes[primaryIndex] = groupCode;
 
@@ -547,7 +549,7 @@ function upsert_(sheet, data) {
       info.width,
       extraMatch,
       Object.assign({}, household, guest),
-      { contact: Boolean(guest.phone || guest.email) }
+      { contact: Boolean(guest.phone || guest.email), forceAddress: isAddress }
     );
     if (extraMatch === -1 && extraIndex !== -1) codes[extraIndex] = groupCode;
   });
@@ -704,7 +706,7 @@ function stampHouseholdAddress_(sheet, values, map, width, codes, groupCode, par
       sameText_(cell_(values[i], map, "party"), party) &&
       (cell_(values[i], map, "first name") || cell_(values[i], map, "last name"));
     if (!sameCode && !sameParty) continue;
-    fillGuest_(values[i], map, address, { contact: false });
+    fillGuest_(values[i], map, address, { contact: false, forceAddress: true });
     sheet.getRange(i + 2, 1, 1, width).setValues([values[i]]);
   }
 }

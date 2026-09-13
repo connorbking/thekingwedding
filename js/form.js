@@ -154,7 +154,7 @@ function applyAddress(form, suggestion) {
   fillInput(form, "region", suggestion.region);
   fillInput(form, "postal", suggestion.postal);
   fillInput(form, "country", suggestion.country || "United States");
-  if (suggestion.apt) fillInput(form, "apt", suggestion.apt);
+  fillInput(form, "apt", suggestion.apt || "", true);
   if (form.addressSearch) form.addressSearch.value = suggestion.label || composedAddress(form);
   const chosen = form.querySelector("[data-address-chosen]");
   if (chosen) {
@@ -173,7 +173,10 @@ function hideSuggestions(form) {
 async function lookupAddresses(query) {
   const response = await fetch(`${API.address}?q=${encodeURIComponent(query)}`);
   const data = await response.json().catch(() => ({}));
-  return Array.isArray(data.suggestions) ? data.suggestions : [];
+  return {
+    suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+    hint: data.hint || "",
+  };
 }
 
 function bindAddressLookup(form) {
@@ -186,8 +189,13 @@ function bindAddressLookup(form) {
   let timer = 0;
   let request = 0;
 
-  const render = (suggestions) => {
+  const render = (suggestions, hint = "") => {
     if (!suggestions.length) {
+      if (hint) {
+        list.innerHTML = `<li class="address-hint">${escapeAttr(hint)}</li>`;
+        list.hidden = false;
+        return;
+      }
       hideSuggestions(form);
       return;
     }
@@ -224,9 +232,9 @@ function bindAddressLookup(form) {
     }
     timer = window.setTimeout(async () => {
       try {
-        const suggestions = await lookupAddresses(query);
+        const { suggestions, hint } = await lookupAddresses(query);
         if (current !== request) return;
-        render(suggestions);
+        render(suggestions, hint);
       } catch {
         if (current === request) hideSuggestions(form);
       }
@@ -239,10 +247,18 @@ function bindAddressLookup(form) {
 }
 
 async function resolveTypedAddress(form) {
-  if (form.street?.value.trim() && form.city?.value.trim()) return true;
+  if (
+    form.street?.value.trim() &&
+    form.city?.value.trim() &&
+    form.region?.value.trim() &&
+    form.postal?.value.trim() &&
+    form.country?.value.trim()
+  ) {
+    return true;
+  }
   const query = form.addressSearch?.value.trim() || "";
   if (query.length < 4) return false;
-  const suggestions = await lookupAddresses(query);
+  const { suggestions, hint } = await lookupAddresses(query);
   if (suggestions.length === 1) {
     applyAddress(form, suggestions[0]);
     return true;
@@ -264,6 +280,9 @@ async function resolveTypedAddress(form) {
         });
       });
     }
+  } else if (hint) {
+    const errorNode = form.querySelector("[data-form-error]");
+    if (errorNode) errorNode.textContent = hint;
   }
   return false;
 }
@@ -323,9 +342,10 @@ function ensureRsvpField(form, eventName) {
   form.querySelector(".form-grid")?.after(field);
 }
 
-function fillInput(form, name, value) {
-  if (!form[name] || value == null || value === "") return;
-  form[name].value = value;
+function fillInput(form, name, value, allowEmpty = false) {
+  if (!form[name]) return;
+  if (!allowEmpty && (value == null || value === "")) return;
+  form[name].value = value ?? "";
 }
 
 function hidePrimaryFields(form) {

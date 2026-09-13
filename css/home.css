@@ -451,6 +451,15 @@ body.details-open {
   outline: none;
 }
 
+.address-suggestions .address-hint {
+  display: block;
+  padding: 12px 14px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--gold-muted);
+}
+
 .address-chosen {
   margin: 0;
   font-family: "Bodoni Moda", serif;

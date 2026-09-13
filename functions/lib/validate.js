@@ -26,9 +26,6 @@ function addressFields(body) {
 }
 
 function validateParty(body, event) {
-  const accessCode = text(body.accessCode || body.groupCode || body.code, { min: 1, max: 40 }).toUpperCase();
-  if (!accessCode) return { error: "This invitation link is missing a group code." };
-
   const guests = (Array.isArray(body.guests) ? body.guests : [])
     .map((guest) => ({
       id: text(guest.id, { min: 0, max: 240 }),
@@ -49,6 +46,8 @@ function validateParty(body, event) {
   }
 
   const isRsvp = text(body.kind || body.formKind, { min: 0, max: 20 }).toLowerCase() === "rsvp";
+  const accessCode = text(body.accessCode || body.groupCode || body.code, { min: 0, max: 40 }).toUpperCase();
+  if (isRsvp && !accessCode) return { error: "This invitation link is missing a group code." };
   if (isRsvp && guests.some((guest) => !guest.rsvp)) {
     return { error: "Please reply for each guest." };
   }
