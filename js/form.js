@@ -156,11 +156,6 @@ function applyAddress(form, suggestion) {
   fillInput(form, "country", suggestion.country || "United States");
   fillInput(form, "apt", suggestion.apt || "", true);
   if (form.addressSearch) form.addressSearch.value = suggestion.label || composedAddress(form);
-  const chosen = form.querySelector("[data-address-chosen]");
-  if (chosen) {
-    chosen.hidden = false;
-    chosen.textContent = suggestion.label || composedAddress(form);
-  }
 }
 
 function hideSuggestions(form) {
@@ -218,11 +213,6 @@ function bindAddressLookup(form) {
     ["street", "city", "region", "postal"].forEach((name) => {
       if (form[name]) form[name].value = "";
     });
-    const chosen = form.querySelector("[data-address-chosen]");
-    if (chosen) {
-      chosen.hidden = true;
-      chosen.textContent = "";
-    }
     const query = search.value.trim();
     window.clearTimeout(timer);
     const current = ++request;
@@ -425,11 +415,6 @@ function renderParty(form, guest, eventName) {
     fillInput(form, "country", address.country || form.country?.value);
     if (form.addressSearch) {
       form.addressSearch.value = composedAddress(form);
-    }
-    const chosen = form.querySelector("[data-address-chosen]");
-    if (chosen && form.street?.value) {
-      chosen.hidden = false;
-      chosen.textContent = composedAddress(form);
     }
     if (!form.dataset.household && !form.querySelector("[data-address-cap]")) {
       const cap = document.createElement("p");

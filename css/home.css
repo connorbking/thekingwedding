@@ -460,14 +460,6 @@ body.details-open {
   color: var(--gold-muted);
 }
 
-.address-chosen {
-  margin: 0;
-  font-family: "Bodoni Moda", serif;
-  font-size: 1.05rem;
-  font-style: italic;
-  color: var(--gold-light);
-}
-
 .details-success {
   min-height: 220px;
   display: grid;
