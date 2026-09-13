@@ -82,14 +82,19 @@
         <label class="visually-hidden">Last name <input name="lastName"></label>
         <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
         <label class="visually-hidden">Email <input name="email" type="email"></label>
-        <p class="household-label">Mailing address</p>
-        <label>Street address <input name="street" required autocomplete="address-line1"></label>
-        <label>Apartment or unit <input name="apt" autocomplete="address-line2"></label>
-        <div class="form-grid form-grid--2">
-          <label>City <input name="city" required autocomplete="address-level2"></label>
-          <label>State or region <input name="region" required autocomplete="address-level1"></label>
-          <label>Postal code <input name="postal" required autocomplete="postal-code"></label>
-          <label>Country <input name="country" required autocomplete="country-name" value="United States"></label>
+        <div class="household-split">
+          <div class="party-list" data-party-list></div>
+          <div class="household-address">
+            <p class="household-label">Mailing address</p>
+            <label>Street address <input name="street" required autocomplete="address-line1" placeholder="Street address"></label>
+            <label>Apartment or unit <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
+            <div class="form-grid form-grid--2">
+              <label>City <input name="city" required autocomplete="address-level2" placeholder="City"></label>
+              <label>State or region <input name="region" required autocomplete="address-level1" placeholder="State"></label>
+              <label>Postal code <input name="postal" required autocomplete="postal-code" placeholder="Postal code"></label>
+              <label>Country <input name="country" required autocomplete="country-name" value="United States" placeholder="Country"></label>
+            </div>
+          </div>
         </div>
         <div class="form-actions">
           <button class="find-invite" type="submit">Save our details</button>

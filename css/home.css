@@ -169,7 +169,7 @@ html:has(body.landing-body.is-open) {
 }
 
 .landing-body.is-open .invitation-gate {
-  width: min(100%, 720px);
+  width: min(100%, 1180px);
   height: auto;
   max-height: none;
   overflow: visible;
@@ -179,7 +179,7 @@ html:has(body.landing-body.is-open) {
 }
 
 .household-desk {
-  width: min(100%, 760px);
+  width: min(100%, 1120px);
   margin-top: 8px;
   text-align: left;
 }
@@ -271,23 +271,77 @@ html:has(body.landing-body.is-open) {
   color: #e4c79d;
 }
 
+.household-form.address-form.is-party {
+  max-width: none;
+}
+
+.household-split {
+  display: grid;
+  gap: 28px;
+}
+
+@media (min-width: 860px) {
+  .household-split {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 40px;
+    align-items: start;
+  }
+}
+
+.household-address {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.household-form .household-label,
+.household-form .guest-cap {
+  margin: 0 0 10px;
+  font-size: 15px;
+  letter-spacing: 3px;
+}
+
 .household-form label {
   color: var(--gold-muted);
+  font-size: 0.92rem;
+  letter-spacing: 0.12em;
 }
 
 .household-form input {
   border-color: rgba(228, 199, 157, 0.55);
   background: rgba(18, 23, 25, 0.28);
   color: #e4c79d;
+  font-family: "Bodoni Moda", serif;
+  font-size: 1.2rem;
+  padding: 0.9rem 0.95rem;
+}
+
+.household-form input::placeholder {
+  color: rgba(228, 199, 157, 0.48);
+  font-size: 1.15rem;
 }
 
 .household-form .party-member {
   border-bottom-color: rgba(228, 199, 157, 0.22);
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (min-width: 720px) {
+  .household-form .party-member:not(.party-member--rsvp) {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .household-form .guest-cap,
 .household-form .form-error {
   color: var(--gold-muted);
+}
+
+.household-form .form-error {
+  font-size: 1.05rem;
+}
+
+.household-form .form-actions .find-invite {
+  font-size: 1.15rem;
 }
 
 .household-reset {

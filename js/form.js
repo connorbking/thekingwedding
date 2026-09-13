@@ -37,10 +37,10 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
   const fields = `
-    <label>First name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name"></label>
-    <label>Last name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name"></label>
-    <label>Phone <input name="memberPhone${index}" type="tel" value="${escapeAttr(member.phone || "")}" autocomplete="tel"></label>
-    <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email"></label>
+    <label>First name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name" placeholder="First name"></label>
+    <label>Last name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name" placeholder="Last name"></label>
+    <label>Phone <input name="memberPhone${index}" type="tel" value="${escapeAttr(member.phone || "")}" autocomplete="tel" placeholder="Phone"></label>
+    <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
   `;
 
   if (!showRsvp) {
