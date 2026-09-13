@@ -314,13 +314,16 @@ html:has(body.landing-body.is-open) {
 
 .household-form .party-member {
   border-bottom-color: rgba(228, 199, 157, 0.22);
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(8rem, 0.9fr) minmax(11rem, 1.2fr);
+  align-items: end;
 }
 
-@media (min-width: 720px) {
-  .household-form .party-member:not(.party-member--rsvp) {
-    grid-template-columns: 1fr 1fr;
-  }
+.household-form .party-member > label {
+  min-width: 0;
+}
+
+.household-form .party-member input {
+  width: 100%;
 }
 
 .household-form .guest-cap,
@@ -383,7 +386,7 @@ body.details-open {
 .details-modal-panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 720px);
+  width: min(100%, 1120px);
   max-height: min(90dvh, 920px);
   overflow: auto;
   padding: 28px 28px 32px;
