@@ -329,17 +329,38 @@ html:has(body.landing-body) {
   border-color: var(--gold-light);
 }
 
+.find-invite {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(228, 199, 157, 0.85);
+  border-radius: 6px;
+  background: rgba(18, 23, 25, 0.28);
+  font-family: "Bodoni Moda", serif;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 2px;
+  color: #e4c79d;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.find-invite:hover,
+.find-invite:focus-visible {
+  outline: none;
+  border-color: var(--gold-light);
+  color: var(--gold-light);
+}
+
 .form-error {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  right: 0;
-  margin: 0;
+  min-height: 1.2em;
+  margin: 10px 0 0;
   font-family: "Bodoni Moda", serif;
   font-size: 14px;
   font-style: italic;
   color: var(--gold-muted);
-  pointer-events: none;
 }
 
 .chooser-links,
