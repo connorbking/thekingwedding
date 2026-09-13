@@ -12,7 +12,7 @@ import {
 } from "./guests.js";
 
 const eventKey = document.body.dataset.event;
-const guest = resolveGuest();
+const guest = await resolveGuest(eventKey);
 
 if (!guestCanAccess(guest, eventKey)) {
   window.location.replace("/");

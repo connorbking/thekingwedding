@@ -1,6 +1,6 @@
 import { CONTACT_EMAIL, EVENTS } from "./config.js";
 import {
-  lookupGuest,
+  findGuest,
   rememberGuest,
   eventHref,
   isDualGuest,
@@ -61,9 +61,9 @@ function admit(guest, { autoNavigate }) {
   showContinue(guest);
 }
 
-form?.addEventListener("submit", (event) => {
+form?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const guest = lookupGuest(form.code.value);
+  const guest = await findGuest(form.code.value);
   if (!guest) {
     if (errorNode) {
       errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
@@ -75,10 +75,13 @@ form?.addEventListener("submit", (event) => {
 });
 
 const params = new URLSearchParams(window.location.search);
-const fromQuery = lookupGuest(params.get("code"));
+const fromQuery = await findGuest(params.get("code"));
 
 if (fromQuery) {
   form.code.value = fromQuery.code;
+  if (params.get("gate") === "1") {
+    admit(fromQuery, { autoNavigate: false });
+  }
 } else if (params.get("code") && errorNode) {
   form.code.value = params.get("code");
   errorNode.textContent = `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
