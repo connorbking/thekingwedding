@@ -84,7 +84,7 @@ function showHousehold(guest) {
 
   const doors = household.querySelector("[data-event-doors]");
   if (doors) {
-    doors.innerHTML = guest.events.map((key) => doorMarkup(key, guest)).join("");
+    doors.innerHTML = guest.events.filter((key) => key !== "shower").map((key) => doorMarkup(key, guest)).join("");
   }
 
   if (householdForm) {
