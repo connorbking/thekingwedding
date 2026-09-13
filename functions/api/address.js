@@ -32,6 +32,12 @@ function censusMatches(data) {
     .filter(Boolean);
 }
 
+function isUnitedStates(props, country) {
+  const code = String(props?.countrycode || "").trim().toUpperCase();
+  const name = text(country || props?.country).toLowerCase();
+  return code === "US" || name === "united states" || name === "usa" || name === "united states of america";
+}
+
 function photonMatches(data) {
   const features = data?.features;
   if (!Array.isArray(features)) return [];
@@ -40,12 +46,12 @@ function photonMatches(data) {
       const props = feature.properties || {};
       const street = joinStreet(props.housenumber, props.street || props.name);
       const city = text(props.city || props.town || props.village || props.locality);
-      const region = text(props.state || props.county);
+      const region = text(props.state);
       const postal = text(props.postcode);
-      const country = text(props.country) || "United States";
-      if (!street || !city) return null;
-      const label = [street, city, region, postal, country].filter(Boolean).join(", ");
-      return { label, street, apt: "", city, region, postal, country };
+      const country = text(props.country);
+      if (!street || !city || !isUnitedStates(props, country)) return null;
+      const label = [street, city, region, postal, "United States"].filter(Boolean).join(", ");
+      return { label, street, apt: "", city, region, postal, country: "United States" };
     })
     .filter(Boolean);
 }
@@ -63,8 +69,10 @@ async function lookupCensus(query) {
 async function lookupPhoton(query) {
   const url = new URL("https://photon.komoot.io/api/");
   url.searchParams.set("q", query);
-  url.searchParams.set("limit", "6");
+  url.searchParams.set("limit", "15");
   url.searchParams.set("lang", "en");
+  url.searchParams.set("lat", "39.8283");
+  url.searchParams.set("lon", "-98.5795");
   const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
   if (!response.ok) return [];
   return photonMatches(await response.json().catch(() => ({})));

@@ -280,14 +280,6 @@ html:has(body.landing-body.is-open) {
   gap: 28px;
 }
 
-@media (min-width: 860px) {
-  .household-split {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px 40px;
-    align-items: start;
-  }
-}
-
 .household-address {
   display: grid;
   gap: 0.95rem;
@@ -391,7 +383,7 @@ body.details-open {
 .details-modal-panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 1080px);
+  width: min(100%, 720px);
   max-height: min(90dvh, 920px);
   overflow: auto;
   padding: 28px 28px 32px;
@@ -469,6 +461,10 @@ body.details-open {
   display: grid;
   place-items: center;
   text-align: center;
+}
+
+.details-success[hidden] {
+  display: none;
 }
 
 .details-success p {
