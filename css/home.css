@@ -172,7 +172,8 @@ html.invite-returning .invitation-gate {
 }
 
 .household-desk {
-  width: min(100%, 860px);
+  --envelope-width: 300px;
+  width: min(100%, 920px);
   margin-top: 4px;
   text-align: center;
 }
@@ -211,7 +212,8 @@ html.invite-returning .invitation-gate {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 32px 48px;
+  align-items: flex-end;
+  gap: 36px 56px;
   margin-bottom: 28px;
 }
 
@@ -219,7 +221,8 @@ html.invite-returning .invitation-gate {
   display: grid;
   justify-items: center;
   gap: 18px;
-  width: 210px;
+  flex: 0 0 auto;
+  width: var(--envelope-width, 300px);
   padding: 0;
   border: 0;
   background: none;
@@ -237,7 +240,7 @@ html.invite-returning .invitation-gate {
 
 .envelope {
   position: relative;
-  width: 210px;
+  width: var(--envelope-width, 300px);
   aspect-ratio: 1642 / 1052;
   transform-origin: 50% 100%;
   transition: transform 0.4s ease;
@@ -256,13 +259,13 @@ html.invite-returning .invitation-gate {
 
 .envelope-link.is-selected {
   z-index: 6;
-  width: 320px;
+  width: var(--envelope-width, 300px);
   gap: 0;
   transform: translate(var(--focus-x, 0), var(--focus-y, 0));
 }
 
 .envelope-link.is-selected .envelope {
-  width: 320px;
+  width: var(--envelope-width, 300px);
 }
 
 .envelope-link.is-selected:hover .envelope,
@@ -298,21 +301,21 @@ html.invite-returning .invitation-gate {
 
 .envelope-link.is-opening .envelope-sleeve {
   overflow: visible;
-  clip-path: inset(-240% 0 0 0);
+  clip-path: inset(-280% -8% 8% -8%);
 }
 
 .envelope-card {
-  left: 10%;
-  right: 10%;
+  left: 9%;
+  right: 9%;
   top: 0;
-  height: 150%;
-  transform: translateY(28%);
-  transition: transform 1.15s 0.2s ease;
+  height: 168%;
+  transform: translateY(108%);
+  transition: transform 1.2s 0.18s ease;
   pointer-events: none;
 }
 
 .envelope-link.is-opening .envelope-card {
-  transform: translateY(-58%);
+  transform: translateY(-102%);
 }
 
 .invite-sheet {
@@ -459,18 +462,19 @@ html.invite-returning .invitation-gate {
 }
 
 @media (max-width: 640px) {
+  .household-desk {
+    --envelope-width: 210px;
+  }
+
   .event-doors {
     gap: 22px 20px;
   }
 
   .envelope,
-  .envelope-link {
-    width: 156px;
-  }
-
+  .envelope-link,
   .envelope-link.is-selected,
   .envelope-link.is-selected .envelope {
-    width: min(78vw, 280px);
+    width: var(--envelope-width, 210px);
   }
 
   .invite-sheet-script {
@@ -818,7 +822,7 @@ body.details-open {
   font-weight: 300;
   font-size: 24px;
   letter-spacing: 0;
-  text-transform: lowercase;
+  text-transform: none;
   margin: 0 18px;
 }
 
