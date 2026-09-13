@@ -39,24 +39,20 @@ function memberName(member) {
 function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
   if (!event) return "";
-  const title = eventKey === "como" ? "Lake Como" : "Whippany";
-  const region = eventKey === "como" ? "Italy" : "New Jersey";
   const people = (guest.members || [])
     .map(memberName)
     .filter(Boolean)
     .map((name) => `<li>${escapeHtml(name)}</li>`)
     .join("");
   return `
-    <article class="event-door">
-      <p class="eyebrow">${event.display}</p>
-      <h3>${title}</h3>
-      <p class="place">${region}</p>
-      <p class="household-label">Your party</p>
-      <ul class="event-party">${people || "<li>Your household</li>"}</ul>
-      <div class="event-door-links">
-        <a href="${eventHref(eventKey, guest.code)}">Save the Date</a>
-        <a href="${eventHref(eventKey, guest.code, "rsvp")}">RSVP</a>
-      </div>
+    <article>
+      <a class="event-door" href="${eventHref(eventKey, guest.code)}">
+        <p class="eyebrow">${event.display}</p>
+        <h3>${event.shortTitle}</h3>
+        <p class="place">${event.place}</p>
+        <p class="household-label">Your party</p>
+        <ul class="event-party">${people || "<li>Your household</li>"}</ul>
+      </a>
     </article>
   `;
 }
@@ -79,8 +75,6 @@ function showHousehold(guest) {
     doors.innerHTML = guest.events.map((key) => doorMarkup(key, guest)).join("");
   }
 
-  const success = household.querySelector("[data-household-success]");
-  if (success) success.hidden = true;
   if (householdForm) {
     householdForm.hidden = false;
     initHouseholdForm({ guest, form: householdForm });

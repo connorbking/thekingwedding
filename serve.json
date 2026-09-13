@@ -8,6 +8,10 @@
     { "source": "/jersey/save-the-date", "destination": "/jersey/index.html" },
     { "source": "/jersey/rsvp", "destination": "/jersey/index.html" },
     { "source": "/jersey/faq", "destination": "/jersey/index.html" },
-    { "source": "/jersey/**", "destination": "/jersey/index.html" }
+    { "source": "/jersey/**", "destination": "/jersey/index.html" },
+    { "source": "/shower/save-the-date", "destination": "/shower/index.html" },
+    { "source": "/shower/rsvp", "destination": "/shower/index.html" },
+    { "source": "/shower/faq", "destination": "/shower/index.html" },
+    { "source": "/shower/**", "destination": "/shower/index.html" }
   ]
 }

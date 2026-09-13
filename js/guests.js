@@ -1,8 +1,8 @@
-import { API, GUEST_CODES, LOCAL_PEOPLE, DEFAULT_PARTY_SIZE } from "./config.js";
+import { API, GUEST_CODES, LOCAL_PEOPLE, DEFAULT_PARTY_SIZE, EVENT_ORDER, sortEvents } from "./config.js";
 
 export const INVITE_STORAGE_KEY = "king.invite";
 
-const EVENT_KEYS = new Set(["como", "jersey"]);
+const EVENT_KEYS = new Set(EVENT_ORDER);
 const RESERVED_PARAMS = new Set([
   "code",
   "group",
@@ -40,10 +40,7 @@ function eventsFrom(match) {
   const raw = Array.isArray(match?.events)
     ? match.events
     : String(match?.events || "").split(",");
-  const events = raw.map((key) => String(key).trim()).filter((key) => EVENT_KEYS.has(key));
-  if (events.includes("como") && !events.includes("jersey")) {
-    events.push("jersey");
-  }
+  const events = sortEvents(raw.map((key) => String(key).trim()).filter((key) => EVENT_KEYS.has(key)));
   return events;
 }
 
@@ -183,8 +180,12 @@ export function guestCanAccess(guest, eventKey) {
   return Boolean(guest?.events?.includes(eventKey));
 }
 
+export function isMultiGuest(guest) {
+  return (guest?.events?.length || 0) > 1;
+}
+
 export function isDualGuest(guest) {
-  return Boolean(guest?.events?.includes("como") && guest?.events?.includes("jersey"));
+  return isMultiGuest(guest);
 }
 
 export function extraGuestSlots(guest) {

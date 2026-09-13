@@ -5,5 +5,6 @@
 /jersey/save-the-date /jersey/index.html 200
 /jersey/rsvp          /jersey/index.html 200
 /jersey/faq           /jersey/index.html 200
-/como/*   /como/index.html   200
-/jersey/* /jersey/index.html 200
+/shower/save-the-date /shower/index.html 200
+/shower/rsvp          /shower/index.html 200
+/shower/faq           /shower/index.html 200

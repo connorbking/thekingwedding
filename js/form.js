@@ -4,6 +4,7 @@ import { extraGuestSlots } from "./guests.js";
 function eventPlace(eventName) {
   if (eventName === "como") return "Lake Como";
   if (eventName === "jersey") return "Whippany";
+  if (eventName === "shower") return "the bridal shower";
   return "the celebration";
 }
 
@@ -99,6 +100,13 @@ function collectMembers(form) {
       rsvp: card.querySelector("input[name^='memberRsvp']:checked")?.value || "",
     };
   }).filter((guest) => guest.firstName || guest.lastName);
+}
+
+function markHouseholdSaved(form) {
+  const button = form.querySelector("[type='submit']");
+  if (!button) return;
+  button.textContent = "Your details have been updated!";
+  button.classList.add("is-saved");
 }
 
 function successNode(form) {
@@ -366,6 +374,11 @@ function bindForm(form, eventName, guest) {
   });
 
   form.addEventListener("input", (inputEvent) => {
+    const button = form.querySelector("[type='submit']");
+    if (form.dataset.household === "true" && button?.classList.contains("is-saved")) {
+      button.textContent = "Save our details";
+      button.classList.remove("is-saved");
+    }
     const card = inputEvent.target.closest("[data-party-member]");
     const name = card?.querySelector("[data-member-name]");
     if (!name) return;
@@ -378,8 +391,12 @@ function bindForm(form, eventName, guest) {
     submitEvent.preventDefault();
     const honeypot = form.querySelector("[name='company']");
     if (honeypot && honeypot.value) {
-      form.hidden = true;
-      successNode(form)?.removeAttribute("hidden");
+      if (form.dataset.household === "true") {
+        markHouseholdSaved(form);
+      } else {
+        form.hidden = true;
+        successNode(form)?.removeAttribute("hidden");
+      }
       return;
     }
 
@@ -402,8 +419,12 @@ function bindForm(form, eventName, guest) {
 
     try {
       await postSubmission(payload);
-      form.hidden = true;
-      successNode(form)?.removeAttribute("hidden");
+      if (form.dataset.household === "true") {
+        markHouseholdSaved(form);
+      } else {
+        form.hidden = true;
+        successNode(form)?.removeAttribute("hidden");
+      }
     } catch (error) {
       if (errorNode) {
         errorNode.textContent = error.message || "Something went wrong sending your address. Please try again.";

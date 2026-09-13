@@ -179,7 +179,7 @@ html:has(body.landing-body.is-open) {
 }
 
 .household-desk {
-  width: min(100%, 640px);
+  width: min(100%, 760px);
   margin-top: 8px;
   text-align: left;
 }
@@ -210,17 +210,28 @@ html:has(body.landing-body.is-open) {
 }
 
 @media (min-width: 640px) {
-  .event-doors:has(.event-door:nth-child(2)) {
-    grid-template-columns: 1fr 1fr;
+  .event-doors {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }
 
 .event-door {
+  display: block;
   padding: 16px 18px 18px;
   border: 1px solid rgba(228, 199, 157, 0.55);
   border-radius: 8px;
   background: rgba(18, 23, 25, 0.32);
   backdrop-filter: blur(4px);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.event-door:hover,
+.event-door:focus-visible {
+  border-color: #e4c79d;
+  background: rgba(18, 23, 25, 0.5);
+  outline: none;
 }
 
 .event-door .eyebrow {
@@ -246,32 +257,12 @@ html:has(body.landing-body.is-open) {
 }
 
 .event-party {
-  margin: 0 0 14px;
+  margin: 0;
   padding-left: 1.1rem;
   font-family: "Bodoni Moda", serif;
   font-size: 16px;
   font-style: italic;
   color: #e4c79d;
-}
-
-.event-door-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-}
-
-.event-door-links a {
-  color: var(--gold-light);
-  font-size: 13px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(224, 198, 159, 0.45);
-}
-
-.event-door-links a:hover {
-  color: #fff6df;
-  border-bottom-color: #fff6df;
 }
 
 .household-form {
@@ -297,10 +288,6 @@ html:has(body.landing-body.is-open) {
 .household-form .guest-cap,
 .household-form .form-error {
   color: var(--gold-muted);
-}
-
-.household-form .form-success {
-  color: #e4c79d;
 }
 
 .household-reset {

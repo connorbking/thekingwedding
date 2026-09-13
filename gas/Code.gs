@@ -2,6 +2,8 @@
  * Guest list for https://theking.wedding
  *
  * Open this spreadsheet → Extensions → Apps Script → paste this file → Save.
+ * After editing, Deploy → Manage deployments → New version
+ * (or Deploy → New deployment the first time).
  * Deploy → New deployment → Type: Web app
  *   Execute as: Me
  *   Who has access: Anyone
@@ -149,18 +151,37 @@ function headerIndex_(sheet) {
 }
 
 function extrasList_(data) {
-  if (!data.additionalGuests) return [];
-  if (typeof data.additionalGuests === "string") return [];
-  return data.additionalGuests
+  let extras = data.additionalGuests;
+  if (!extras && Array.isArray(data.guests) && data.guests.length > 1) {
+    extras = data.guests.slice(1);
+  }
+  if (!extras) return [];
+  if (typeof extras === "string") return [];
+  return extras
     .map(function (guest) {
       return {
+        id: guest && guest.id,
         firstName: String((guest && guest.firstName) || (guest && guest.first_name) || "").trim(),
         lastName: String((guest && guest.lastName) || (guest && guest.last_name) || "").trim(),
+        phone: String((guest && guest.phone) || "").trim(),
+        email: String((guest && guest.email) || "").trim(),
+        rsvp: (guest && guest.rsvp) || "",
       };
     })
     .filter(function (guest) {
       return guest.firstName || guest.lastName;
     });
+}
+
+function primaryFrom_(data) {
+  const guest = Array.isArray(data.guests) && data.guests[0] ? data.guests[0] : {};
+  return {
+    firstName: data.firstName || data.first_name || guest.firstName || guest.first_name || "",
+    lastName: data.lastName || data.last_name || guest.lastName || guest.last_name || "",
+    phone: data.phone || guest.phone || "",
+    email: data.email || guest.email || "",
+    id: data.id || guest.id || "",
+  };
 }
 
 function partyName_(data, existing) {
@@ -457,25 +478,36 @@ function upsert_(sheet, data) {
   const lastRow = sheet.getLastRow();
   const values =
     lastRow < 2 ? [] : sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
-  const match = findRow_(values, info.map, data);
+  const codes = groupCodesFor_(values, info.map);
+  const primary = primaryFrom_(data);
+  const requested = formatCode_(data.groupCode || data.accessCode || data.code);
+  const match = findGuestRow_(values, info.map, codes, requested, Object.assign({}, data, primary));
   const existingParty = match === -1 ? "" : String(cell_(values[match], info.map, "party") || "").trim();
   const party = partyName_(data, existingParty);
-  const existingCode =
-    match === -1 ? "" : String(cell_(values[match], info.map, "group code") || "").trim();
-  const groupCode = String(data.groupCode || data.accessCode || data.code || existingCode)
-    .trim()
-    .toUpperCase();
-  const household = {
-    event: data.event,
-    party: party,
-    groupCode: groupCode,
-    rsvp: data.rsvp || "",
+  const existingCode = match === -1 ? "" : codes[match] || formatCode_(cell_(values[match], info.map, "group code"));
+  const groupOnSheet = requested && codes.indexOf(requested) !== -1;
+  const groupCode = existingCode || (groupOnSheet ? requested : "");
+  const isAddress = String(data.kind || "").toLowerCase() !== "rsvp";
+  const address = {
     street: data.street || data.street1 || "",
     apt: data.apt || data.street2 || "",
     city: data.city || "",
     region: data.region || data.state || "",
     postal: data.postal || data.zip || "",
+    party: party,
+    groupCode: groupCode,
   };
+  const household = Object.assign(
+    {
+      event: data.event,
+      rsvp: data.rsvp || "",
+    },
+    address
+  );
+
+  if (isAddress && match === -1) {
+    return { ok: false, error: "We could not match that guest to the list." };
+  }
 
   const primaryIndex = writeRow_(
     sheet,
@@ -483,24 +515,28 @@ function upsert_(sheet, data) {
     info.map,
     info.width,
     match,
-    Object.assign({}, data, household),
+    Object.assign({}, data, primary, household),
     { contact: true }
   );
+  if (match === -1 && primaryIndex !== -1) codes[primaryIndex] = groupCode;
 
   extrasList_(data).forEach(function (guest) {
-    const extraMatch = findRow_(values, info.map, guest, { nameOnly: true, party: party });
-    writeRow_(
+    const extraMatch = findGuestRow_(values, info.map, codes, groupCode || requested, guest);
+    if (extraMatch === -1 && isAddress) return;
+    const extraIndex = writeRow_(
       sheet,
       values,
       info.map,
       info.width,
       extraMatch,
       Object.assign({}, household, guest),
-      { contact: false }
+      { contact: Boolean(guest.phone || guest.email) }
     );
+    if (extraMatch === -1 && extraIndex !== -1) codes[extraIndex] = groupCode;
   });
 
-  return { ok: true, updated: primaryIndex !== -1 && match !== -1, party: party };
+  stampHouseholdAddress_(sheet, values, info.map, info.width, groupCodesFor_(values, info.map), groupCode, party, address);
+  return { ok: true, updated: match !== -1, party: party };
 }
 
 function deleteById_(sheet, id) {
@@ -560,7 +596,7 @@ function doPost(e) {
     if (data.action === "list") {
       return json_({ submissions: list_(sheet) });
     }
-    if (data.action === "party" || (data.guests && data.guests.length)) {
+    if (data.action === "party") {
       return json_(updateParty_(sheet, data));
     }
     return json_(upsert_(sheet, data));
@@ -586,28 +622,74 @@ function groupCodesFor_(values, map) {
   });
 }
 
-function findInGroup_(values, map, codes, groupCode, guest) {
-  if (guest && guest.id) {
-    const parsed = parseId_(guest.id);
-    if (Number.isInteger(parsed.index) && values[parsed.index] && codes[parsed.index] === groupCode) {
-      return parsed.index;
-    }
+function findById_(values, map, guest) {
+  if (!guest || !guest.id) return -1;
+  const parsed = parseId_(guest.id);
+  if (!Number.isInteger(parsed.index) || !values[parsed.index]) return -1;
+  const row = values[parsed.index];
+  if (
+    parsed.first &&
+    parsed.last &&
+    sameText_(cell_(row, map, "first name"), parsed.first) &&
+    sameText_(cell_(row, map, "last name"), parsed.last)
+  ) {
+    return parsed.index;
   }
+  const first = guest.firstName || guest.first_name || "";
+  const last = guest.lastName || guest.last_name || "";
+  if (
+    first &&
+    last &&
+    sameText_(cell_(row, map, "first name"), first) &&
+    sameText_(cell_(row, map, "last name"), last)
+  ) {
+    return parsed.index;
+  }
+  return -1;
+}
+
+function findGuestRow_(values, map, codes, groupCode, guest) {
+  const byId = findById_(values, map, guest);
+  if (byId !== -1) return byId;
 
   const first = guest.firstName || guest.first_name || "";
   const last = guest.lastName || guest.last_name || "";
-  if (!first || !last) return -1;
-
-  for (let i = 0; i < values.length; i += 1) {
-    if (
-      codes[i] === groupCode &&
-      sameText_(cell_(values[i], map, "first name"), first) &&
-      sameText_(cell_(values[i], map, "last name"), last)
-    ) {
-      return i;
+  const email = guest.email || "";
+  if (groupCode && first && last) {
+    for (let i = 0; i < values.length; i += 1) {
+      if (
+        codes[i] === groupCode &&
+        sameText_(cell_(values[i], map, "first name"), first) &&
+        sameText_(cell_(values[i], map, "last name"), last)
+      ) {
+        return i;
+      }
     }
   }
-  return -1;
+  return findRow_(values, map, {
+    firstName: first,
+    lastName: last,
+    email: email,
+  });
+}
+
+function findInGroup_(values, map, codes, groupCode, guest) {
+  return findGuestRow_(values, map, codes, groupCode, guest);
+}
+
+function stampHouseholdAddress_(sheet, values, map, width, codes, groupCode, party, address) {
+  if (!address.street && !address.city) return;
+  for (let i = 0; i < values.length; i += 1) {
+    const sameCode = groupCode && codes[i] === groupCode;
+    const sameParty =
+      !groupCode &&
+      party &&
+      sameText_(cell_(values[i], map, "party"), party) &&
+      (cell_(values[i], map, "first name") || cell_(values[i], map, "last name"));
+    if (!sameCode && !sameParty) continue;
+    fillGuest_(values[i], map, address, { contact: false });
+    sheet.getRange(i + 2, 1, 1, width).setValues([values[i]]);
+  }
 }
 
 function updateParty_(sheet, data) {
@@ -616,15 +698,22 @@ function updateParty_(sheet, data) {
   const values =
     lastRow < 2 ? [] : sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
   const codes = groupCodesFor_(values, info.map);
-  const groupCode = formatCode_(data.groupCode || data.accessCode || data.code);
-  if (!groupCode) return { ok: false, error: "Missing group code." };
+  let groupCode = formatCode_(data.groupCode || data.accessCode || data.code);
+  const firstGuest = (data.guests && data.guests[0]) || data;
+  const hint = findGuestRow_(values, info.map, codes, groupCode, firstGuest);
+  if (hint !== -1 && (!groupCode || codes.indexOf(groupCode) === -1)) {
+    groupCode = codes[hint] || groupCode;
+  }
+  if (!groupCode && hint === -1) return { ok: false, error: "Missing group code." };
 
-  let template = null;
-  let existingParty = "";
-  for (let i = 0; i < values.length; i += 1) {
-    if (codes[i] !== groupCode) continue;
-    if (!template) template = values[i];
-    if (!existingParty) existingParty = String(cell_(values[i], info.map, "party") || "").trim();
+  let template = hint !== -1 ? values[hint] : null;
+  let existingParty = hint !== -1 ? String(cell_(values[hint], info.map, "party") || "").trim() : "";
+  if (groupCode) {
+    for (let i = 0; i < values.length; i += 1) {
+      if (codes[i] !== groupCode) continue;
+      if (!template) template = values[i];
+      if (!existingParty) existingParty = String(cell_(values[i], info.map, "party") || "").trim();
+    }
   }
 
   const party = partyName_(data, existingParty);
@@ -640,7 +729,7 @@ function updateParty_(sheet, data) {
   };
 
   (data.guests || []).forEach(function (guest) {
-    const index = findInGroup_(values, info.map, codes, groupCode, guest);
+    const index = findGuestRow_(values, info.map, codes, groupCode, guest);
     const next = Object.assign({}, household, guest, {
       firstName: guest.firstName || guest.first_name || "",
       lastName: guest.lastName || guest.last_name || "",
@@ -648,17 +737,28 @@ function updateParty_(sheet, data) {
       email: guest.email || "",
       rsvp: guest.rsvp || "",
     });
-    if (index === -1 && template) {
-      const row = new Array(info.width).fill("");
-      fillGuest_(row, info.map, next, { contact: true });
-      copyInvites_(template, row, info.map);
-      sheet.appendRow(row);
-      values.push(row);
-      codes.push(groupCode);
-    } else {
+    if (index !== -1) {
       writeRow_(sheet, values, info.map, info.width, index, next, { contact: true });
-      if (index !== -1) codes[index] = groupCode;
+      codes[index] = groupCode || codes[index];
+      return;
     }
+    if (!template) return;
+    const row = new Array(info.width).fill("");
+    fillGuest_(row, info.map, next, { contact: true });
+    copyInvites_(template, row, info.map);
+    sheet.appendRow(row);
+    values.push(row);
+    codes.push(groupCode);
+  });
+
+  stampHouseholdAddress_(sheet, values, info.map, info.width, groupCodesFor_(values, info.map), groupCode, party, {
+    street: household.street,
+    apt: household.apt,
+    city: household.city,
+    region: household.region,
+    postal: household.postal,
+    party: party,
+    groupCode: groupCode,
   });
 
   return { ok: true, party: party, groupCode: groupCode };

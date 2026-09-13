@@ -111,6 +111,10 @@ function inviteLinksHtml(row) {
   if (!code) return "";
   const slug = encodeURIComponent(code);
   const links = [];
+  if (invitedTo(row, "shower")) {
+    links.push(`<a href="/shower/save-the-date?${slug}">Shower date</a>`);
+    links.push(`<a href="/shower/rsvp?${slug}">Shower RSVP</a>`);
+  }
   if (invitedTo(row, "como")) {
     links.push(`<a href="/como/save-the-date?${slug}">Como date</a>`);
     links.push(`<a href="/como/rsvp?${slug}">Como RSVP</a>`);

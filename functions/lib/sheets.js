@@ -44,9 +44,14 @@ export function sheetConfigured(env) {
 }
 
 export async function appendGuest(env, submission) {
+  const guests = Array.isArray(submission.guests) ? submission.guests : [];
+  const extras = guests.length > 1 ? guests.slice(1) : submission.extras || [];
+  const isRsvp = submission.kind === "rsvp";
   return callSheet(env, {
     method: "POST",
     body: {
+      action: isRsvp && guests.length ? "party" : "upsert",
+      kind: submission.kind || (isRsvp ? "rsvp" : "address"),
       event: submission.event,
       rsvp: submission.rsvp,
       party: submission.party,
@@ -62,9 +67,8 @@ export async function appendGuest(env, submission) {
       postal: submission.postal,
       accessCode: submission.accessCode,
       groupCode: submission.accessCode,
-      additionalGuests: submission.guests?.length ? submission.guests.slice(1) : submission.extras,
-      guests: submission.guests,
-      action: submission.guests?.length ? "party" : undefined,
+      additionalGuests: extras,
+      guests: isRsvp ? guests : undefined,
     },
   });
 }
@@ -141,9 +145,12 @@ function partyRecord(party, event = "") {
       if (!events.includes(key)) events.push(key);
     });
   });
-  if (event && !events.includes(event) && !(event === "jersey" && events.includes("como"))) {
+  if (event && !events.includes(event)) {
     return { found: false };
   }
+
+  const order = ["shower", "como", "jersey"];
+  events.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
   const code =
     groupCode(party.find((row) => groupCode(row))) ||

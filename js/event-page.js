@@ -23,7 +23,7 @@ if (!guestCanAccess(guest, eventKey)) {
     el.href = gateHref(guest.code);
   });
 
-  document.querySelectorAll("a[href^='/como'], a[href^='/jersey']").forEach((el) => {
+  document.querySelectorAll("a[href^='/como'], a[href^='/jersey'], a[href^='/shower']").forEach((el) => {
     el.href = withCode(el.getAttribute("href"), guest.code);
   });
 

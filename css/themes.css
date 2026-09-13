@@ -1,3 +1,8 @@
+body[data-theme="shower"] {
+  --hero-image: url("/public/bg_jersey.png");
+  --footer-image: url("/public/texture_jersey.png");
+}
+
 body[data-theme="como"] {
   --hero-image: url("/public/bg_como.png");
   --footer-image: url("/public/texture_jersey.png");
@@ -9,7 +14,8 @@ body[data-theme="jersey"] {
 }
 
 .hero--como .hero-copy h1,
-.hero--jersey .hero-copy h1 {
+.hero--jersey .hero-copy h1,
+.hero--shower .hero-copy h1 {
   text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 

@@ -1,4 +1,4 @@
-const EVENTS = new Set(["como", "jersey"]);
+const EVENTS = new Set(["shower", "como", "jersey"]);
 
 function text(value, { min = 1, max = 160 } = {}) {
   const next = String(value || "").trim();
@@ -58,15 +58,20 @@ function validateParty(body, event) {
     return { error: "Please complete the mailing address for your party." };
   }
 
+  const primary = guests[0] || {};
   return {
     submission: {
       event,
       kind: isRsvp ? "rsvp" : "address",
       accessCode,
       party: text(body.party || body.greeting, { min: 0, max: 160 }),
+      firstName: primary.firstName,
+      lastName: primary.lastName,
+      phone: primary.phone,
+      email: primary.email,
       ...address,
       guests,
-      extras: [],
+      extras: guests.slice(1),
       partySize: guests.length,
     },
   };

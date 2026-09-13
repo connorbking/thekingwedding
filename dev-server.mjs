@@ -22,8 +22,10 @@ function rewrite(pathname) {
   if (pathname.startsWith("/img/")) return `/public/${pathname.slice(5)}`;
   if (pathname.startsWith("/como/") && pathname !== "/como/index.html") return "/como/index.html";
   if (pathname.startsWith("/jersey/") && pathname !== "/jersey/index.html") return "/jersey/index.html";
+  if (pathname.startsWith("/shower/") && pathname !== "/shower/index.html") return "/shower/index.html";
   if (pathname === "/como") return "/como/index.html";
   if (pathname === "/jersey") return "/jersey/index.html";
+  if (pathname === "/shower") return "/shower/index.html";
   if (pathname.endsWith("/")) return `${pathname}index.html`;
   return pathname;
 }
