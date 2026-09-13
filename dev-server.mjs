@@ -18,6 +18,35 @@ const types = {
   ".json": "application/json",
 };
 
+const handlers = {
+  "GET /api/invite": "./functions/api/invite.js",
+  "POST /api/submissions": "./functions/api/submissions.js",
+  "GET /api/address": "./functions/api/address.js",
+  "GET /api/admin/submissions": "./functions/api/admin/submissions.js",
+};
+
+function loadEnv() {
+  const env = { ...process.env };
+  const file = path.join(root, ".dev.vars");
+  if (!fs.existsSync(file)) return env;
+  for (const line of fs.readFileSync(file, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    env[key] = value;
+  }
+  return env;
+}
+
 function rewrite(pathname) {
   if (pathname.startsWith("/img/")) return `/public/${pathname.slice(5)}`;
   if (pathname.startsWith("/como/") && pathname !== "/como/index.html") return "/como/index.html";
@@ -30,9 +59,54 @@ function rewrite(pathname) {
   return pathname;
 }
 
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+async function runApi(req, url) {
+  const key = `${req.method} ${url.pathname}`;
+  const file = handlers[key];
+  if (!file) return null;
+  const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req);
+  const request = new Request(url, {
+    method: req.method,
+    headers: req.headers,
+    body,
+  });
+  const mod = await import(`${file}?t=${Date.now()}`);
+  const handler = req.method === "GET" ? mod.onRequestGet : mod.onRequestPost;
+  if (!handler) {
+    return new Response(JSON.stringify({ error: "This local route is missing a handler." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+  return handler({ request, env: loadEnv() });
+}
+
 http
-  .createServer((req, res) => {
+  .createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    try {
+      const api = await runApi(req, url);
+      if (api) {
+        const buffer = Buffer.from(await api.arrayBuffer());
+        res.writeHead(api.status, Object.fromEntries(api.headers));
+        res.end(buffer);
+        return;
+      }
+    } catch (error) {
+      res
+        .writeHead(500, { "Content-Type": "application/json; charset=utf-8" })
+        .end(JSON.stringify({ error: error.message || "Local API failed." }));
+      return;
+    }
+
     let filePath = path.normalize(path.join(root, rewrite(url.pathname)));
     if (!filePath.startsWith(root)) {
       res.writeHead(403).end();
@@ -47,5 +121,12 @@ http
     });
   })
   .listen(port, "127.0.0.1", () => {
+    const env = loadEnv();
+    const sheet = String(env.GOOGLE_SHEETS_WEBAPP_URL || "").trim();
     console.log(`theking.wedding local → http://127.0.0.1:${port}`);
+    console.log(
+      sheet
+        ? "Google Sheet: using Apps Script web app from .dev.vars"
+        : "Google Sheet: missing GOOGLE_SHEETS_WEBAPP_URL in .dev.vars"
+    );
   });

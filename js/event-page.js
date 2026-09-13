@@ -23,6 +23,16 @@ if (!guestCanAccess(guest, eventKey)) {
     el.href = gateHref(guest.code);
   });
 
+  document.querySelectorAll(".nav-links").forEach((links) => {
+    if (links.querySelector("[data-invitations]")) return;
+    const item = document.createElement("a");
+    item.href = gateHref(guest.code);
+    item.dataset.invitations = "";
+    item.dataset.homeLink = "";
+    item.textContent = "Invitations";
+    links.prepend(item);
+  });
+
   document.querySelectorAll("a[href^='/como'], a[href^='/jersey'], a[href^='/shower']").forEach((el) => {
     el.href = withCode(el.getAttribute("href"), guest.code);
   });
