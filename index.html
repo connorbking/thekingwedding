@@ -76,31 +76,10 @@
       <p class="household-kicker" data-household-greeting></p>
       <h2 class="household-title">Your invitation</h2>
       <div class="event-doors" data-event-doors></div>
-      <form class="household-form address-form" data-household-form>
-        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
-        <label class="visually-hidden">First name <input name="firstName"></label>
-        <label class="visually-hidden">Last name <input name="lastName"></label>
-        <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
-        <label class="visually-hidden">Email <input name="email" type="email"></label>
-        <div class="household-split">
-          <div class="party-list" data-party-list></div>
-          <div class="household-address">
-            <p class="household-label">Mailing address</p>
-            <label>Street address <input name="street" required autocomplete="address-line1" placeholder="Street address"></label>
-            <label>Apartment or unit <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
-            <div class="form-grid form-grid--2">
-              <label>City <input name="city" required autocomplete="address-level2" placeholder="City"></label>
-              <label>State or region <input name="region" required autocomplete="address-level1" placeholder="State"></label>
-              <label>Postal code <input name="postal" required autocomplete="postal-code" placeholder="Postal code"></label>
-              <label>Country <input name="country" required autocomplete="country-name" value="United States" placeholder="Country"></label>
-            </div>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="find-invite" type="submit">Save our details</button>
-        </div>
-        <p class="form-error" data-form-error></p>
-      </form>
+      <div class="household-mail">
+        <p>A formal invitation via mail to follow</p>
+        <button class="find-invite" type="button" data-open-details>Provide our details</button>
+      </div>
       <button class="household-reset" type="button" data-not-you>Not you?</button>
     </section>
 
@@ -119,6 +98,48 @@
       <span></span>
     </div>
   </main>
+
+  <div class="details-modal" data-details-modal hidden>
+    <button class="details-modal-backdrop" type="button" data-close-details aria-label="Close details"></button>
+    <div class="details-modal-panel" role="dialog" aria-modal="true" aria-labelledby="details-title">
+      <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
+      <div data-details-form-wrap>
+        <h2 id="details-title">Your details</h2>
+        <form class="household-form address-form" data-household-form>
+          <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
+          <label class="visually-hidden">First name <input name="firstName"></label>
+          <label class="visually-hidden">Last name <input name="lastName"></label>
+          <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
+          <label class="visually-hidden">Email <input name="email" type="email"></label>
+          <div class="household-split">
+            <div class="party-list" data-party-list></div>
+            <div class="household-address">
+              <p class="household-label">Mailing address</p>
+              <label class="address-lookup">
+                Street address
+                <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address" aria-autocomplete="list" aria-controls="address-suggestions">
+              </label>
+              <ul class="address-suggestions" id="address-suggestions" data-address-suggestions hidden></ul>
+              <label>Apartment or unit <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
+              <input type="hidden" name="street">
+              <input type="hidden" name="city">
+              <input type="hidden" name="region">
+              <input type="hidden" name="postal">
+              <input type="hidden" name="country" value="United States">
+              <p class="address-chosen" data-address-chosen hidden></p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="find-invite" type="submit">Save our details</button>
+          </div>
+          <p class="form-error" data-form-error></p>
+        </form>
+      </div>
+      <div class="details-success" data-details-success hidden>
+        <p>Success, your details have been updated.</p>
+      </div>
+    </div>
+  </div>
 
   <svg class="water-filter" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
     <filter id="lake-ripple" x="0%" y="0%" width="100%" height="100%">

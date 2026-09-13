@@ -36,12 +36,31 @@ export function groupCodeFromSearch(search = window.location.search) {
   return "";
 }
 
+function memberEventKeys(member) {
+  if (Array.isArray(member?.events) && member.events.length) {
+    return member.events.map((key) => String(key).trim()).filter((key) => EVENT_KEYS.has(key));
+  }
+  const keys = [];
+  if (member?.invite?.shower || member?.shower) keys.push("shower");
+  if (member?.invite?.como || member?.como) keys.push("como");
+  if (member?.invite?.jersey || member?.jersey) keys.push("jersey");
+  return keys;
+}
+
 function eventsFrom(match) {
-  const raw = Array.isArray(match?.events)
-    ? match.events
-    : String(match?.events || "").split(",");
-  const events = sortEvents(raw.map((key) => String(key).trim()).filter((key) => EVENT_KEYS.has(key)));
-  return events;
+  const members = match?.guests || match?.members || [];
+  const fromMembers = [];
+  members.forEach((member) => {
+    memberEventKeys(member).forEach((key) => {
+      if (!fromMembers.includes(key)) fromMembers.push(key);
+    });
+  });
+  const raw = fromMembers.length
+    ? fromMembers
+    : Array.isArray(match?.events)
+      ? match.events
+      : String(match?.events || "").split(",");
+  return sortEvents(raw.map((key) => String(key).trim()).filter((key) => EVENT_KEYS.has(key)));
 }
 
 function guestFromMatch(code, match) {

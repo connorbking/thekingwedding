@@ -103,10 +103,169 @@ function collectMembers(form) {
 }
 
 function markHouseholdSaved(form) {
-  const button = form.querySelector("[type='submit']");
-  if (!button) return;
-  button.textContent = "Your details have been updated!";
-  button.classList.add("is-saved");
+  const modal = form.closest("[data-details-modal]");
+  const wrap = modal?.querySelector("[data-details-form-wrap]");
+  const success = modal?.querySelector("[data-details-success]");
+  if (!modal || !success) {
+    const button = form.querySelector("[type='submit']");
+    if (!button) return;
+    button.textContent = "Your details have been updated!";
+    button.classList.add("is-saved");
+    return;
+  }
+  if (wrap) wrap.hidden = true;
+  success.hidden = false;
+  window.setTimeout(() => closeDetailsModal(modal), 2000);
+}
+
+export function closeDetailsModal(modal = document.querySelector("[data-details-modal]")) {
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("details-open");
+  const wrap = modal.querySelector("[data-details-form-wrap]");
+  const success = modal.querySelector("[data-details-success]");
+  if (wrap) wrap.hidden = false;
+  if (success) success.hidden = true;
+}
+
+export function openDetailsModal(modal = document.querySelector("[data-details-modal]")) {
+  if (!modal) return;
+  const wrap = modal.querySelector("[data-details-form-wrap]");
+  const success = modal.querySelector("[data-details-success]");
+  if (wrap) wrap.hidden = false;
+  if (success) success.hidden = true;
+  modal.hidden = false;
+  document.body.classList.add("details-open");
+  modal.querySelector("[name='addressSearch']")?.focus();
+}
+
+function composedAddress(form) {
+  if (!String(form.street?.value || "").trim()) return "";
+  return [form.street?.value, form.city?.value, form.region?.value, form.postal?.value, form.country?.value]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function applyAddress(form, suggestion) {
+  if (!suggestion) return;
+  fillInput(form, "street", suggestion.street);
+  fillInput(form, "city", suggestion.city);
+  fillInput(form, "region", suggestion.region);
+  fillInput(form, "postal", suggestion.postal);
+  fillInput(form, "country", suggestion.country || "United States");
+  if (suggestion.apt) fillInput(form, "apt", suggestion.apt);
+  if (form.addressSearch) form.addressSearch.value = suggestion.label || composedAddress(form);
+  const chosen = form.querySelector("[data-address-chosen]");
+  if (chosen) {
+    chosen.hidden = false;
+    chosen.textContent = suggestion.label || composedAddress(form);
+  }
+}
+
+function hideSuggestions(form) {
+  const list = form.querySelector("[data-address-suggestions]");
+  if (!list) return;
+  list.hidden = true;
+  list.innerHTML = "";
+}
+
+async function lookupAddresses(query) {
+  const response = await fetch(`${API.address}?q=${encodeURIComponent(query)}`);
+  const data = await response.json().catch(() => ({}));
+  return Array.isArray(data.suggestions) ? data.suggestions : [];
+}
+
+function bindAddressLookup(form) {
+  if (form.dataset.addressBound === "true") return;
+  form.dataset.addressBound = "true";
+  const search = form.querySelector("[name='addressSearch']");
+  const list = form.querySelector("[data-address-suggestions]");
+  if (!search || !list) return;
+
+  let timer = 0;
+  let request = 0;
+
+  const render = (suggestions) => {
+    if (!suggestions.length) {
+      hideSuggestions(form);
+      return;
+    }
+    list.innerHTML = suggestions
+      .map(
+        (row, index) =>
+          `<li><button type="button" data-address-index="${index}">${escapeAttr(row.label)}</button></li>`
+      )
+      .join("");
+    list.hidden = false;
+    list.querySelectorAll("[data-address-index]").forEach((button) => {
+      button.addEventListener("click", () => {
+        applyAddress(form, suggestions[Number(button.dataset.addressIndex)]);
+        hideSuggestions(form);
+      });
+    });
+  };
+
+  search.addEventListener("input", () => {
+    ["street", "city", "region", "postal"].forEach((name) => {
+      if (form[name]) form[name].value = "";
+    });
+    const chosen = form.querySelector("[data-address-chosen]");
+    if (chosen) {
+      chosen.hidden = true;
+      chosen.textContent = "";
+    }
+    const query = search.value.trim();
+    window.clearTimeout(timer);
+    const current = ++request;
+    if (query.length < 4) {
+      hideSuggestions(form);
+      return;
+    }
+    timer = window.setTimeout(async () => {
+      try {
+        const suggestions = await lookupAddresses(query);
+        if (current !== request) return;
+        render(suggestions);
+      } catch {
+        if (current === request) hideSuggestions(form);
+      }
+    }, 280);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) hideSuggestions(form);
+  });
+}
+
+async function resolveTypedAddress(form) {
+  if (form.street?.value.trim() && form.city?.value.trim()) return true;
+  const query = form.addressSearch?.value.trim() || "";
+  if (query.length < 4) return false;
+  const suggestions = await lookupAddresses(query);
+  if (suggestions.length === 1) {
+    applyAddress(form, suggestions[0]);
+    return true;
+  }
+  if (suggestions.length > 1) {
+    const list = form.querySelector("[data-address-suggestions]");
+    if (list) {
+      list.innerHTML = suggestions
+        .map(
+          (row, index) =>
+            `<li><button type="button" data-address-index="${index}">${escapeAttr(row.label)}</button></li>`
+        )
+        .join("");
+      list.hidden = false;
+      list.querySelectorAll("[data-address-index]").forEach((button) => {
+        button.addEventListener("click", () => {
+          applyAddress(form, suggestions[Number(button.dataset.addressIndex)]);
+          hideSuggestions(form);
+        });
+      });
+    }
+  }
+  return false;
 }
 
 function successNode(form) {
@@ -244,6 +403,14 @@ function renderParty(form, guest, eventName) {
     fillInput(form, "region", address.region);
     fillInput(form, "postal", address.postal);
     fillInput(form, "country", address.country || form.country?.value);
+    if (form.addressSearch) {
+      form.addressSearch.value = composedAddress(form);
+    }
+    const chosen = form.querySelector("[data-address-chosen]");
+    if (chosen && form.street?.value) {
+      chosen.hidden = false;
+      chosen.textContent = composedAddress(form);
+    }
     if (!form.dataset.household && !form.querySelector("[data-address-cap]")) {
       const cap = document.createElement("p");
       cap.className = "guest-cap";
@@ -400,6 +567,10 @@ function bindForm(form, eventName, guest) {
       return;
     }
 
+    if (form.dataset.household === "true" && !(await resolveTypedAddress(form))) {
+      form.querySelector("[data-form-error]").textContent = "Please choose your mailing address from the list.";
+      return;
+    }
     const payload = partyMode ? serializeParty(form, eventName, guest) : serialize(form, eventName, guest);
     if (form.dataset.household === "true") payload.kind = "address";
     if (!partyMode && collectExtras(form).length > extraGuestSlots(guest)) {
@@ -483,4 +654,5 @@ export function initHouseholdForm({ guest, form }) {
   form.dataset.formKind = "address";
   form.dataset.household = "true";
   bindForm(form, guest.events?.[0] || "jersey", guest);
+  bindAddressLookup(form);
 }

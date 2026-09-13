@@ -3,6 +3,7 @@ export const CONTACT_EMAIL = "hello@theking.wedding";
 export const API = {
   submissions: "/api/submissions",
   invite: "/api/invite",
+  address: "/api/address",
 };
 
 export const DEFAULT_PARTY_SIZE = 2;

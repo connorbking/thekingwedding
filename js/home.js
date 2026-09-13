@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL, EVENTS } from "./config.js";
-import { initHouseholdForm } from "./form.js";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js";
 import {
   findGuest,
   findGuestByName,
@@ -14,6 +14,7 @@ const continuePanel = document.querySelector("[data-continue]");
 const household = document.querySelector("[data-household]");
 const form = document.querySelector("[data-code-form]");
 const householdForm = document.querySelector("[data-household-form]");
+const detailsModal = document.querySelector("[data-details-modal]");
 const errorNode = document.querySelector("[data-code-error]");
 
 function missingMessage() {
@@ -36,10 +37,21 @@ function memberName(member) {
   return `${member.first_name || member.firstName || ""} ${member.last_name || member.lastName || ""}`.trim();
 }
 
+function memberInvited(member, eventKey) {
+  if (Array.isArray(member.events) && member.events.length) return member.events.includes(eventKey);
+  if (member.invite && typeof member.invite === "object") return Boolean(member.invite[eventKey]);
+  if (eventKey === "jersey") return Boolean(member.jersey);
+  if (eventKey === "como") return Boolean(member.como);
+  if (eventKey === "shower") return Boolean(member.shower);
+  return true;
+}
+
 function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
   if (!event) return "";
-  const people = (guest.members || [])
+  const invitedMembers = (guest.members || []).filter((member) => memberInvited(member, eventKey));
+  if (!invitedMembers.length) return "";
+  const people = invitedMembers
     .map(memberName)
     .filter(Boolean)
     .map((name) => `<li>${escapeHtml(name)}</li>`)
@@ -76,7 +88,6 @@ function showHousehold(guest) {
   }
 
   if (householdForm) {
-    householdForm.hidden = false;
     initHouseholdForm({ guest, form: householdForm });
   }
 }
@@ -114,6 +125,20 @@ form?.addEventListener("submit", async (event) => {
       findInvite.removeAttribute("aria-busy");
       findInvite.classList.remove("is-loading");
     }
+  }
+});
+
+household?.querySelector("[data-open-details]")?.addEventListener("click", () => {
+  openDetailsModal(detailsModal);
+});
+
+detailsModal?.querySelectorAll("[data-close-details]").forEach((el) => {
+  el.addEventListener("click", () => closeDetailsModal(detailsModal));
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && detailsModal && !detailsModal.hidden) {
+    closeDetailsModal(detailsModal);
   }
 });
 

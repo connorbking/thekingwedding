@@ -84,9 +84,15 @@ function hasName(row) {
 function fillDownParty(rows) {
   const list = rows.map((row, index) => ({ ...row, _sheetIndex: index }));
   let code = "";
+  let party = "";
 
   for (const row of list) {
+    const currentParty = String(row.party || "").trim().toLowerCase();
     const currentCode = groupCode(row);
+    if (currentParty && party && currentParty !== party && !currentCode) {
+      code = "";
+    }
+    if (currentParty) party = currentParty;
     if (currentCode) {
       code = currentCode;
     } else if (code && hasName(row)) {
@@ -136,21 +142,23 @@ function householdKey(row, index = 0) {
   return `solo:${row._sheetIndex ?? index}`;
 }
 
+function invitedToEvent(row, key) {
+  if (row?.invite && typeof row.invite[key] === "boolean") return row.invite[key];
+  if (Array.isArray(row?.events)) return row.events.includes(key);
+  if (key === "jersey") return Boolean(row?.jersey);
+  if (key === "como") return Boolean(row?.como);
+  if (key === "shower") return Boolean(row?.shower);
+  return false;
+}
+
 function partyRecord(party, event = "") {
   if (!party.length) return { found: false };
 
-  const events = [];
-  party.forEach((row) => {
-    (row.events || []).forEach((key) => {
-      if (!events.includes(key)) events.push(key);
-    });
-  });
+  const members = party.filter(hasName);
+  const events = ["shower", "como", "jersey"].filter((key) => members.some((row) => invitedToEvent(row, key)));
   if (event && !events.includes(event)) {
     return { found: false };
   }
-
-  const order = ["shower", "como", "jersey"];
-  events.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
   const code =
     groupCode(party.find((row) => groupCode(row))) ||
@@ -161,9 +169,9 @@ function partyRecord(party, event = "") {
     found: true,
     code,
     greeting: party.find((row) => row.party)?.party || "",
-    maxParty: Math.min(12, Math.max(party.length + 4, 2)),
+    maxParty: Math.min(12, Math.max(members.length + 4, 2)),
     events,
-    guests: party,
+    guests: members,
   };
 }
 

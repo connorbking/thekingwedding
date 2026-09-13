@@ -206,7 +206,7 @@ html:has(body.landing-body.is-open) {
 .event-doors {
   display: grid;
   gap: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
 }
 
 @media (min-width: 640px) {
@@ -342,6 +342,141 @@ html:has(body.landing-body.is-open) {
 
 .household-form .form-actions .find-invite {
   font-size: 1.15rem;
+}
+
+.household-mail {
+  width: min(100%, 420px);
+  margin: 8px auto 0;
+  text-align: center;
+}
+
+.household-mail p {
+  margin: 0 0 14px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.household-mail .find-invite {
+  margin-top: 0;
+}
+
+body.details-open {
+  overflow: hidden;
+}
+
+.details-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.details-modal[hidden] {
+  display: none;
+}
+
+.details-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(8, 10, 12, 0.72);
+  cursor: pointer;
+}
+
+.details-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1080px);
+  max-height: min(90dvh, 920px);
+  overflow: auto;
+  padding: 28px 28px 32px;
+  border: 1px solid rgba(228, 199, 157, 0.5);
+  border-radius: 10px;
+  background: rgba(18, 23, 25, 0.94);
+  color: #e4c79d;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.details-modal-panel h2 {
+  margin: 0 0 22px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.details-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: none;
+  color: var(--gold-muted);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.details-modal-close:hover {
+  color: #fff6df;
+}
+
+.address-suggestions {
+  list-style: none;
+  margin: -4px 0 0;
+  padding: 0;
+  border: 1px solid rgba(228, 199, 157, 0.45);
+  border-radius: 6px;
+  background: rgba(12, 16, 18, 0.96);
+  overflow: hidden;
+}
+
+.address-suggestions button {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: #e4c79d;
+  font-family: "Bodoni Moda", serif;
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.address-suggestions button:hover,
+.address-suggestions button:focus-visible {
+  background: rgba(228, 199, 157, 0.12);
+  outline: none;
+}
+
+.address-chosen {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.details-success {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.details-success p {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: 1.7rem;
+  font-style: italic;
+  color: #e4c79d;
 }
 
 .household-reset {

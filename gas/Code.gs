@@ -12,6 +12,7 @@
  */
 const SPREADSHEET_ID = "1VyFole7kJOnJjGnI07sDxjmlgYa2HUtrk9mxH46o7gE";
 const SHEET_GID = 338671760;
+const SHEET_NAME = "SeedData";
 
 const HEADERS = [
   "Party",
@@ -65,7 +66,7 @@ const ALIASES = {
   "como wedding": "invite como",
   "invite bridal": "invite bridal",
   "invite bridal shower": "invite bridal",
-  "bridal shower": "invite bridal",
+  "invite shower": "invite bridal",
   "rsvp whippany": "rsvp whippany",
   "rsvp jersey": "rsvp whippany",
   "rsvp como": "rsvp como",
@@ -76,10 +77,11 @@ const ALIASES = {
 function sheet_(options) {
   const opts = options || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const named = ss.getSheetByName(SHEET_NAME);
   const byId = ss.getSheets().filter(function (tab) {
     return tab.getSheetId() === SHEET_GID;
   })[0];
-  const sheet = byId || ss.getSheets()[0];
+  const sheet = named || byId || ss.getSheets()[0];
   ensureHeaders_(sheet);
   if (!opts.readOnly) {
     try {
@@ -144,8 +146,15 @@ function headerIndex_(sheet) {
   const existing = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
   const map = {};
   existing.forEach(function (name, index) {
-    const key = normalizeHeader_(name);
-    if (key && map[key] === undefined) map[key] = index;
+    const raw = String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    const key = ALIASES[raw] || raw;
+    if (!key) return;
+    if (map[key] === undefined || raw === key) {
+      map[key] = index;
+    }
   });
   return { map: map, width: existing.length, headers: existing };
 }
@@ -192,6 +201,8 @@ function partyName_(data, existing) {
 }
 
 function isYes_(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value === "0") return false;
   return /^(yes|y|true|x|1|✓|✔)$/i.test(String(value || "").trim());
 }
 
@@ -460,9 +471,15 @@ function list_(sheet) {
 
 function fillDownGroupCodes_(guests) {
   let code = "";
+  let party = "";
   return guests.map(function (row) {
+    const currentParty = String(row.party || "").trim().toLowerCase();
     const current = String(row.group_code || row.access_code || "").trim().toUpperCase();
     const named = String(row.first_name || "").trim() || String(row.last_name || "").trim();
+    if (currentParty && party && currentParty !== party && !current) {
+      code = "";
+    }
+    if (currentParty) party = currentParty;
     if (current) {
       code = current;
     } else if (code && named) {
