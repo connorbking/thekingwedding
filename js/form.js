@@ -111,10 +111,12 @@ function markHouseholdSaved(form) {
     if (!button) return;
     button.textContent = "Your details have been updated!";
     button.classList.add("is-saved");
+    document.dispatchEvent(new CustomEvent("king:details-saved"));
     return;
   }
   if (wrap) wrap.hidden = true;
   success.hidden = false;
+  document.dispatchEvent(new CustomEvent("king:details-saved"));
   window.setTimeout(() => closeDetailsModal(modal), 2000);
 }
 

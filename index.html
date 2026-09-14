@@ -39,11 +39,12 @@
   <main class="invitation-gate" data-gate-stage>
     <div class="monogram" aria-hidden="true">
       <span>A</span>
-      <span class="monogram-rule">⚜</span>
+      <img class="monogram-rule" src="/public/envelopes/key.png" alt="">
       <span>C</span>
     </div>
-    <span class="unlock-key" data-unlock-key hidden aria-hidden="true"></span>
+    <img class="unlock-key" data-unlock-key src="/public/envelopes/key.png" alt="" hidden>
 
+    <p class="household-kicker" data-household-greeting hidden></p>
     <h1 class="names">
       <span>Alyssa</span>
       <span class="and">&amp;</span>
@@ -83,10 +84,7 @@
     </div>
 
     <section class="household-desk" data-household hidden>
-      <p class="household-kicker" data-household-greeting></p>
       <p class="household-count" data-household-count></p>
-      <p class="household-hint" data-household-hint>Select an envelope</p>
-      <button class="household-back" type="button" data-back-envelopes hidden>All invitations</button>
       <div class="event-doors" data-event-doors></div>
       <div class="household-mail">
         <p>Formal Invitations via mail to follow:</p>
@@ -155,6 +153,6 @@
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env11"></script>
+  <script type="module" src="/js/home.js?v=env14"></script>
 </body>
 </html>

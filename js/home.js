@@ -44,13 +44,11 @@ function memberInvited(member, eventKey) {
 }
 
 function countLabel(count) {
-  if (count === 1) return "Have left you an invitation";
-  if (count === 2) return "Have left you two invitations";
-  if (count === 3) return "Have left you three invitations";
-  return `Have left you ${count} invitations`;
+  if (count === 1) return "have sent you an invitation.";
+  return `have sent you ${count} invitations.`;
 }
 
-const ART_V = "6";
+const ART_V = "7";
 const artUrl = (file) => `/public/envelopes/${file}?v=${ART_V}`;
 const ENVELOPE_ART = {
   como: {
@@ -79,6 +77,8 @@ const ENVELOPE_ART = {
   },
 };
 
+const openedEnvelopes = new Set();
+
 function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
   const art = ENVELOPE_ART[eventKey];
@@ -87,27 +87,31 @@ function doorMarkup(eventKey, guest) {
   if (!invitedMembers.length) return "";
   const region = event.region || event.place;
   return `
-    <button type="button" class="event-door envelope-link" data-envelope aria-label="Open ${escapeHtml(event.shortTitle)}" aria-expanded="false">
+    <button type="button" class="event-door envelope-link${openedEnvelopes.has(eventKey) ? " is-opened" : ""}" data-envelope data-event="${eventKey}" aria-label="Open ${escapeHtml(event.shortTitle)}" aria-expanded="false">
       <span class="envelope envelope--${eventKey}" aria-hidden="true">
-        <img class="envelope-open-flap" src="${art.openFlap}" alt="">
-        <span class="envelope-sleeve">
-          <span class="envelope-letter">
-            <img class="envelope-letter-art" src="${art.letter}" alt="">
-            <span class="invite-sheet">
-              <span class="invite-sheet-script">Save the Date</span>
-              <span class="invite-sheet-names">Alyssa &amp; Connor</span>
-              <span class="invite-sheet-rule"></span>
-              <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
-              <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
-              <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
+        <span class="envelope-stack">
+          <img class="envelope-open-flap" src="${art.openFlap}" alt="">
+          <span class="envelope-sleeve">
+            <span class="envelope-letter">
+              <img class="envelope-letter-art" src="${art.letter}" alt="">
+              <span class="invite-sheet">
+                <span class="invite-sheet-script">Save the Date</span>
+                <span class="invite-sheet-names">Alyssa &amp; Connor</span>
+                <span class="invite-sheet-rule"></span>
+                <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
+                <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
+                <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
+                <span class="invite-sheet-soon">(Check back soon for more details!)</span>
+                <span class="invite-sheet-close">Close Invite</span>
+              </span>
             </span>
           </span>
-        </span>
-        <span class="envelope-crop">
-          <img class="envelope-body" src="${art.body}" alt="">
-          <img class="envelope-closed-flap" src="${art.closedFlap}" alt="">
-          <img class="envelope-seal" src="${art.seal}" alt="">
-          <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
+          <span class="envelope-crop">
+            <img class="envelope-body" src="${art.body}" alt="">
+            <img class="envelope-closed-flap" src="${art.closedFlap}" alt="">
+            <img class="envelope-seal" src="${art.seal}" alt="">
+            <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
+          </span>
         </span>
       </span>
       <span class="envelope-caption">
@@ -119,6 +123,7 @@ function doorMarkup(eventKey, guest) {
 }
 
 function showHousehold(guest) {
+  hideUnlockKey();
   rememberGuest(guest);
   document.body.classList.add("is-open");
   sealed.hidden = true;
@@ -126,9 +131,9 @@ function showHousehold(guest) {
   if (continuePanel) continuePanel.hidden = true;
   household.hidden = false;
 
-  const greeting = household.querySelector("[data-household-greeting]");
+  const greeting = document.querySelector("[data-household-greeting]");
   if (greeting) {
-    greeting.textContent = guest.greeting ? `Dear ${guest.greeting}` : "";
+    greeting.textContent = guest.greeting ? `Dear ${guest.greeting},` : "";
     greeting.hidden = !guest.greeting;
   }
 
@@ -137,6 +142,7 @@ function showHousehold(guest) {
     .filter((key) => doorMarkup(key, guest));
   const count = household.querySelector("[data-household-count]");
   if (count) count.textContent = countLabel(shown.length);
+  startEnvelopeWiggle();
 
   const doors = household.querySelector("[data-event-doors]");
   const nextKey = shown.join("|");
@@ -203,8 +209,17 @@ async function beginUnlockWait() {
   }
 }
 
+function hideUnlockKey() {
+  if (!unlockKey) return;
+  unlockKey.getAnimations?.().forEach((animation) => animation.cancel());
+  unlockKey.hidden = true;
+  unlockKey.style.removeProperty("left");
+  unlockKey.style.removeProperty("top");
+  unlockKey.style.removeProperty("transform");
+}
+
 function cancelUnlockWait() {
-  if (unlockKey) unlockKey.hidden = true;
+  hideUnlockKey();
   document.body.classList.remove("is-unlocking", "is-unlocking-wait", "is-unlocked", "is-entering");
 }
 
@@ -236,7 +251,7 @@ async function finishUnlockSequence() {
   await wait(240);
   document.body.classList.add("is-entering");
   await wait(900);
-  unlockKey.hidden = true;
+  hideUnlockKey();
 }
 
 findInvite?.addEventListener("click", () => {
@@ -291,10 +306,62 @@ fetch("/api/invite?warm=1").catch(() => {});
 
 function setReading(open) {
   household?.classList.toggle("is-reading", open);
-  const hint = household?.querySelector("[data-household-hint]");
-  const back = household?.querySelector("[data-back-envelopes]");
-  if (hint) hint.hidden = open;
-  if (back) back.hidden = !open;
+}
+
+let wiggleTimer = 0;
+
+function nudgeClosedEnvelopes() {
+  if (prefersReducedMotion()) return;
+  if (household?.classList.contains("is-reading")) return;
+  const closed = [...(household?.querySelectorAll("[data-envelope]:not(.is-opening):not(.is-selected):not(.is-opened)") || [])];
+  closed.forEach((link, index) => {
+    window.setTimeout(() => {
+      if (household?.classList.contains("is-reading")) return;
+      if (link.classList.contains("is-opening") || link.classList.contains("is-selected") || link.classList.contains("is-opened")) return;
+      const env = link.querySelector(".envelope");
+      if (!env) return;
+      env.classList.remove("is-wiggling");
+      void env.offsetWidth;
+      env.classList.add("is-wiggling");
+    }, index * 1000);
+  });
+}
+
+let detailsConfirmed = sessionStorage.getItem("king.detailsConfirmed") === "1";
+
+function markDetailsConfirmed() {
+  detailsConfirmed = true;
+  sessionStorage.setItem("king.detailsConfirmed", "1");
+  household?.querySelector("[data-open-details]")?.classList.remove("is-wiggling");
+}
+
+document.addEventListener("king:details-saved", markDetailsConfirmed);
+
+function allEnvelopesOpened() {
+  const doors = [...(household?.querySelectorAll("[data-envelope]") || [])];
+  return doors.length > 0 && doors.every((door) => door.classList.contains("is-opened"));
+}
+
+function nudgeDetailsButton() {
+  if (prefersReducedMotion()) return;
+  if (detailsConfirmed) return;
+  if (!allEnvelopesOpened()) return;
+  if (document.body.classList.contains("details-open")) return;
+  const btn = household?.querySelector("[data-open-details]");
+  if (!btn) return;
+  btn.classList.remove("is-wiggling");
+  void btn.offsetWidth;
+  btn.classList.add("is-wiggling");
+}
+
+function runWiggleHints() {
+  nudgeClosedEnvelopes();
+  nudgeDetailsButton();
+}
+
+function startEnvelopeWiggle() {
+  if (wiggleTimer) return;
+  wiggleTimer = window.setInterval(runWiggleHints, 5000);
 }
 
 function closeEnvelopes() {
@@ -305,19 +372,67 @@ function closeEnvelopes() {
     link.style.removeProperty("--focus-y");
   });
   setReading(false);
+  if (allEnvelopesOpened()) nudgeDetailsButton();
 }
 
-function centerEnvelope(link) {
-  const card = link.querySelector(".envelope") || link;
-  const box = card.getBoundingClientRect();
-  const lift = Math.min(150, window.innerHeight * 0.18);
-  link.style.setProperty("--focus-x", `${window.innerWidth / 2 - (box.left + box.width / 2)}px`);
-  link.style.setProperty("--focus-y", `${window.innerHeight / 2 - (box.top + box.height / 2) + lift}px`);
+function letterFocusDelta(link) {
+  const letter = link.querySelector(".envelope-letter");
+  const art = link.querySelector(".envelope-letter-art") || letter;
+  if (!letter || !art) return null;
+  const box = art.getBoundingClientRect();
+  if (!box.width || !box.height) return null;
+  const reserve = Math.min(160, window.innerHeight * 0.2);
+  const targetX = window.innerWidth / 2;
+  const targetY = (window.innerHeight - reserve) / 2;
+  return {
+    x: targetX - (box.left + box.width / 2),
+    y: targetY - (box.top + box.height / 2),
+  };
+}
+
+function readFocus(link, name) {
+  return Number.parseFloat(link.style.getPropertyValue(name)) || 0;
+}
+
+function centerOpenLetter(link) {
+  const letter = link.querySelector(".envelope-letter");
+  if (!letter) return;
+
+  if (link.classList.contains("is-opening")) {
+    const delta = letterFocusDelta(link);
+    if (!delta) return;
+    link.style.setProperty("--focus-x", `${readFocus(link, "--focus-x") + delta.x}px`);
+    link.style.setProperty("--focus-y", `${readFocus(link, "--focus-y") + delta.y}px`);
+    return;
+  }
+
+  const previous = {
+    animation: letter.style.animation,
+    transform: letter.style.transform,
+    opacity: letter.style.opacity,
+  };
+  letter.style.animation = "none";
+  letter.style.opacity = "1";
+  letter.style.transform = "translateY(var(--letter-out-y)) scale(var(--letter-out-scale))";
+  void letter.offsetWidth;
+  const delta = letterFocusDelta(link);
+  letter.style.animation = previous.animation;
+  letter.style.transform = previous.transform;
+  letter.style.opacity = previous.opacity;
+  if (!delta) return;
+  link.style.setProperty("--focus-x", `${delta.x}px`);
+  link.style.setProperty("--focus-y", `${delta.y}px`);
 }
 
 household?.addEventListener("click", (event) => {
+  if (event.button !== 0) return;
+  if (event.target.closest(".invite-sheet-close")) {
+    event.preventDefault();
+    closeEnvelopes();
+    return;
+  }
   const link = event.target.closest("[data-envelope]");
-  if (!link || event.button !== 0) return;
+  if (!link) return;
   if (link.classList.contains("is-opening")) {
     closeEnvelopes();
     return;
@@ -328,11 +443,10 @@ household?.addEventListener("click", (event) => {
     other.setAttribute("aria-expanded", other === link ? "true" : "false");
   });
   setReading(true);
-  centerEnvelope(link);
-  link.classList.add("is-opening");
+  centerOpenLetter(link);
+  link.classList.add("is-opening", "is-opened");
+  if (link.dataset.event) openedEnvelopes.add(link.dataset.event);
 });
-
-household?.querySelector("[data-back-envelopes]")?.addEventListener("click", closeEnvelopes);
 
 window.addEventListener("pagehide", closeEnvelopes);
 window.addEventListener("pageshow", (event) => {
@@ -340,7 +454,7 @@ window.addEventListener("pageshow", (event) => {
 });
 window.addEventListener("resize", () => {
   const open = household?.querySelector(".envelope-link.is-opening");
-  if (open) centerEnvelope(open);
+  if (open) centerOpenLetter(open);
 });
 
 household?.querySelector("[data-open-details]")?.addEventListener("click", () => {
@@ -361,6 +475,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 household?.querySelector("[data-not-you]")?.addEventListener("click", () => {
+  openedEnvelopes.clear();
+  detailsConfirmed = false;
+  sessionStorage.removeItem("king.detailsConfirmed");
   clearGuest();
   window.location.assign("/");
 });

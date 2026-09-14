@@ -6,5 +6,8 @@
   "pages_build_output_dir": ".",
   "observability": {
     "enabled": true
+  },
+  "secrets": {
+    "required": ["GOOGLE_SHEETS_WEBAPP_URL"]
   }
 }
