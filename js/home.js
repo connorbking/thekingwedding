@@ -1,5 +1,6 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party3";
+import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k6";
 import {
   findGuest,
   findGuestByName,
@@ -122,8 +123,14 @@ function doorMarkup(eventKey, guest) {
   `;
 }
 
+function showMonogramPng(show) {
+  const img = document.querySelector(".monogram-key-png");
+  if (img) img.hidden = !show;
+}
+
 function showHousehold(guest) {
-  hideUnlockKey();
+  hideKey3d();
+  showMonogramPng(true);
   rememberGuest(guest);
   document.body.classList.add("is-open");
   sealed.hidden = true;
@@ -161,7 +168,6 @@ function showHousehold(guest) {
 }
 
 const findInvite = form?.querySelector(".find-invite");
-const unlockKey = document.querySelector("[data-unlock-key]");
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -171,87 +177,38 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function unlockPoints() {
-  const fleur = document.querySelector(".monogram-rule");
+function lockCenter() {
   const lockEl = document.querySelector(".lock");
-  if (!unlockKey || !fleur || !lockEl) return null;
-  const from = fleur.getBoundingClientRect();
+  if (!lockEl) return null;
   const to = lockEl.getBoundingClientRect();
   return {
-    startX: from.left + from.width / 2,
-    startY: from.top + from.height / 2,
-    holeX: to.left + to.width / 2,
-    holeY: to.top + to.height * 0.42,
     lockX: to.left + to.width / 2,
     lockY: to.top + to.height / 2,
   };
 }
 
-async function beginUnlockWait() {
-  const points = unlockPoints();
-  if (!points || prefersReducedMotion()) return;
-  document.body.style.setProperty("--lock-ox", `${(points.lockX / window.innerWidth) * 100}%`);
-  document.body.style.setProperty("--lock-oy", `${(points.lockY / window.innerHeight) * 100}%`);
-  unlockKey.hidden = false;
-  unlockKey.style.left = `${points.startX}px`;
-  unlockKey.style.top = `${points.startY}px`;
-  document.body.classList.add("is-unlocking", "is-unlocking-wait");
-  try {
-    await unlockKey.animate(
-      [
-        { transform: "scale(1) rotate(0deg)" },
-        { transform: "translateY(-24px) scale(1.35) rotate(-8deg)" },
-      ],
-      { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
-    ).finished;
-  } catch {
-    /* animation canceled */
+function cancelUnlock() {
+  showMonogramPng(false);
+  resetKey3d();
+  document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
+}
+
+async function playUnlockSequence() {
+  const center = lockCenter();
+  if (prefersReducedMotion()) return true;
+  if (center) {
+    document.body.style.setProperty("--lock-ox", `${(center.lockX / window.innerWidth) * 100}%`);
+    document.body.style.setProperty("--lock-oy", `${(center.lockY / window.innerHeight) * 100}%`);
   }
-}
-
-function hideUnlockKey() {
-  if (!unlockKey) return;
-  unlockKey.getAnimations?.().forEach((animation) => animation.cancel());
-  unlockKey.hidden = true;
-  unlockKey.style.removeProperty("left");
-  unlockKey.style.removeProperty("top");
-  unlockKey.style.removeProperty("transform");
-}
-
-function cancelUnlockWait() {
-  hideUnlockKey();
-  document.body.classList.remove("is-unlocking", "is-unlocking-wait", "is-unlocked", "is-entering");
-}
-
-async function finishUnlockSequence() {
-  const points = unlockPoints();
-  if (!points || prefersReducedMotion()) return;
-  document.body.classList.remove("is-unlocking-wait");
-  const travelX = points.holeX - points.startX;
-  const travelY = points.holeY - points.startY;
-  try {
-    await unlockKey.animate(
-      [
-        { transform: "translateY(-24px) scale(1.35) rotate(-8deg)", offset: 0 },
-        {
-          transform: `translate(${travelX}px, ${travelY * 0.72}px) scale(1.2) rotate(18deg)`,
-          offset: 0.62,
-        },
-        {
-          transform: `translate(${travelX}px, ${travelY}px) scale(1.05) rotate(90deg)`,
-          offset: 1,
-        },
-      ],
-      { duration: 1100, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
-    ).finished;
-  } catch {
-    /* animation canceled */
-  }
+  document.body.classList.add("is-unlocking");
+  const played = await playKeyUnlock();
+  if (!played) return false;
   document.body.classList.add("is-unlocked");
-  await wait(240);
+  await wait(220);
+  hideKey3d();
   document.body.classList.add("is-entering");
   await wait(900);
-  hideUnlockKey();
+  return true;
 }
 
 findInvite?.addEventListener("click", () => {
@@ -270,21 +227,19 @@ form?.addEventListener("submit", async (event) => {
     findInvite.classList.add("is-loading");
   }
   form.dataset.unlocking = "true";
-  const waiting = beginUnlockWait();
   try {
     const guest = await findGuestByName(form.firstName.value, form.lastName.value);
-    await waiting;
     if (!guest) {
-      cancelUnlockWait();
       if (errorNode) errorNode.textContent = missingMessage();
       return;
     }
-    await finishUnlockSequence();
+    const played = await playUnlockSequence();
+    if (!played) return;
     showHousehold(guest);
     document.body.classList.add("is-revealing");
-    document.body.classList.remove("is-unlocking", "is-unlocking-wait", "is-unlocked", "is-entering");
+    document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
   } catch (error) {
-    cancelUnlockWait();
+    cancelUnlock();
     if (errorNode) {
       errorNode.textContent = error.ambiguous
         ? ambiguousMessage()
@@ -370,9 +325,51 @@ function closeEnvelopes() {
     link.setAttribute("aria-expanded", "false");
     link.style.removeProperty("--focus-x");
     link.style.removeProperty("--focus-y");
+    link.querySelector(".envelope")?.style.removeProperty("--letter-out-scale");
   });
   setReading(false);
   if (allEnvelopesOpened()) nudgeDetailsButton();
+}
+
+function letterViewportReserve() {
+  return window.innerWidth < 640
+    ? Math.min(220, window.innerHeight * 0.28)
+    : Math.min(160, window.innerHeight * 0.2);
+}
+
+function fitLetterToViewport(link) {
+  const envelope = link.querySelector(".envelope");
+  const letter = link.querySelector(".envelope-letter");
+  const art = link.querySelector(".envelope-letter-art") || letter;
+  if (!envelope || !letter || !art) return;
+
+  if (window.innerWidth >= 640) {
+    envelope.style.removeProperty("--letter-out-scale");
+    return;
+  }
+
+  envelope.style.setProperty("--letter-out-scale", "1");
+  const previous = {
+    animation: letter.style.animation,
+    transform: letter.style.transform,
+    opacity: letter.style.opacity,
+  };
+  letter.style.animation = "none";
+  letter.style.opacity = "1";
+  letter.style.transform = "translateY(var(--letter-out-y)) scale(1)";
+  void letter.offsetWidth;
+  const box = art.getBoundingClientRect();
+  letter.style.animation = previous.animation;
+  letter.style.transform = previous.transform;
+  letter.style.opacity = previous.opacity;
+  if (!box.width || !box.height) return;
+
+  const scale = Math.min(
+    (window.innerWidth - 28) / box.width,
+    (window.innerHeight - letterViewportReserve()) / box.height,
+    2.325
+  );
+  envelope.style.setProperty("--letter-out-scale", String(Math.max(scale, 0.4)));
 }
 
 function letterFocusDelta(link) {
@@ -381,7 +378,7 @@ function letterFocusDelta(link) {
   if (!letter || !art) return null;
   const box = art.getBoundingClientRect();
   if (!box.width || !box.height) return null;
-  const reserve = Math.min(160, window.innerHeight * 0.2);
+  const reserve = letterViewportReserve();
   const targetX = window.innerWidth / 2;
   const targetY = (window.innerHeight - reserve) / 2;
   return {
@@ -397,6 +394,7 @@ function readFocus(link, name) {
 function centerOpenLetter(link) {
   const letter = link.querySelector(".envelope-letter");
   if (!letter) return;
+  fitLetterToViewport(link);
 
   if (link.classList.contains("is-opening")) {
     const delta = letterFocusDelta(link);
@@ -434,6 +432,7 @@ household?.addEventListener("click", (event) => {
   const link = event.target.closest("[data-envelope]");
   if (!link) return;
   if (link.classList.contains("is-opening")) {
+    if (event.target.closest(".envelope-letter")) return;
     closeEnvelopes();
     return;
   }
@@ -446,6 +445,14 @@ household?.addEventListener("click", (event) => {
   centerOpenLetter(link);
   link.classList.add("is-opening", "is-opened");
   if (link.dataset.event) openedEnvelopes.add(link.dataset.event);
+});
+
+document.addEventListener("click", (event) => {
+  if (event.button !== 0) return;
+  if (!household?.classList.contains("is-reading")) return;
+  if (detailsModal && !detailsModal.hidden) return;
+  if (event.target.closest(".envelope-letter, .household-mail, [data-details-modal], [data-envelope]")) return;
+  closeEnvelopes();
 });
 
 window.addEventListener("pagehide", closeEnvelopes);
@@ -485,9 +492,12 @@ household?.querySelector("[data-not-you]")?.addEventListener("click", () => {
 const params = new URLSearchParams(window.location.search);
 const stored = readStoredGuest();
 if (params.get("code") || params.get("gate") || stored) {
+  hideKey3d();
   if (stored) showHousehold(stored);
   const returning = await resolveGuest();
   if (returning) showHousehold(returning);
   else if (!stored && params.get("code") && errorNode) errorNode.textContent = missingMessage();
   document.documentElement.classList.remove("invite-returning");
+} else {
+  initKey3d();
 }

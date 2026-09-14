@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Alyssa & Connor · The King Wedding</title>
   <meta name="description" content="Alyssa and Connor are getting married in 2027. Enter your name to continue.">
   <meta property="og:title" content="Alyssa & Connor · The King Wedding">
@@ -13,7 +13,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/home.css?v=type1">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+    }
+  }
+  </script>
   <script>
     (function () {
       try {
@@ -36,13 +44,15 @@
     </div>
   </div>
 
+  <canvas class="key3d-canvas" data-key3d hidden></canvas>
   <main class="invitation-gate" data-gate-stage>
     <div class="monogram" aria-hidden="true">
       <span>A</span>
-      <img class="monogram-rule" src="/public/envelopes/key.png" alt="">
+      <span class="monogram-rule" data-key-slot>
+        <img class="monogram-key-png" src="/public/key.png" alt="" hidden>
+      </span>
       <span>C</span>
     </div>
-    <img class="unlock-key" data-unlock-key src="/public/envelopes/key.png" alt="" hidden>
 
     <p class="household-kicker" data-household-greeting hidden></p>
     <h1 class="names">
@@ -99,8 +109,8 @@
       <span></span>
     </div>
 
-    <p class="secret-caps">Some stories are meant</p>
-    <p class="secret-italic">for the right people</p>
+    <p class="secret-caps">Our favorite people,</p>
+    <p class="secret-italic">our happiest chapter.</p>
 
     <div class="fleur-rule fleur-rule--faint" aria-hidden="true">
       <span></span>
@@ -114,7 +124,7 @@
     <div class="details-modal-panel" role="dialog" aria-modal="true" aria-labelledby="details-title">
       <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
       <div data-details-form-wrap>
-        <h2 id="details-title">Your details</h2>
+        <h2 id="details-title">Your Party</h2>
         <form class="household-form address-form" data-household-form>
           <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
           <label class="visually-hidden">First name <input name="firstName"></label>
@@ -124,13 +134,13 @@
           <div class="household-split">
             <div class="party-list" data-party-list></div>
             <div class="household-address">
-              <p class="household-label">Mailing address</p>
+              <p class="household-label">Mailing Address</p>
               <label class="address-lookup">
-                Street address
+                Street Address
                 <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address" aria-autocomplete="list" aria-controls="address-suggestions">
               </label>
               <ul class="address-suggestions" id="address-suggestions" data-address-suggestions hidden></ul>
-              <label>Apartment or unit <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
+              <label>Apartment <input name="apt" autocomplete="address-line2" placeholder="Apartment"></label>
               <input type="hidden" name="street">
               <input type="hidden" name="city">
               <input type="hidden" name="region">
@@ -153,6 +163,6 @@
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env14"></script>
+  <script type="module" src="/js/home.js?v=env29"></script>
 </body>
 </html>

@@ -12,11 +12,11 @@ function extraRowTemplate(index) {
   return `
     <div class="guest-row" data-guest-row>
       <label>
-        <span>First name</span>
+        <span>First Name</span>
         <input type="text" name="guestFirst${index}" autocomplete="off">
       </label>
       <label>
-        <span>Last name</span>
+        <span>Last Name</span>
         <input type="text" name="guestLast${index}" autocomplete="off">
       </label>
       <button type="button" class="guest-remove" data-remove-guest aria-label="Remove guest">&times;</button>
@@ -37,8 +37,8 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
   const fields = `
-    <label>First name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name" placeholder="First name"></label>
-    <label>Last name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name" placeholder="Last name"></label>
+    <label>First Name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name" placeholder="First Name"></label>
+    <label>Last Name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name" placeholder="Last Name"></label>
     <label>Phone <input name="memberPhone${index}" type="tel" value="${escapeAttr(member.phone || "")}" autocomplete="tel" placeholder="Phone"></label>
     <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
   `;
@@ -46,6 +46,7 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   if (!showRsvp) {
     return `
       <div class="party-member" data-party-member data-member-id="${escapeAttr(member.id || "")}">
+        <p class="party-member-label">Guest ${index + 1}</p>
         ${fields}
       </div>
     `;
@@ -422,14 +423,14 @@ function renderParty(form, guest, eventName) {
       const cap = document.createElement("p");
       cap.className = "guest-cap";
       cap.setAttribute("data-address-cap", "");
-      cap.textContent = "Mailing address";
+      cap.textContent = "Mailing Address";
       form.querySelector("[name='street']")?.closest("label")?.before(cap);
     }
   }
 
   partyList(form).innerHTML = members.length
     ? `
-    <p class="guest-cap">Your party</p>
+    <p class="guest-cap">Attendees</p>
     ${members.map((member, index) => memberTemplate(index, member, eventName, showRsvp)).join("")}
   `
     : "";
