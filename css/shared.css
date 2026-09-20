@@ -26,6 +26,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -300,6 +302,16 @@ p {
   text-align: left;
 }
 
+.address-form.is-party,
+.rsvp-card:has(.address-form.is-party) {
+  max-width: min(62rem, calc(100% - 0.5rem));
+}
+
+.address-form.is-rsvp,
+.rsvp-card:has(.address-form.is-rsvp) {
+  max-width: 36rem;
+}
+
 .address-form {
   display: grid;
   gap: 0.9rem;
@@ -320,10 +332,10 @@ p {
 .guest-row label {
   display: grid;
   gap: 0.35rem;
-  font-family: var(--display);
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .address-form input,
@@ -340,6 +352,166 @@ p {
 .band--wine .address-form select {
   background: rgba(251, 247, 239, 0.92);
   border-color: rgba(244, 239, 228, 0.16);
+}
+
+.rsvp-choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(92, 18, 24, 0.18);
+}
+
+.rsvp-choices legend {
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0 0.35rem;
+}
+
+.address-form .rsvp-choices label,
+.rsvp-choices label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.rsvp-choices input {
+  width: auto;
+  margin: 0;
+}
+
+.rsvp-choices--inline {
+  flex-wrap: nowrap;
+  border: none;
+  padding: 0 0 0.15rem;
+  min-height: 2.7rem;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.address-form.is-party .is-hidden-primary {
+  display: none !important;
+}
+
+.band--wine .rsvp-choices {
+  border-color: rgba(244, 239, 228, 0.22);
+}
+
+.party-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.party-member {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 0.7rem;
+  margin: 0;
+  padding: 0.95rem 0 1.05rem;
+  border-bottom: 1px solid rgba(92, 18, 24, 0.12);
+}
+
+.party-member:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.party-member-label {
+  grid-column: 1 / -1;
+  margin: 0 0 0.1rem;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.party-member--rsvp {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+}
+
+.party-member-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.party-edit-toggle {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0.4rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.party-edit-toggle:hover,
+.party-member.is-editing .party-edit-toggle {
+  opacity: 1;
+}
+
+.party-edit-toggle svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.party-edit {
+  display: none !important;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 0.7rem;
+  padding-top: 0.2rem;
+}
+
+.party-member.is-editing .party-edit {
+  display: grid !important;
+}
+
+.party-member .rsvp-choices--inline {
+  position: relative;
+  min-height: 0;
+  padding: 0;
+}
+
+.party-member--rsvp .rsvp-choices legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (min-width: 720px) {
+  .party-member:not(.party-member--rsvp) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .party-member.is-editing .party-edit {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.band--wine .party-member {
+  border-bottom-color: rgba(244, 239, 228, 0.16);
+}
+
+.band--wine .party-member:last-child {
+  border-bottom: 0;
 }
 
 .guest-list {
@@ -418,6 +590,26 @@ p {
   opacity: 0.8;
 }
 
+.admin-link {
+  display: block;
+  margin-top: 2.4rem;
+  font-family: var(--display);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.32;
+}
+
+.admin-link:hover {
+  opacity: 0.7;
+}
+
+.home-footer {
+  padding: 2rem 1.25rem;
+  text-align: center;
+  background: #110d0b;
+}
+
 .rsvp-page,
 .faq-page {
   min-height: 100vh;
@@ -469,12 +661,58 @@ p {
 }
 
 @media (max-width: 640px) {
+  .site-nav {
+    flex-wrap: wrap;
+    padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+  }
+
   .nav-links {
     gap: 0.7rem;
     font-size: 0.56rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
-  .guest-row {
+  .guest-row,
+  .party-member,
+  .party-member--rsvp,
+  .party-member.is-editing .party-edit {
     grid-template-columns: 1fr;
+  }
+
+  .rsvp-choices,
+  .rsvp-choices--inline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .address-form input,
+  .address-form select,
+  .address-form textarea {
+    font-size: 16px;
+  }
+
+  .rsvp-page,
+  .faq-page {
+    padding-left: max(0.85rem, env(safe-area-inset-left));
+    padding-right: max(0.85rem, env(safe-area-inset-right));
+  }
+
+  .rsvp-card,
+  .faq-list {
+    padding: 1.4rem 1rem;
+  }
+
+  .rsvp-card h2,
+  .faq-page h2 {
+    font-size: clamp(2.2rem, 12vw, 3rem);
+  }
+
+  .band {
+    padding: 3rem 1rem;
+  }
+
+  .hero-copy {
+    padding-inline: 1rem;
   }
 }

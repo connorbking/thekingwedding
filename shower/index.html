@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Save the Date · Bridal Shower</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Save the date for Alyssa’s bridal shower in New Jersey — Saturday, June 5, 2027.">
+  <meta property="og:image" content="/public/bg_jersey.png">
+  <script>
+    document.documentElement.classList.add("invite-pending");
+    (function () {
+      var q = new URLSearchParams(location.search).get("code");
+      if (q && q.trim()) return;
+      try {
+        var stored = JSON.parse(sessionStorage.getItem("king.invite") || "null");
+        if (stored && Array.isArray(stored.events) && stored.events.indexOf("shower") !== -1) return;
+      } catch (e) {}
+      location.replace("/");
+    })();
+  </script>
+  <style>html.invite-pending body { visibility: hidden; }</style>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css">
+  <link rel="stylesheet" href="/css/envelope.css">
+  <link rel="stylesheet" href="/css/themes.css">
+</head>
+<body data-theme="shower" data-event="shower" data-base="/shower" data-title-base="Bridal Shower · The King Wedding">
+  <a class="skip" href="#address">Skip to address form</a>
+
+  <section class="view is-active" data-view="save-the-date">
+    <header class="hero hero--shower">
+      <nav class="site-nav">
+        <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
+        <div class="nav-links">
+          <a href="/shower/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
+          <a href="/shower/rsvp" data-route data-nav="rsvp">RSVP</a>
+          <a href="/shower/faq" data-route data-nav="faq">FAQ</a>
+          <a href="/" data-not-you>Not you?</a>
+        </div>
+      </nav>
+      <div class="hero-copy">
+        <p class="eyebrow">06 · 05 · 2027</p>
+        <p class="eyebrow">New Jersey</p>
+      </div>
+      <div class="hero-stage">
+        <div>
+          <div class="scene">
+            <div class="envelope envelope--cream" data-envelope role="button" tabindex="0" aria-label="Open the invitation" aria-expanded="false">
+              <div class="env-back"></div>
+              <div class="env-card">
+                <article class="invite-card">
+                  <div>
+                    <p data-greeting="optional" hidden></p>
+                    <p class="script">Save the Date</p>
+                    <p class="invite-names">Connor &amp; Alyssa</p>
+                    <p class="invite-meta">5 June 2027</p>
+                  </div>
+                </article>
+              </div>
+              <div class="env-front"></div>
+              <div class="env-flap">
+                <div class="env-flap-face env-flap-face--back"></div>
+                <div class="env-flap-face env-flap-face--front">
+                  <div class="monogram">AC</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="envelope-hint" data-envelope-hint>Click to open</p>
+        </div>
+      </div>
+      <p class="hero-note">We can’t wait to celebrate with you. We hope to see you there.</p>
+    </header>
+
+    <section class="band band--wine band--jersey-form" id="address">
+      <p class="eyebrow">Bridal Shower</p>
+      <p class="eyebrow">06.05.2027</p>
+      <figure class="polaroid">
+        <img src="/public/jersey-polaroid.jpg" alt="Connor and Alyssa" onerror="this.src='/public/bg_jersey.png'">
+        <figcaption>C &amp; A</figcaption>
+      </figure>
+      <p class="til" style="margin-top:0">Formal invitations <em>to come</em></p>
+      <p data-greeting hidden></p>
+      <p class="center-copy">Your household mailing details live with your invitation. Update them once, then RSVP for the bridal shower here.</p>
+      <p class="form-actions" style="justify-items:center">
+        <a class="btn btn--olive" href="/?gate=1" data-home-link>Update household details</a>
+        <a class="btn btn--ghost" href="/shower/rsvp" data-route>RSVP</a>
+      </p>
+    </section>
+
+    <footer class="site-footer">
+      <p class="script" style="font-size:2.4rem">AC</p>
+      <p class="center-copy">We can’t wait to celebrate with you. More details to come.</p>
+      <p class="eyebrow">All of our love,</p>
+      <span class="script">Connor &amp; Alyssa</span>
+      <a class="back-link" href="/?gate=1" data-home-link>&lt; Back to invitation</a>
+      <a class="admin-link" href="/admin/">Host login</a>
+    </footer>
+  </section>
+
+  <section class="view rsvp-page" data-view="rsvp">
+    <nav class="site-nav">
+      <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
+      <div class="nav-links">
+        <a href="/shower/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
+        <a href="/shower/rsvp" data-route data-nav="rsvp">RSVP</a>
+        <a href="/shower/faq" data-route data-nav="faq">FAQ</a>
+        <a href="/" data-not-you>Not you?</a>
+      </div>
+    </nav>
+    <div class="rsvp-card">
+      <p class="eyebrow">Bridal Shower · 06.05.2027</p>
+      <h2>RSVP</h2>
+      <p data-generic-rsvp>Household mailing details are updated from your invitation. This page is only for bridal shower replies.</p>
+      <p data-generic-rsvp-cta><a class="btn btn--olive" href="/?gate=1" data-home-link>Update household details</a></p>
+      <p data-rsvp-intro hidden>Please reply for everyone in your party.</p>
+      <div data-rsvp-form-host></div>
+    </div>
+  </section>
+
+  <section class="view faq-page" data-view="faq">
+    <nav class="site-nav">
+      <a class="wordmark" href="/?gate=1" data-home-link>The King Wedding</a>
+      <div class="nav-links">
+        <a href="/shower/save-the-date" data-route data-nav="save-the-date">Save the Date</a>
+        <a href="/shower/rsvp" data-route data-nav="rsvp">RSVP</a>
+        <a href="/shower/faq" data-route data-nav="faq">FAQ</a>
+        <a href="/" data-not-you>Not you?</a>
+      </div>
+    </nav>
+    <div class="faq-list">
+      <h2>A few details</h2>
+      <details open>
+        <summary>When and where?</summary>
+        <p>Saturday, June 5, 2027 in New Jersey. The exact address will be on your invitation.</p>
+      </details>
+      <details data-dual-only>
+        <summary>Is this the only celebration?</summary>
+        <p>No. We are also gathering on Lake Como on September 11, 2027, and in Whippany on October 2, 2027. Open the other invitations from the gate.</p>
+      </details>
+      <details>
+        <summary>Dress</summary>
+        <p>Daytime garden party. Soft florals, pastels, and shoes that can manage a lawn.</p>
+      </details>
+      <details>
+        <summary>Children</summary>
+        <p>Please follow the names on your Save the Date. If you are unsure whether little ones are included, write us and we will tell you plainly.</p>
+      </details>
+      <details>
+        <summary>Gifts</summary>
+        <p>Having you there is the gift. We will share anything further with the invitation.</p>
+      </details>
+    </div>
+  </section>
+
+  <script type="module" src="/js/event-page.js?v=party2"></script>
+</body>
+</html>

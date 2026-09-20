@@ -1,7 +1,7 @@
 import { initRouter } from "./router.js";
 import { initEnvelope } from "./envelope.js";
 import { initCountdown } from "./countdown.js";
-import { initAddressForm } from "./form.js";
+import { initAddressForm } from "./form.js?v=party2";
 import {
   resolveGuest,
   guestCanAccess,
@@ -12,7 +12,7 @@ import {
 } from "./guests.js";
 
 const eventKey = document.body.dataset.event;
-const guest = resolveGuest();
+const guest = await resolveGuest(eventKey);
 
 if (!guestCanAccess(guest, eventKey)) {
   window.location.replace("/");
@@ -23,7 +23,17 @@ if (!guestCanAccess(guest, eventKey)) {
     el.href = gateHref(guest.code);
   });
 
-  document.querySelectorAll("a[href^='/como'], a[href^='/jersey']").forEach((el) => {
+  document.querySelectorAll(".nav-links").forEach((links) => {
+    if (links.querySelector("[data-invitations]")) return;
+    const item = document.createElement("a");
+    item.href = gateHref(guest.code);
+    item.dataset.invitations = "";
+    item.dataset.homeLink = "";
+    item.textContent = "Invitations";
+    links.prepend(item);
+  });
+
+  document.querySelectorAll("a[href^='/como'], a[href^='/jersey'], a[href^='/shower']").forEach((el) => {
     el.href = withCode(el.getAttribute("href"), guest.code);
   });
 

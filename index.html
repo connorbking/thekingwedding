@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Alyssa & Connor · The King Wedding</title>
   <meta name="description" content="Alyssa and Connor are getting married in 2027. Enter your name to continue.">
   <meta property="og:title" content="Alyssa & Connor · The King Wedding">
@@ -11,15 +11,32 @@
   <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/home.css?v=type34">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script>
+    (function () {
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get("code") || q.get("gate") || sessionStorage.getItem("king.invite")) {
+          document.documentElement.classList.add("invite-returning");
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body class="landing-body">
   <div class="landing-photo" aria-hidden="true">
     <div class="landing-scene">
       <div class="landing-overlay"></div>
-      <div class="water-flow"></div>
       <span class="candle-flame" style="left: 89.77%; top: 5.3%"></span>
       <span class="candle-flame" style="left: 92.72%; top: 7.2%"></span>
       <span class="candle-flame" style="left: 94.88%; top: 15.95%"></span>
@@ -27,18 +44,26 @@
     </div>
   </div>
 
+  <canvas class="key3d-canvas" data-key3d hidden></canvas>
   <main class="invitation-gate" data-gate-stage>
     <div class="monogram" aria-hidden="true">
       <span>A</span>
-      <span class="monogram-rule">⚜</span>
+      <span class="monogram-rule" data-key-slot>
+        <img class="monogram-key-png" src="/public/key.png" alt="" hidden>
+      </span>
       <span>C</span>
     </div>
 
+    <p class="household-kicker" data-household-greeting hidden></p>
     <h1 class="names">
-      <span>Alyssa</span>
-      <span class="and">and</span>
-      <span>Connor</span>
+      <span class="names-sealed">
+        <span>Alyssa</span>
+        <span class="and">&amp;</span>
+        <span>Connor</span>
+      </span>
+      <span class="names-invited">You're Invited</span>
     </h1>
+    <div class="invite-mark" aria-hidden="true"></div>
 
     <p class="date">Wedding Festivities</p>
 
@@ -51,9 +76,14 @@
       </div>
 
       <form class="name-form" id="invite" data-code-form>
-        <label class="visually-hidden" for="code">enter your code please</label>
         <div class="name-input-wrap">
-          <input class="name-input" id="code" name="code" required autocomplete="name" spellcheck="false" placeholder="enter your code please">
+          <div class="name-fields">
+            <label class="visually-hidden" for="firstName">First name</label>
+            <input class="name-input" id="firstName" name="firstName" required autocomplete="given-name" spellcheck="false" placeholder="first name">
+            <label class="visually-hidden" for="lastName">Last name</label>
+            <input class="name-input" id="lastName" name="lastName" required autocomplete="family-name" spellcheck="false" placeholder="last name">
+          </div>
+          <button class="find-invite" type="submit">Find my Invite</button>
           <p class="form-error" data-code-error></p>
         </div>
       </form>
@@ -67,14 +97,24 @@
       <a class="enter-link" data-continue-link href="#">Continue</a>
     </div>
 
+    <section class="household-desk" data-household hidden>
+      <p class="household-count" data-household-count></p>
+      <div class="event-doors" data-event-doors></div>
+      <div class="household-mail">
+        <p>Formal invitations via mail to follow.</p>
+        <button class="find-invite" type="button" data-open-details>Confirm your contact details</button>
+      </div>
+      <button class="household-reset" type="button" data-not-you>Not you?</button>
+    </section>
+
     <div class="fleur-rule" aria-hidden="true">
       <span></span>
       <b>⚜</b>
       <span></span>
     </div>
 
-    <p class="secret-caps">Some stories are meant</p>
-    <p class="secret-italic">for the right people</p>
+    <p class="secret-caps">Our favorite people,</p>
+    <p class="secret-italic">our happiest chapter.</p>
 
     <div class="fleur-rule fleur-rule--faint" aria-hidden="true">
       <span></span>
@@ -83,20 +123,68 @@
     </div>
   </main>
 
-  <svg class="water-filter" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
-    <filter id="lake-ripple" x="0%" y="0%" width="100%" height="100%">
-      <feImage href="/public/engagement/water-overlay.png" xlink:href="/public/engagement/water-overlay.png" preserveAspectRatio="none" result="lakemask"/>
-      <feMorphology in="lakemask" operator="erode" radius="16" result="inset"/>
-      <feGaussianBlur in="inset" stdDeviation="6" result="softedge"/>
-      <feComposite in="SourceGraphic" in2="inset" operator="in" result="wateronly"/>
-      <feTurbulence type="fractalNoise" baseFrequency="0.009 0.024" numOctaves="2" seed="2" stitchTiles="stitch" result="noise"/>
-      <feOffset in="noise" result="shifted">
-        <animate attributeName="dx" dur="28s" from="0" to="512" repeatCount="indefinite"/>
-      </feOffset>
-      <feDisplacementMap in="wateronly" in2="shifted" scale="11" xChannelSelector="R" yChannelSelector="G" result="rippled"/>
-      <feComposite in="rippled" in2="softedge" operator="in"/>
-    </filter>
-  </svg>
-  <script type="module" src="/js/home.js"></script>
+  <div class="details-modal" data-details-modal hidden>
+    <button class="details-modal-backdrop" type="button" data-close-details aria-label="Close details"></button>
+    <div class="details-modal-panel" role="dialog" aria-modal="true" aria-labelledby="details-title">
+      <div class="details-envelope" aria-hidden="true">
+        <img class="details-envelope-art" src="/public/contact-details.png" alt="">
+      </div>
+      <article class="details-letter">
+        <div class="details-letter-paper" aria-hidden="true"></div>
+        <span class="details-letter-rule" aria-hidden="true"></span>
+        <img class="details-letter-seal" src="/public/envelopes/olive-seal.png" alt="" aria-hidden="true">
+        <span class="details-flourish details-flourish--tl" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--tr" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--bl" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--br" aria-hidden="true"></span>
+        <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
+        <div class="details-sheet">
+      <div data-details-form-wrap>
+        <h2 id="details-title">A note for the post</h2>
+        <p class="details-lede">Where should we send your formal invitation?</p>
+        <span class="details-diamond" aria-hidden="true"></span>
+        <form class="household-form address-form" data-household-form>
+          <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
+          <label class="visually-hidden">First name <input name="firstName"></label>
+          <label class="visually-hidden">Last name <input name="lastName"></label>
+          <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
+          <label class="visually-hidden">Email <input name="email" type="email"></label>
+          <div class="household-split">
+            <div class="party-list" data-party-list></div>
+            <div class="household-address">
+              <p class="household-label">Mailing address</p>
+              <p class="address-note">Please confirm where you’d like your invitation sent.</p>
+              <label class="address-lookup">
+                Street address
+                <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions">
+              </label>
+              <ul class="address-suggestions" id="address-suggestions" data-address-suggestions hidden></ul>
+              <label>Apartment / unit (optional) <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
+              <input type="hidden" name="street">
+              <input type="hidden" name="city">
+              <input type="hidden" name="region">
+              <input type="hidden" name="postal">
+              <input type="hidden" name="country" value="United States">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="find-invite" type="submit">Confirm mailing details</button>
+          </div>
+          <p class="form-error" data-form-error></p>
+        </form>
+        <button class="details-not-you" type="button" data-not-you>Not you?</button>
+      </div>
+      <div class="details-success" data-details-success hidden>
+        <p>Success, your details have been updated.</p>
+      </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <footer class="home-footer">
+    <a class="admin-link" href="/admin/">Host login</a>
+  </footer>
+  <script type="module" src="/js/home.js?v=env40"></script>
 </body>
 </html>

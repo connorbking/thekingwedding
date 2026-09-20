@@ -1,0 +1,12 @@
+node_modules
+.git
+.wrangler
+functions
+migrations
+gas
+dev-server.mjs
+wrangler.jsonc
+package.json
+package-lock.json
+.dev.vars
+README.md

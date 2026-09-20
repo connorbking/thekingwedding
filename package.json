@@ -1,0 +1,11 @@
+{
+  "name": "thekingwedding",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy . --project-name=thekingwedding"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.1"
+  }
+}

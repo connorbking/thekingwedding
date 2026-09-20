@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Host desk · The King Wedding</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css?v=20260907j">
+  <link rel="stylesheet" href="/css/admin.css?v=20260907v">
+</head>
+<body class="admin">
+  <div class="admin-shell">
+    <header class="admin-top">
+      <a class="wordmark" href="/">The King Wedding</a>
+      <div class="admin-session">
+        <button class="btn btn--ghost" type="button" data-header-login>Log in</button>
+        <div class="admin-who" data-who hidden>
+          <span data-admin-email></span>
+          <button class="btn btn--ghost" type="button" data-logout>Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="admin-card admin-login" data-login>
+      <p class="eyebrow">Private</p>
+      <h1>Host desk</h1>
+      <p>Sign in with a host Google account to see invitees and RSVPs.</p>
+      <div class="form-actions">
+        <button class="btn btn--google" type="button" data-google-login>Continue with Google</button>
+      </div>
+      <p class="admin-error" data-login-error></p>
+    </section>
+
+    <section class="admin-desk" data-desk hidden>
+      <header class="desk-head">
+        <div>
+          <h1>Guest List</h1>
+          <p class="admin-lede">Click a number to open that list.</p>
+        </div>
+        <div class="desk-actions">
+          <button class="btn btn--olive" type="button" data-export>Export CSV</button>
+          <a class="btn" href="https://docs.google.com/spreadsheets/d/1VyFole7kJOnJjGnI07sDxjmlgYa2HUtrk9mxH46o7gE/edit?gid=338671760#gid=338671760" target="_blank" rel="noopener">Open Google Sheet</a>
+        </div>
+      </header>
+
+      <p class="admin-error desk-error" data-desk-error hidden></p>
+
+      <div class="event-modules">
+        <article class="event-card event-card--shower" data-event-card="shower">
+          <p class="eyebrow">June 5, 2027</p>
+          <h2>Bridal Shower</h2>
+          <button type="button" class="event-total" data-filter-list="shower" data-filter-rsvp="">
+            <strong data-stat-invite="shower">0</strong>
+            <span>Invitees</span>
+          </button>
+          <div class="event-rsvps">
+            <button type="button" data-filter-list="shower" data-filter-rsvp="Yes"><strong data-stat-rsvp="shower-Yes">0</strong><span>Yes</span></button>
+            <button type="button" data-filter-list="shower" data-filter-rsvp="No"><strong data-stat-rsvp="shower-No">0</strong><span>No</span></button>
+          </div>
+        </article>
+        <article class="event-card event-card--como" data-event-card="como">
+          <p class="eyebrow">September 11, 2027</p>
+          <h2>Como</h2>
+          <button type="button" class="event-total" data-filter-list="como" data-filter-rsvp="">
+            <strong data-stat-invite="como">0</strong>
+            <span>Invitees</span>
+          </button>
+          <div class="event-rsvps">
+            <button type="button" data-filter-list="como" data-filter-rsvp="Yes"><strong data-stat-rsvp="como-Yes">0</strong><span>Yes</span></button>
+            <button type="button" data-filter-list="como" data-filter-rsvp="No"><strong data-stat-rsvp="como-No">0</strong><span>No</span></button>
+          </div>
+        </article>
+        <article class="event-card" data-event-card="jersey">
+          <p class="eyebrow">October 2, 2027</p>
+          <h2>Whippany</h2>
+          <button type="button" class="event-total" data-filter-list="jersey" data-filter-rsvp="">
+            <strong data-stat-invite="jersey">0</strong>
+            <span>Invitees</span>
+          </button>
+          <div class="event-rsvps">
+            <button type="button" data-filter-list="jersey" data-filter-rsvp="Yes"><strong data-stat-rsvp="jersey-Yes">0</strong><span>Yes</span></button>
+            <button type="button" data-filter-list="jersey" data-filter-rsvp="No"><strong data-stat-rsvp="jersey-No">0</strong><span>No</span></button>
+          </div>
+        </article>
+      </div>
+
+      <section class="guest-panel">
+        <div class="admin-toolbar">
+          <p class="list-caption" data-list-caption>All guests</p>
+          <input type="search" data-filter-query placeholder="Search name or group code">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Address</th>
+                <th>Invite</th>
+                <th>RSVP</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody data-submissions></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </div>
+  <script type="module" src="/js/admin.js?v=20260907v"></script>
+</body>
+</html>
