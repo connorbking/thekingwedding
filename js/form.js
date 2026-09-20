@@ -33,6 +33,22 @@ function memberName(member) {
   return `${member.first_name || member.firstName || ""} ${member.last_name || member.lastName || ""}`.trim();
 }
 
+function memberContact(member) {
+  return [member.phone || "", member.email || ""].map((value) => String(value).trim()).filter(Boolean).join("  ·  ");
+}
+
+function memberContactLine(phone, email) {
+  const parts = [];
+  if (phone) parts.push(`<span class="party-member-phone" data-member-phone>${escapeAttr(phone)}</span>`);
+  if (email) parts.push(`<span class="party-member-email" data-member-email>${escapeAttr(email)}</span>`);
+  else parts.push(`<button type="button" class="party-add-email" data-edit-member>Add email →</button>`);
+  return parts.join("");
+}
+
+function guestCountLabel(count) {
+  return count === 1 ? "1 guest" : `${count} guests`;
+}
+
 function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
@@ -45,9 +61,17 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
 
   if (!showRsvp) {
     return `
-      <div class="party-member" data-party-member data-member-id="${escapeAttr(member.id || "")}">
-        <p class="party-member-label">Guest ${index + 1}</p>
-        ${fields}
+      <div class="party-member party-member--note" data-party-member data-member-id="${escapeAttr(member.id || "")}">
+        <span class="party-member-index">${String(index + 1).padStart(2, "0")}</span>
+        <div class="party-member-summary">
+          <p class="party-member-name" data-member-name>${escapeAttr(memberName(member) || "Guest")}</p>
+          <p class="party-member-contact" data-member-contact>${memberContactLine(String(member.phone || "").trim(), String(member.email || "").trim())}</p>
+        </div>
+        <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
+          Edit
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="party-edit" data-member-edit hidden>${fields}</div>
       </div>
     `;
   }
@@ -239,16 +263,26 @@ function bindAddressLookup(form) {
   });
 }
 
-async function resolveTypedAddress(form) {
-  if (
+function hasCompleteAddress(form) {
+  return Boolean(
     form.street?.value.trim() &&
     form.city?.value.trim() &&
     form.region?.value.trim() &&
     form.postal?.value.trim() &&
     form.country?.value.trim()
-  ) {
-    return true;
-  }
+  );
+}
+
+function validateHouseholdDetails(form) {
+  if (form.addressSearch?.value.trim() || hasCompleteAddress(form)) return true;
+  form.addressSearch?.focus();
+  const errorNode = form.querySelector("[data-form-error]");
+  if (errorNode) errorNode.textContent = "Please enter your mailing address.";
+  return false;
+}
+
+async function resolveTypedAddress(form) {
+  if (hasCompleteAddress(form)) return true;
   const query = form.addressSearch?.value.trim() || "";
   if (query.length < 4) return false;
   const { suggestions, hint } = await lookupAddresses(query);
@@ -430,7 +464,10 @@ function renderParty(form, guest, eventName) {
 
   partyList(form).innerHTML = members.length
     ? `
-    <p class="guest-cap">Attendees</p>
+    <div class="party-head">
+      <p class="guest-cap">Your party</p>
+      <p class="party-count">${guestCountLabel(members.length)}</p>
+    </div>
     ${members.map((member, index) => memberTemplate(index, member, eventName, showRsvp)).join("")}
   `
     : "";
@@ -513,7 +550,9 @@ function bindForm(form, eventName, guest) {
     renderParty(form, guest, eventName);
     const submit = form.querySelector("[type='submit']");
     if (submit && form.dataset.formKind === "rsvp") submit.textContent = "Send RSVP";
-    else if (submit && !form.classList.contains("find-invite") && submit.classList.contains("btn")) {
+    else if (submit && form.dataset.household === "true") {
+      submit.textContent = "Confirm mailing details";
+    } else if (submit && !form.classList.contains("find-invite") && submit.classList.contains("btn")) {
       submit.textContent = "Save our details";
     }
   } else if (form.dataset.formKind === "rsvp") {
@@ -546,14 +585,17 @@ function bindForm(form, eventName, guest) {
       if (panel) panel.hidden = !open;
       editBtn.setAttribute("aria-expanded", open ? "true" : "false");
       editBtn.setAttribute("aria-label", open ? "Done editing guest" : "Edit guest");
-      if (open) card.querySelector("input[name^='memberFirst']")?.focus();
+      if (open) {
+        const focusName = editBtn.classList.contains("party-add-email") ? "memberEmail" : "memberFirst";
+        card.querySelector(`input[name^='${focusName}']`)?.focus();
+      }
     }
   });
 
   form.addEventListener("input", (inputEvent) => {
     const button = form.querySelector("[type='submit']");
     if (form.dataset.household === "true" && button?.classList.contains("is-saved")) {
-      button.textContent = "Save our details";
+      button.textContent = "Confirm mailing details";
       button.classList.remove("is-saved");
     }
     const card = inputEvent.target.closest("[data-party-member]");
@@ -561,7 +603,11 @@ function bindForm(form, eventName, guest) {
     if (!name) return;
     const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
     const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
+    const phone = card.querySelector("input[name^='memberPhone']")?.value.trim() || "";
+    const email = card.querySelector("input[name^='memberEmail']")?.value.trim() || "";
     name.textContent = `${first} ${last}`.trim() || "Guest";
+    const contact = card.querySelector("[data-member-contact]");
+    if (contact) contact.innerHTML = memberContactLine(phone, email);
   });
 
   form.addEventListener("submit", async (submitEvent) => {
@@ -577,9 +623,18 @@ function bindForm(form, eventName, guest) {
       return;
     }
 
-    if (form.dataset.household === "true" && !(await resolveTypedAddress(form))) {
-      form.querySelector("[data-form-error]").textContent = "Please choose your mailing address from the list.";
-      return;
+    if (form.dataset.household === "true") {
+      if (!validateHouseholdDetails(form)) return;
+      if (!(await resolveTypedAddress(form))) {
+        const errorNode = form.querySelector("[data-form-error]");
+        if (errorNode && !errorNode.textContent) {
+          errorNode.textContent = form.addressSearch?.value.trim()
+            ? "Please choose your mailing address from the list."
+            : "Please enter your mailing address.";
+        }
+        form.addressSearch?.focus();
+        return;
+      }
     }
     const payload = partyMode ? serializeParty(form, eventName, guest) : serialize(form, eventName, guest);
     if (form.dataset.household === "true") payload.kind = "address";

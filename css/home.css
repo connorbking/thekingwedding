@@ -238,6 +238,11 @@ html.invite-returning .invitation-gate {
   color: #e4c79d;
 }
 
+.landing-body.is-open .household-count,
+html.invite-returning .household-count {
+  display: none;
+}
+
 .event-doors {
   display: flex;
   flex-wrap: wrap;
@@ -301,6 +306,15 @@ html.invite-returning .invitation-gate {
   line-height: 0;
 }
 
+.envelope--como,
+.envelope--jersey,
+.envelope--shower {
+  --closed-body-h: calc(var(--env-width) * 719 / 1373);
+  --closed-flap-h: calc(var(--env-width) * 486 / 1338);
+  --env-height: var(--closed-body-h);
+  height: var(--closed-body-h);
+}
+
 .envelope--como {
   --seal-top: 52%;
   --seal-size: 24%;
@@ -314,12 +328,14 @@ html.invite-returning .invitation-gate {
 }
 
 .envelope--shower {
-  --seal-top: 50%;
+  --seal-top: 52%;
+  --seal-size: 24%;
   --env-zoom: 1.16;
 }
 
 .envelope-link:has(.envelope--como),
-.envelope-link:has(.envelope--jersey) {
+.envelope-link:has(.envelope--jersey),
+.envelope-link:has(.envelope--shower) {
   width: var(--env-width, 320px);
 }
 
@@ -414,6 +430,12 @@ html.invite-returning .invitation-gate {
   height: var(--env-height);
 }
 
+.envelope-link.is-selected .envelope--como,
+.envelope-link.is-selected .envelope--jersey,
+.envelope-link.is-selected .envelope--shower {
+  height: var(--closed-body-h);
+}
+
 .envelope-link.is-selected:hover .envelope,
 .envelope-link.is-opening .envelope {
   overflow: visible;
@@ -426,6 +448,12 @@ html.invite-returning .invitation-gate {
   display: block;
   overflow: visible;
   pointer-events: none;
+  transform-origin: 50% 50%;
+  transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.envelope-link.is-selected .envelope-crop {
+  transform: scale(1.85);
 }
 
 .landing-body.is-open:has(.envelope-link.is-selected) .invitation-gate,
@@ -459,6 +487,20 @@ html.invite-returning .invitation-gate {
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 16px 14px rgba(0, 0, 0, 0.3));
+}
+
+.envelope--como .envelope-body,
+.envelope--jersey .envelope-body,
+.envelope--shower .envelope-body {
+  height: var(--closed-body-h);
+  object-fit: fill;
+}
+
+.envelope--como .envelope-closed-flap,
+.envelope--jersey .envelope-closed-flap,
+.envelope--shower .envelope-closed-flap {
+  height: var(--closed-flap-h);
+  object-fit: fill;
 }
 
 .envelope-closed-flap,
@@ -517,14 +559,6 @@ html.invite-returning .invitation-gate {
   opacity: 0;
 }
 
-.envelope-link.is-opening .envelope-closed-flap {
-  animation: envelope-flap-lift 0.42s ease forwards;
-}
-
-.envelope-link.is-opening .envelope-open-flap {
-  animation: envelope-flap-reveal 0.48s ease 0.42s forwards;
-}
-
 .envelope-link.is-opening .envelope-seal:not(.envelope-seal--broken) {
   opacity: 0;
 }
@@ -538,86 +572,154 @@ html.invite-returning .invitation-gate {
   opacity: 0;
 }
 
-.envelope-link.is-opening .envelope-sleeve {
-  overflow: visible;
-  animation: envelope-sleeve-draw 1.45s ease 0.7s forwards;
+.envelope-open-scene {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 6;
+  width: max-content;
+  max-width: min(860px, 94vw);
+  transform: translateX(-50%) scale(0.4);
+  transform-origin: 50% 100%;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.envelope-link.is-opening .envelope-letter {
-  animation: envelope-letter-draw 1.45s ease 0.7s forwards;
+.envelope-opened {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(860px, 94vw);
+  max-height: min(90dvh, 980px);
+  object-fit: contain;
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.32));
+}
+
+.envelope-link.is-opening .envelope-crop,
+.envelope-link.is-opening .envelope-open-flap,
+.envelope-link.is-opening .envelope-sleeve {
+  animation: envelope-closed-fade 0.4s ease forwards;
+}
+
+.envelope-link.is-opening .envelope-open-scene {
+  animation: envelope-open-bloom 0.82s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: auto;
 }
 
-@keyframes envelope-flap-lift {
-  0% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
+.envelope-link.is-opening .invite-sheet {
+  animation: invite-sheet-in 0.4s ease 0.4s forwards;
+}
 
-  100% {
-    transform: scaleY(0);
-    opacity: 1;
+@keyframes envelope-closed-fade {
+  to {
+    opacity: 0;
   }
 }
 
-@keyframes envelope-flap-reveal {
-  0% {
-    transform: scaleY(0);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-
-@keyframes envelope-sleeve-draw {
-  0%,
-  58% {
-    z-index: 5;
-    clip-path: inset(-280% -18% 44% -18%);
-  }
-
-  72%,
-  100% {
-    z-index: 6;
-    clip-path: inset(-340% -70% -80% -70%);
-  }
-}
-
-@keyframes envelope-letter-draw {
+@keyframes envelope-open-bloom {
   0% {
     opacity: 0;
-    transform: translateY(110%);
+    transform: translateX(-50%) scale(0.72);
   }
 
-  14% {
+  28% {
     opacity: 1;
-  }
-
-  58% {
-    transform: translateY(var(--letter-clear-y)) scale(1);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(var(--letter-out-y)) scale(var(--letter-out-scale));
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes invite-sheet-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }
 
 .invite-sheet {
   position: absolute;
-  inset: 18% 24% 16%;
+  inset: 0;
+  container-type: inline-size;
+  color: rgba(63, 11, 16, 0.68);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.invite-sheet-head,
+.invite-sheet-body {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35em;
   box-sizing: border-box;
-  padding: 0.4em 0.5em;
+  padding: 0 0.35em;
   text-align: center;
-  color: rgba(63, 11, 16, 0.68);
+}
+
+.invite-sheet-head {
+  top: 21.4%;
+  right: 17%;
+  left: 28%;
+  height: 7.4%;
+}
+
+.invite-sheet-body {
+  top: 45.8%;
+  right: 17%;
+  bottom: 15%;
+  left: 28%;
+  justify-content: flex-start;
+  gap: 0.42em;
+  padding-top: 0.35em;
+}
+
+.envelope--como .invite-sheet-head {
+  top: 21.3%;
+  right: 17%;
+  left: 28%;
+  height: 7.6%;
+}
+
+.envelope--como .invite-sheet-body {
+  top: 45.6%;
+  right: 17%;
+  bottom: 15%;
+  left: 28%;
+}
+
+.envelope--jersey .invite-sheet-head {
+  top: 22.4%;
+  right: 18%;
+  left: 30%;
+  height: 8%;
+}
+
+.envelope--jersey .invite-sheet-body {
+  top: 45.3%;
+  right: 18%;
+  bottom: 16%;
+  left: 30%;
+}
+
+.envelope--shower .invite-sheet-head {
+  top: 26.5%;
+  right: 12%;
+  left: 35%;
+  height: 7.4%;
+}
+
+.envelope--shower .invite-sheet-body {
+  top: 49.4%;
+  right: 12%;
+  bottom: 16%;
+  left: 35%;
 }
 
 .invite-sheet-script,
@@ -630,7 +732,8 @@ html.invite-returning .invitation-gate {
 
 .invite-sheet-script {
   font-family: "Great Vibes", "Snell Roundhand", cursive;
-  font-size: 28px;
+  font-size: 36px;
+  font-size: clamp(14px, 5.5cqi, 36px);
   font-style: normal;
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -641,52 +744,68 @@ html.invite-returning .invitation-gate {
 
 .invite-sheet-names {
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 9px;
+  font-size: 16px;
+  font-size: clamp(9px, 2.65cqi, 16px);
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .invite-sheet-rule {
-  width: 38%;
+  width: 42%;
   height: 1px;
-  margin: 0.1em 0 0.15em;
+  margin: 0.15em 0 0.2em;
   background: linear-gradient(90deg, transparent, rgba(196, 164, 106, 0.55), transparent);
 }
 
 .invite-sheet-meta {
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 8px;
+  font-size: 14px;
+  font-size: clamp(8px, 2.3cqi, 14px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.invite-sheet-soon {
-  display: block;
-  margin-top: 0.7em;
-  font-family: "Bodoni Moda", serif;
-  font-size: 7.5px;
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  text-transform: none;
-  color: rgba(63, 11, 16, 0.58);
+@media (min-width: 900px) {
+  .envelope--como .invite-sheet-body,
+  .envelope--jersey .invite-sheet-body {
+    gap: 0.55em;
+  }
+
+  .envelope--como .invite-sheet-names,
+  .envelope--jersey .invite-sheet-names {
+    font-size: clamp(11px, 3.2cqi, 21px);
+  }
+
+  .envelope--como .invite-sheet-meta,
+  .envelope--jersey .invite-sheet-meta {
+    font-size: clamp(9px, 2.8cqi, 17px);
+  }
 }
 
 .invite-sheet-close {
-  position: relative;
-  z-index: 8;
-  display: block;
-  margin-top: 1.1em;
-  padding: 0.35em 0.5em;
-  font-family: "Bodoni Moda", serif;
-  font-size: 7px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(92, 18, 24, 0.7);
+  position: absolute;
+  top: 2.4%;
+  left: 2.2%;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  width: clamp(32px, 7cqi, 42px);
+  height: clamp(32px, 7cqi, 42px);
+  color: #e4c79d;
   cursor: pointer;
   pointer-events: auto;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.invite-sheet-close svg {
+  width: 54%;
+  height: 54%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .envelope-link.is-selected .envelope-caption {
@@ -702,42 +821,41 @@ html.invite-returning .invitation-gate {
   .envelope-closed-flap,
   .envelope-open-flap,
   .envelope-seal,
+  .envelope-crop,
   .envelope-link {
     transition: none;
   }
 
   .envelope-link.is-opening .envelope-sleeve,
-  .envelope-link.is-opening .envelope-letter,
-  .envelope-link.is-opening .envelope-closed-flap,
+  .envelope-link.is-opening .envelope-crop,
   .envelope-link.is-opening .envelope-open-flap,
+  .envelope-link.is-opening .envelope-open-scene,
+  .envelope-link.is-opening .invite-sheet,
   .envelope-link:not(.is-opening):not(.is-selected):not(.is-opened) .envelope.is-wiggling,
   .household-mail .find-invite.is-wiggling {
     animation: none;
   }
 
-  .envelope-link.is-opening .envelope-open-flap {
-    opacity: 1;
-    transform: scaleY(1);
+  .envelope-link.is-selected .envelope-crop {
+    transform: none;
   }
 
-  .envelope-link.is-opening .envelope-closed-flap {
-    opacity: 0;
-    transform: scaleY(0);
-  }
-
+  .envelope-link.is-opening .envelope-crop,
+  .envelope-link.is-opening .envelope-open-flap,
   .envelope-link.is-opening .envelope-sleeve {
-    z-index: 6;
-    clip-path: none;
+    opacity: 0;
   }
 
-  .envelope-link.is-opening .envelope-letter {
+  .envelope-link.is-opening .envelope-open-scene,
+  .envelope-link.is-opening .invite-sheet {
     opacity: 1;
-    transform: translateY(var(--letter-out-y)) scale(var(--letter-out-scale));
+    transform: translateX(-50%) scale(1);
   }
 }
 
 .envelope-caption {
   display: grid;
+  justify-items: center;
   gap: 4px;
 }
 
@@ -854,6 +972,10 @@ html.invite-returning .invitation-gate {
     );
   }
 
+  .envelope-link.is-selected .envelope-crop {
+    transform: scale(1.55);
+  }
+
   .envelope-link.is-away {
     position: absolute;
     width: 0;
@@ -862,8 +984,32 @@ html.invite-returning .invitation-gate {
     margin: 0;
   }
 
-  .invite-sheet-script {
-    font-size: 22px;
+  .envelope-open-scene,
+  .envelope-opened {
+    max-width: min(860px, 96vw);
+  }
+
+  .envelope-opened {
+    max-height: min(86dvh, 980px);
+  }
+
+  .invite-sheet-body {
+    gap: 0.28em;
+  }
+
+  .invite-sheet-names {
+    letter-spacing: 0.1em;
+  }
+
+  .invite-sheet-meta {
+    letter-spacing: 0.07em;
+  }
+
+  .invite-sheet-close {
+    top: 1.6%;
+    left: 1.4%;
+    width: 40px;
+    height: 40px;
   }
 
   .picker-bar {
@@ -883,27 +1029,51 @@ html.invite-returning .invitation-gate {
     width: min(calc(100% - 24px), 420px);
   }
 
-  .details-modal {
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-    align-items: stretch;
+  .details-modal-panel {
+    width: min(720px, calc(100vw - 20px));
+    max-width: none;
+    max-height: none;
+    margin: max(16px, env(safe-area-inset-top)) auto max(28px, env(safe-area-inset-bottom));
+    padding: 0;
+    border-radius: 0;
   }
 
-  .details-modal-panel {
-    width: 100%;
-    max-height: 100dvh;
-    border-radius: 8px;
-    padding: 52px 14px 20px;
+  .details-envelope {
+    width: 112%;
+    margin: 0 -6% -52px;
+  }
+
+  .details-letter {
+    padding: 42px 22px 44px;
+  }
+
+  .details-letter-rule {
+    inset: 12px;
+  }
+
+  .details-letter-seal {
+    top: -16px;
+    width: 56px;
+  }
+
+  .details-flourish {
+    width: 38px;
+    height: 38px;
   }
 
   .details-modal-panel h2 {
-    font-size: 22px;
-    letter-spacing: 2px;
-    margin-bottom: 16px;
+    font-size: clamp(16px, 5vw, 20px);
+    letter-spacing: 0.18em;
+    margin: 6px 0 10px;
+  }
+
+  .details-diamond {
+    margin-bottom: 24px;
   }
 
   .details-modal-close {
-    top: 4px;
-    right: 4px;
+    top: 6px;
+    right: 6px;
     width: 44px;
     height: 44px;
   }
@@ -912,31 +1082,49 @@ html.invite-returning .invitation-gate {
   .household-form select,
   .household-form textarea {
     font-size: 16px;
-    padding: 0.75rem 0.8rem;
+    padding: 0.5rem 0.1rem 0.4rem;
   }
 
   .household-form input::placeholder {
     font-size: 16px;
   }
 
-  .household-form .party-member,
+  .household-form .party-member:not(.party-member--note),
   .household-form .party-member.is-editing .party-edit {
     grid-template-columns: 1fr;
   }
 
-  .household-split {
-    gap: 18px;
+  .household-form .party-member--note.is-editing .party-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .household-address {
+    margin-top: 40px;
   }
 
   .household-form .form-actions .find-invite {
+    min-width: 0;
+    width: min(100%, 22rem);
     min-height: 48px;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 380px) {
+  .invite-sheet-script {
+    font-size: clamp(13px, 5.1cqi, 28px);
+  }
+
+  .invite-sheet-names,
+  .invite-sheet-meta {
+    letter-spacing: 0.05em;
   }
 }
 
 .household-form {
   max-width: none;
   margin: 0;
-  color: #e4c79d;
+  color: rgba(63, 11, 16, 0.72);
 }
 
 .household-form.address-form.is-party {
@@ -944,75 +1132,268 @@ html.invite-returning .invitation-gate {
 }
 
 .household-split {
-  display: grid;
-  gap: 28px;
+  display: block;
 }
 
 .household-address {
   display: grid;
-  gap: 0.95rem;
+  gap: 0.9rem;
+  margin-top: 56px;
 }
 
 .household-form .household-label,
 .household-form .guest-cap {
-  margin: 0 0 12px;
-  font-family: "Bodoni Moda", serif;
-  font-size: 15px;
-  font-style: italic;
+  margin: 0;
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 11px;
+  font-style: normal;
   font-weight: 400;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: var(--gold-light);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(63, 11, 16, 0.48);
 }
 
 .household-form label {
-  color: var(--gold-muted);
-  font-family: "Bodoni Moda", serif;
-  font-size: 0.95rem;
-  letter-spacing: 0.03em;
-  text-transform: none;
+  color: rgba(63, 11, 16, 0.48);
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
-.household-form input {
-  border-color: rgba(228, 199, 157, 0.55);
-  background: rgba(18, 23, 25, 0.28);
-  color: #e4c79d;
+.household-form input,
+.household-form.address-form input {
+  appearance: none;
+  border: 0;
+  border-bottom: 1px solid rgba(92, 18, 24, 0.28);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(63, 11, 16, 0.82);
   font-family: "Bodoni Moda", serif;
-  font-size: 1.2rem;
-  padding: 0.9rem 0.95rem;
+  font-size: 1.05rem;
+  padding: 0.3rem 0 0.45rem;
+}
+
+.household-form input:focus,
+.household-form.address-form input:focus {
+  outline: none;
+  border-bottom-color: rgba(168, 132, 64, 0.88);
+  box-shadow: 0 1px 0 rgba(168, 132, 64, 0.4);
+}
+
+.household-form input:focus-visible,
+.household-form.address-form input:focus-visible {
+  outline: none;
+  border-bottom-width: 2px;
+  border-bottom-color: rgba(124, 36, 42, 0.55);
+  box-shadow: 0 1px 0 rgba(168, 132, 64, 0.35);
 }
 
 .household-form input::placeholder {
-  color: rgba(228, 199, 157, 0.48);
-  font-size: 1.15rem;
+  color: rgba(63, 11, 16, 0.32);
+  font-size: 1rem;
 }
 
 .household-form .party-list {
-  gap: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .household-form .party-member {
-  border: 1px solid rgba(228, 199, 157, 0.28);
-  border-radius: 8px;
-  background: rgba(8, 11, 13, 0.32);
-  grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(8rem, 0.9fr) minmax(11rem, 1.2fr);
+  border: 0;
+  border-bottom: 1px solid rgba(92, 18, 24, 0.1);
+  border-radius: 0;
+  background: none;
+  grid-template-columns: 1fr 1fr;
   align-items: end;
-  padding: 1rem 1.05rem 1.1rem;
+  padding: 0 0 0.85rem;
 }
 
 .household-form .party-member-label {
-  color: #f3e2c4;
-  letter-spacing: 0.2em;
+  color: rgba(92, 18, 24, 0.62);
+  letter-spacing: 0.18em;
+}
+
+.party-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+}
+
+.party-head .guest-cap,
+.household-form .party-count {
+  margin: 0;
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(63, 11, 16, 0.48);
+}
+
+.party-member--note {
+  position: relative;
+  display: block;
+  padding: 26px 4.5rem 8px 0;
+  border: 0;
+  background: none;
+}
+
+.party-member-index {
+  display: block;
+  position: static;
+  margin: 0 0 8px;
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: rgba(63, 11, 16, 0.22);
+}
+
+.party-member-summary {
+  min-width: 0;
+  padding: 0;
+}
+
+.party-member--note .party-member-name {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  overflow-wrap: anywhere;
+  color: #241612;
+}
+
+.party-member-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 8px 0 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: 13px;
+  color: rgba(63, 11, 16, 0.4);
+}
+
+.party-add-email {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(92, 18, 24, 0.58);
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.party-add-email:hover,
+.party-add-email:focus-visible {
+  color: rgba(92, 18, 24, 0.88);
+}
+
+.party-member--note.is-editing .party-add-email {
+  visibility: hidden;
+}
+
+.party-member--note .party-edit-toggle {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(63, 11, 16, 0.28);
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 1;
+}
+
+.party-member--note .party-edit-toggle svg {
+  width: 12px;
+  height: 12px;
+}
+
+.party-member--note.is-editing .party-edit-toggle {
+  color: rgba(92, 18, 24, 0.78);
+}
+
+.party-member--note .party-edit {
+  display: none;
+}
+
+.party-member--note.is-editing .party-edit {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 14px;
+}
+
+.household-form .party-member--note,
+.household-form .party-member--note.is-editing {
+  display: block;
+  grid-template-columns: none;
+  border: 0;
+  background: none;
+}
+
+.household-form .party-member--note:last-child {
+  padding-bottom: 8px;
+  border: 0;
+}
+
+.address-note {
+  margin: 0 0 18px;
+  max-width: 22rem;
+  font-family: "Bodoni Moda", serif;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+  color: rgba(63, 11, 16, 0.48);
+}
+
+.details-not-you {
+  display: block;
+  margin: 16px auto 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(63, 11, 16, 0.34);
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.details-not-you:hover {
+  color: rgba(63, 11, 16, 0.7);
 }
 
 @media (max-width: 799px) {
-  .household-form .party-member {
+  .household-form .party-member:not(.party-member--note) {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 519px) {
-  .household-form .party-member {
+  .household-form .party-member:not(.party-member--note) {
     grid-template-columns: 1fr;
   }
 }
@@ -1026,7 +1407,7 @@ html.invite-returning .invitation-gate {
 }
 
 .household-form .form-error {
-  color: var(--gold-muted);
+  color: rgba(92, 18, 24, 0.7);
 }
 
 .household-form .form-error {
@@ -1034,7 +1415,46 @@ html.invite-returning .invitation-gate {
 }
 
 .household-form .form-actions .find-invite {
-  font-size: 1.15rem;
+  display: inline-block;
+  width: auto;
+  min-width: 22rem;
+  margin: 8px auto 0;
+  padding: 0.95rem 2.6rem;
+  border: 0;
+  border-radius: 2px;
+  background: #3a1218;
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f6efe4;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.household-form .form-actions .find-invite::before {
+  display: none;
+}
+
+.household-form .form-actions .find-invite::after {
+  content: " →";
+}
+
+.household-form .form-actions .find-invite.is-loading::after {
+  content: "";
+}
+
+.household-form .form-actions .find-invite {
+  white-space: nowrap;
+}
+
+.household-form .form-actions .find-invite:hover,
+.household-form .form-actions .find-invite:focus-visible {
+  background: #4a181f;
+  border-color: transparent;
+  color: #fff8ef;
+  box-shadow: none;
 }
 
 .household-mail {
@@ -1063,9 +1483,11 @@ body.details-open {
   position: fixed;
   inset: 0;
   z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
 }
 
 .details-modal[hidden] {
@@ -1073,89 +1495,254 @@ body.details-open {
 }
 
 .details-modal-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   border: 0;
   padding: 0;
-  background: rgba(8, 10, 12, 0.72);
+  background: rgba(8, 10, 12, 0.56);
   cursor: pointer;
 }
 
 .details-modal-panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 1120px);
-  max-height: min(90dvh, 920px);
-  overflow: auto;
-  padding: 28px 28px 32px;
-  border: 1px solid rgba(228, 199, 157, 0.5);
-  border-radius: 10px;
-  background: rgba(18, 23, 25, 0.94);
-  color: #e4c79d;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  width: min(720px, calc(100vw - 48px));
+  max-width: 720px;
+  margin: max(4vh, 24px) auto max(8vh, 48px);
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #2e1c16;
+  box-shadow: none;
+}
+
+.details-envelope {
+  position: relative;
+  z-index: 0;
+  width: 108%;
+  margin: 0 -4% -64px;
+  aspect-ratio: 1199 / 200;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.details-envelope-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.details-letter {
+  position: relative;
+  z-index: 1;
+  height: auto;
+  overflow: visible;
+  padding: 52px 46px 52px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  animation: letter-rise 0.55s ease;
+}
+
+.details-letter-paper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #f3e8d2;
+  background-image:
+    radial-gradient(ellipse at 16% 10%, rgba(255, 252, 246, 0.28), transparent 42%),
+    radial-gradient(ellipse at 86% 92%, rgba(198, 170, 132, 0.1), transparent 48%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.16), transparent 28%, rgba(214, 188, 150, 0.08) 100%),
+    url("/public/letter/ivory-paper-tile.png");
+  background-size: auto, auto, auto, 320px 320px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 246, 0.4),
+    0 0 0 1px rgba(48, 32, 18, 0.05),
+    0 1px 1px rgba(40, 24, 12, 0.14),
+    0 10px 20px rgba(0, 0, 0, 0.16),
+    0 24px 42px rgba(0, 0, 0, 0.14);
+}
+
+.details-letter-rule {
+  position: absolute;
+  inset: 18px;
+  z-index: 1;
+  border: 1px solid rgba(176, 138, 72, 0.48);
+  box-shadow: inset 0 0 0 0.5px rgba(214, 178, 108, 0.16);
+  pointer-events: none;
+}
+
+@keyframes letter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .details-letter {
+    animation: none;
+  }
+}
+
+.details-letter-seal {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  z-index: 6;
+  display: block;
+  width: 70px;
+  height: auto;
+  border: 0;
+  background: none;
+  pointer-events: none;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
+}
+
+.details-flourish {
+  position: absolute;
+  z-index: 2;
+  width: 54px;
+  height: 54px;
+  background:
+    no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72' fill='none'%3E%3Cpath d='M10 58V18c0-6 4-10 10-10h40' stroke='%23c4a86e' stroke-width='1.1'/%3E%3Cpath d='M16 44c0-14 8-22 22-22' stroke='%23c4a86e' stroke-width='0.75'/%3E%3Cpath d='M14 28c8-1 12-8 11-16' stroke='%23c4a86e' stroke-width='0.7'/%3E%3C/svg%3E");
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.details-flourish--tl {
+  top: 16px;
+  left: 16px;
+}
+
+.details-flourish--tr {
+  top: 16px;
+  right: 16px;
+  transform: rotate(90deg);
+}
+
+.details-flourish--bl {
+  bottom: 16px;
+  left: 16px;
+  transform: rotate(270deg);
+}
+
+.details-flourish--br {
+  bottom: 16px;
+  right: 16px;
+  transform: rotate(180deg);
+}
+
+.details-modal .form-actions {
+  margin-top: 3rem;
+  margin-bottom: 0.2rem;
+  text-align: center;
+}
+
+.details-sheet {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  padding: 10px 8px 0;
+  text-align: left;
 }
 
 .details-modal-panel h2 {
-  margin: 0 0 22px;
-  font-family: "Bodoni Moda", serif;
-  font-size: 28px;
+  margin: 14px 0 16px;
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: clamp(18px, 3.2vw, 26px);
   font-weight: 400;
-  letter-spacing: 3px;
+  letter-spacing: 0.28em;
   text-align: center;
+  text-transform: uppercase;
+  color: #241612;
+}
+
+.details-lede {
+  margin: 0 auto 18px;
+  max-width: 22rem;
+  font-family: "Bodoni Moda", serif;
+  font-size: clamp(15px, 2vw, 18px);
+  font-style: italic;
+  line-height: 1.5;
+  text-align: center;
+  color: #6a3a34;
+}
+
+.details-diamond {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: 0 auto 40px;
+  border: 1px solid rgba(92, 18, 24, 0.42);
+  transform: rotate(45deg);
 }
 
 .details-modal-close {
   position: absolute;
-  top: 12px;
-  right: 14px;
+  top: 10px;
+  right: 12px;
+  z-index: 6;
+  width: 36px;
+  height: 36px;
   border: 0;
   background: none;
-  color: var(--gold-muted);
-  font-size: 28px;
+  color: rgba(36, 18, 16, 0.5);
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
 
-.details-modal-close:hover {
-  color: #fff6df;
+.details-modal-close:hover,
+.details-modal-close:focus-visible {
+  color: rgba(36, 18, 16, 0.88);
 }
 
 .address-suggestions {
   list-style: none;
   margin: -4px 0 0;
   padding: 0;
-  border: 1px solid rgba(228, 199, 157, 0.45);
-  border-radius: 6px;
-  background: rgba(12, 16, 18, 0.96);
+  border: 1px solid rgba(92, 18, 24, 0.16);
+  border-radius: 4px;
+  background: rgba(255, 250, 242, 0.96);
   overflow: hidden;
 }
 
 .address-suggestions button {
   display: block;
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 0;
   background: none;
-  color: #e4c79d;
+  color: rgba(63, 11, 16, 0.78);
   font-family: "Bodoni Moda", serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   text-align: left;
   cursor: pointer;
 }
 
 .address-suggestions button:hover,
 .address-suggestions button:focus-visible {
-  background: rgba(228, 199, 157, 0.12);
+  background: rgba(92, 18, 24, 0.06);
   outline: none;
 }
 
 .address-suggestions .address-hint {
   display: block;
-  padding: 12px 14px;
+  padding: 10px 12px;
   font-family: "Bodoni Moda", serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-style: italic;
-  color: var(--gold-muted);
+  color: rgba(63, 11, 16, 0.5);
 }
 
 .details-success {
@@ -1172,13 +1759,14 @@ body.details-open {
 .details-success p {
   margin: 0;
   font-family: "Bodoni Moda", serif;
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   font-style: italic;
-  color: #e4c79d;
+  color: rgba(92, 18, 24, 0.72);
 }
 
 .landing-body:has(.household-desk.is-reading) .household-kicker,
 .landing-body:has(.household-desk.is-reading) .names,
+.landing-body:has(.household-desk.is-reading) .invite-mark,
 .household-desk.is-reading .household-count,
 .household-desk.is-reading .household-reset {
   opacity: 0;
@@ -1202,9 +1790,10 @@ body.details-open {
   background: none;
   color: var(--gold-muted);
   font-family: "Bodoni Moda", serif;
-  font-size: 14px;
+  font-size: 12px;
   font-style: italic;
-  letter-spacing: 1px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
@@ -1287,6 +1876,17 @@ body.details-open {
     0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+.names-sealed {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.names-invited,
+.invite-mark {
+  display: none;
+}
+
 .names .and {
   font-family: "Bodoni Moda", serif;
   font-style: italic;
@@ -1295,6 +1895,37 @@ body.details-open {
   letter-spacing: 0;
   text-transform: none;
   margin: 0 18px;
+}
+
+.landing-body.is-open .names-sealed,
+html.invite-returning .names-sealed {
+  display: none;
+}
+
+.landing-body.is-open .names-invited,
+html.invite-returning .names-invited {
+  display: inline;
+}
+
+.landing-body.is-open .names,
+html.invite-returning .names {
+  width: auto;
+  margin-bottom: 2px;
+  font-size: clamp(22px, 3.1vw, 34px);
+  letter-spacing: 0.32em;
+}
+
+.invite-mark {
+  width: 6px;
+  height: 6px;
+  margin: 12px 0 28px;
+  border: 1px solid rgba(228, 199, 157, 0.72);
+  transform: rotate(45deg);
+}
+
+.landing-body.is-open .invite-mark,
+html.invite-returning .invite-mark {
+  display: block;
 }
 
 .date {
@@ -1799,27 +2430,51 @@ body.details-open {
 }
 
 @media (max-width: 640px) {
-  .details-modal {
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-    align-items: stretch;
+  .details-modal-panel {
+    width: min(720px, calc(100vw - 20px));
+    max-width: none;
+    max-height: none;
+    margin: max(16px, env(safe-area-inset-top)) auto max(28px, env(safe-area-inset-bottom));
+    padding: 0;
+    border-radius: 0;
   }
 
-  .details-modal-panel {
-    width: 100%;
-    max-height: 100dvh;
-    border-radius: 8px;
-    padding: 52px 14px 20px;
+  .details-envelope {
+    width: 112%;
+    margin: 0 -6% -52px;
+  }
+
+  .details-letter {
+    padding: 42px 22px 44px;
+  }
+
+  .details-letter-rule {
+    inset: 12px;
+  }
+
+  .details-letter-seal {
+    top: -16px;
+    width: 56px;
+  }
+
+  .details-flourish {
+    width: 38px;
+    height: 38px;
   }
 
   .details-modal-panel h2 {
-    font-size: 22px;
-    letter-spacing: 2px;
-    margin-bottom: 16px;
+    font-size: clamp(16px, 5vw, 20px);
+    letter-spacing: 0.18em;
+    margin: 6px 0 10px;
+  }
+
+  .details-diamond {
+    margin-bottom: 24px;
   }
 
   .details-modal-close {
-    top: 4px;
-    right: 4px;
+    top: 6px;
+    right: 6px;
     width: 44px;
     height: 44px;
   }
@@ -1828,24 +2483,31 @@ body.details-open {
   .household-form select,
   .household-form textarea {
     font-size: 16px;
-    padding: 0.75rem 0.8rem;
+    padding: 0.5rem 0.1rem 0.4rem;
   }
 
   .household-form input::placeholder {
     font-size: 16px;
   }
 
-  .household-form .party-member,
+  .household-form .party-member:not(.party-member--note),
   .household-form .party-member.is-editing .party-edit {
     grid-template-columns: 1fr;
   }
 
-  .household-split {
-    gap: 18px;
+  .household-form .party-member--note.is-editing .party-edit {
+    grid-template-columns: 1fr;
+  }
+
+  .household-address {
+    margin-top: 40px;
   }
 
   .household-form .form-actions .find-invite {
+    min-width: 0;
+    width: min(100%, 22rem);
     min-height: 48px;
+    white-space: normal;
   }
 
   .household-mail {
@@ -1875,8 +2537,8 @@ body.details-open {
   }
 
   .details-modal-panel {
-    width: min(100%, 1120px);
-    max-height: min(90dvh, 920px);
-    padding: 28px 28px 32px;
+    width: min(720px, calc(100vw - 48px));
+    max-width: 720px;
+    max-height: none;
   }
 }

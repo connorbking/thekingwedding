@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party3";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party9";
 import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k6";
 import {
   findGuest,
@@ -49,13 +49,14 @@ function countLabel(count) {
   return `have sent you ${count} invitations.`;
 }
 
-const ART_V = "7";
+const ART_V = "8";
 const artUrl = (file) => `/public/envelopes/${file}?v=${ART_V}`;
 const ENVELOPE_ART = {
   como: {
     body: artUrl("olive-env.png"),
     closedFlap: artUrl("olive-env-closed-flap.png"),
     openFlap: artUrl("olive-env-open-flap.png"),
+    opened: artUrl("open-olive.png"),
     seal: artUrl("olive-seal.png"),
     sealBroken: artUrl("olive-seal-broken.png"),
     letter: artUrl("letter-insert1.png"),
@@ -64,6 +65,7 @@ const ENVELOPE_ART = {
     body: artUrl("red-env.png"),
     closedFlap: artUrl("red-env-closed-flap.png"),
     openFlap: artUrl("red-env-open-flap.png"),
+    opened: artUrl("open-red.png"),
     seal: artUrl("red-seal.png"),
     sealBroken: artUrl("red-seal-broken.png"),
     letter: artUrl("letter-insert2.png"),
@@ -72,6 +74,7 @@ const ENVELOPE_ART = {
     body: artUrl("cream-env.png"),
     closedFlap: artUrl("cream-env-closed-flap.png"),
     openFlap: artUrl("cream-env-open-flap.png"),
+    opened: artUrl("cream-open.png"),
     seal: artUrl("cream-seal.png"),
     sealBroken: artUrl("cream-seal-broken.png"),
     letter: artUrl("letter-insert3.png"),
@@ -79,6 +82,7 @@ const ENVELOPE_ART = {
 };
 
 const openedEnvelopes = new Set();
+let openTimer = 0;
 
 function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
@@ -95,16 +99,6 @@ function doorMarkup(eventKey, guest) {
           <span class="envelope-sleeve">
             <span class="envelope-letter">
               <img class="envelope-letter-art" src="${art.letter}" alt="">
-              <span class="invite-sheet">
-                <span class="invite-sheet-script">Save the Date</span>
-                <span class="invite-sheet-names">Alyssa &amp; Connor</span>
-                <span class="invite-sheet-rule"></span>
-                <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
-                <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
-                <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
-                <span class="invite-sheet-soon">(Check back soon for more details!)</span>
-                <span class="invite-sheet-close">Close Invite</span>
-              </span>
             </span>
           </span>
           <span class="envelope-crop">
@@ -112,6 +106,26 @@ function doorMarkup(eventKey, guest) {
             <img class="envelope-closed-flap" src="${art.closedFlap}" alt="">
             <img class="envelope-seal" src="${art.seal}" alt="">
             <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
+          </span>
+          <span class="envelope-open-scene">
+            <span class="invite-sheet-close" title="Back">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15.2 5.8 8.8 12l6.4 6.2"></path>
+              </svg>
+            </span>
+            <img class="envelope-opened" src="${art.opened}" alt="">
+            <span class="invite-sheet">
+              <span class="invite-sheet-head">
+                <span class="invite-sheet-script">Save the Date</span>
+              </span>
+              <span class="invite-sheet-body">
+                <span class="invite-sheet-names">Alyssa &amp; Connor</span>
+                <span class="invite-sheet-rule"></span>
+                <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
+                <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
+                <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
+              </span>
+            </span>
           </span>
         </span>
       </span>
@@ -147,13 +161,19 @@ function showHousehold(guest) {
   const shown = sortEvents(guest.events)
     .filter((key) => key !== "shower")
     .filter((key) => doorMarkup(key, guest));
+  shown.forEach((key) => {
+    const src = ENVELOPE_ART[key]?.opened;
+    if (!src) return;
+    const preload = new Image();
+    preload.src = src;
+  });
   const count = household.querySelector("[data-household-count]");
   if (count) count.textContent = countLabel(shown.length);
   startEnvelopeWiggle();
 
   const doors = household.querySelector("[data-event-doors]");
   const nextKey = shown.join("|");
-  const envelopeOpen = Boolean(household.querySelector("[data-envelope].is-opening"));
+  const envelopeOpen = Boolean(household.querySelector("[data-envelope].is-opening, [data-envelope].is-selected"));
   const alreadyShown = Boolean(doors?.dataset.doors && doors.dataset.doors === nextKey);
 
   if (doors && !envelopeOpen && !alreadyShown) {
@@ -320,106 +340,84 @@ function startEnvelopeWiggle() {
 }
 
 function closeEnvelopes() {
+  window.clearTimeout(openTimer);
+  openTimer = 0;
   household?.querySelectorAll("[data-envelope]").forEach((link) => {
     link.classList.remove("is-opening", "is-selected", "is-away");
     link.setAttribute("aria-expanded", "false");
     link.style.removeProperty("--focus-x");
     link.style.removeProperty("--focus-y");
-    link.querySelector(".envelope")?.style.removeProperty("--letter-out-scale");
   });
   setReading(false);
   if (allEnvelopesOpened()) nudgeDetailsButton();
 }
 
-function letterViewportReserve() {
+function openViewportReserve() {
   return window.innerWidth < 640
-    ? Math.min(220, window.innerHeight * 0.28)
-    : Math.min(160, window.innerHeight * 0.2);
-}
-
-function fitLetterToViewport(link) {
-  const envelope = link.querySelector(".envelope");
-  const letter = link.querySelector(".envelope-letter");
-  const art = link.querySelector(".envelope-letter-art") || letter;
-  if (!envelope || !letter || !art) return;
-
-  if (window.innerWidth >= 640) {
-    envelope.style.removeProperty("--letter-out-scale");
-    return;
-  }
-
-  envelope.style.setProperty("--letter-out-scale", "1");
-  const previous = {
-    animation: letter.style.animation,
-    transform: letter.style.transform,
-    opacity: letter.style.opacity,
-  };
-  letter.style.animation = "none";
-  letter.style.opacity = "1";
-  letter.style.transform = "translateY(var(--letter-out-y)) scale(1)";
-  void letter.offsetWidth;
-  const box = art.getBoundingClientRect();
-  letter.style.animation = previous.animation;
-  letter.style.transform = previous.transform;
-  letter.style.opacity = previous.opacity;
-  if (!box.width || !box.height) return;
-
-  const scale = Math.min(
-    (window.innerWidth - 28) / box.width,
-    (window.innerHeight - letterViewportReserve()) / box.height,
-    2.325
-  );
-  envelope.style.setProperty("--letter-out-scale", String(Math.max(scale, 0.4)));
-}
-
-function letterFocusDelta(link) {
-  const letter = link.querySelector(".envelope-letter");
-  const art = link.querySelector(".envelope-letter-art") || letter;
-  if (!letter || !art) return null;
-  const box = art.getBoundingClientRect();
-  if (!box.width || !box.height) return null;
-  const reserve = letterViewportReserve();
-  const targetX = window.innerWidth / 2;
-  const targetY = (window.innerHeight - reserve) / 2;
-  return {
-    x: targetX - (box.left + box.width / 2),
-    y: targetY - (box.top + box.height / 2),
-  };
+    ? Math.min(96, window.innerHeight * 0.1)
+    : Math.min(48, window.innerHeight * 0.06);
 }
 
 function readFocus(link, name) {
   return Number.parseFloat(link.style.getPropertyValue(name)) || 0;
 }
 
-function centerOpenLetter(link) {
-  const letter = link.querySelector(".envelope-letter");
-  if (!letter) return;
-  fitLetterToViewport(link);
+function openSceneBox(link) {
+  const scene = link.querySelector(".envelope-open-scene");
+  if (!scene) return null;
+  const previous = {
+    animation: scene.style.animation,
+    transform: scene.style.transform,
+    opacity: scene.style.opacity,
+  };
+  scene.style.animation = "none";
+  scene.style.opacity = "1";
+  scene.style.transform = "translateX(-50%) scale(1)";
+  void scene.offsetWidth;
+  const box = scene.getBoundingClientRect();
+  scene.style.animation = previous.animation;
+  scene.style.transform = previous.transform;
+  scene.style.opacity = previous.opacity;
+  return box.width && box.height ? box : null;
+}
 
-  if (link.classList.contains("is-opening")) {
-    const delta = letterFocusDelta(link);
-    if (!delta) return;
-    link.style.setProperty("--focus-x", `${readFocus(link, "--focus-x") + delta.x}px`);
-    link.style.setProperty("--focus-y", `${readFocus(link, "--focus-y") + delta.y}px`);
+function viewportCenter() {
+  const reserve = openViewportReserve();
+  return {
+    x: window.innerWidth / 2,
+    y: (window.innerHeight - reserve) / 2,
+  };
+}
+
+function centerClosedEnvelope(link) {
+  const crop = link.querySelector(".envelope-crop");
+  const box = crop?.getBoundingClientRect();
+  if (!box?.width || !box.height) return;
+  const target = viewportCenter();
+  link.style.setProperty("--focus-x", `${readFocus(link, "--focus-x") + (target.x - (box.left + box.width / 2))}px`);
+  link.style.setProperty("--focus-y", `${readFocus(link, "--focus-y") + (target.y - (box.top + box.height / 2))}px`);
+}
+
+function centerOpenLetter(link) {
+  const box = openSceneBox(link);
+  if (!box) return;
+  const target = viewportCenter();
+  const deltaX = target.x - (box.left + box.width / 2);
+  const deltaY = target.y - (box.top + box.height / 2);
+  if (link.classList.contains("is-opening") || link.classList.contains("is-selected")) {
+    link.style.setProperty("--focus-x", `${readFocus(link, "--focus-x") + deltaX}px`);
+    link.style.setProperty("--focus-y", `${readFocus(link, "--focus-y") + deltaY}px`);
     return;
   }
+  link.style.setProperty("--focus-x", `${deltaX}px`);
+  link.style.setProperty("--focus-y", `${deltaY}px`);
+}
 
-  const previous = {
-    animation: letter.style.animation,
-    transform: letter.style.transform,
-    opacity: letter.style.opacity,
-  };
-  letter.style.animation = "none";
-  letter.style.opacity = "1";
-  letter.style.transform = "translateY(var(--letter-out-y)) scale(var(--letter-out-scale))";
-  void letter.offsetWidth;
-  const delta = letterFocusDelta(link);
-  letter.style.animation = previous.animation;
-  letter.style.transform = previous.transform;
-  letter.style.opacity = previous.opacity;
-  if (!delta) return;
-  link.style.setProperty("--focus-x", `${delta.x}px`);
-  link.style.setProperty("--focus-y", `${delta.y}px`);
+function beginOpen(link) {
+  if (!link.classList.contains("is-selected")) return;
+  link.classList.add("is-opening", "is-opened");
+  if (link.dataset.event) openedEnvelopes.add(link.dataset.event);
+  requestAnimationFrame(() => centerOpenLetter(link));
 }
 
 household?.addEventListener("click", (event) => {
@@ -431,8 +429,8 @@ household?.addEventListener("click", (event) => {
   }
   const link = event.target.closest("[data-envelope]");
   if (!link) return;
-  if (link.classList.contains("is-opening")) {
-    if (event.target.closest(".envelope-letter")) return;
+  if (link.classList.contains("is-opening") || link.classList.contains("is-selected")) {
+    if (event.target.closest(".envelope-letter, .envelope-open-scene")) return;
     closeEnvelopes();
     return;
   }
@@ -442,16 +440,22 @@ household?.addEventListener("click", (event) => {
     other.setAttribute("aria-expanded", other === link ? "true" : "false");
   });
   setReading(true);
-  centerOpenLetter(link);
-  link.classList.add("is-opening", "is-opened");
-  if (link.dataset.event) openedEnvelopes.add(link.dataset.event);
+  if (prefersReducedMotion()) {
+    beginOpen(link);
+    return;
+  }
+  requestAnimationFrame(() => {
+    centerClosedEnvelope(link);
+    window.clearTimeout(openTimer);
+    openTimer = window.setTimeout(() => beginOpen(link), 780);
+  });
 });
 
 document.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (!household?.classList.contains("is-reading")) return;
   if (detailsModal && !detailsModal.hidden) return;
-  if (event.target.closest(".envelope-letter, .household-mail, [data-details-modal], [data-envelope]")) return;
+  if (event.target.closest(".envelope-letter, .envelope-open-scene, .household-mail, [data-details-modal], [data-envelope]")) return;
   closeEnvelopes();
 });
 
@@ -460,12 +464,14 @@ window.addEventListener("pageshow", (event) => {
   if (event.persisted) closeEnvelopes();
 });
 window.addEventListener("resize", () => {
-  const open = household?.querySelector(".envelope-link.is-opening");
-  if (open) centerOpenLetter(open);
+  const selected = household?.querySelector(".envelope-link.is-selected");
+  if (!selected) return;
+  if (selected.classList.contains("is-opening")) centerOpenLetter(selected);
+  else centerClosedEnvelope(selected);
 });
 
-household?.querySelector("[data-open-details]")?.addEventListener("click", () => {
-  openDetailsModal(detailsModal);
+document.querySelectorAll("[data-open-details]").forEach((el) => {
+  el.addEventListener("click", () => openDetailsModal(detailsModal));
 });
 
 detailsModal?.querySelectorAll("[data-close-details]").forEach((el) => {
@@ -478,15 +484,17 @@ document.addEventListener("keydown", (event) => {
     closeDetailsModal(detailsModal);
     return;
   }
-  if (household?.querySelector(".is-opening")) closeEnvelopes();
+  if (household?.querySelector(".is-opening, .is-selected")) closeEnvelopes();
 });
 
-household?.querySelector("[data-not-you]")?.addEventListener("click", () => {
-  openedEnvelopes.clear();
-  detailsConfirmed = false;
-  sessionStorage.removeItem("king.detailsConfirmed");
-  clearGuest();
-  window.location.assign("/");
+document.querySelectorAll("[data-not-you]").forEach((el) => {
+  el.addEventListener("click", () => {
+    openedEnvelopes.clear();
+    detailsConfirmed = false;
+    sessionStorage.removeItem("king.detailsConfirmed");
+    clearGuest();
+    window.location.assign("/");
+  });
 });
 
 const params = new URLSearchParams(window.location.search);
