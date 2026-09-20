@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css?v=type1">
+  <link rel="stylesheet" href="/css/home.css?v=type34">
   <script type="importmap">
   {
     "imports": {
@@ -56,10 +56,14 @@
 
     <p class="household-kicker" data-household-greeting hidden></p>
     <h1 class="names">
-      <span>Alyssa</span>
-      <span class="and">&amp;</span>
-      <span>Connor</span>
+      <span class="names-sealed">
+        <span>Alyssa</span>
+        <span class="and">&amp;</span>
+        <span>Connor</span>
+      </span>
+      <span class="names-invited">You're Invited</span>
     </h1>
+    <div class="invite-mark" aria-hidden="true"></div>
 
     <p class="date">Wedding Festivities</p>
 
@@ -97,8 +101,8 @@
       <p class="household-count" data-household-count></p>
       <div class="event-doors" data-event-doors></div>
       <div class="household-mail">
-        <p>Formal Invitations via mail to follow:</p>
-        <button class="find-invite" type="button" data-open-details>Confirm contact details</button>
+        <p>Formal invitations via mail to follow.</p>
+        <button class="find-invite" type="button" data-open-details>Confirm your contact details</button>
       </div>
       <button class="household-reset" type="button" data-not-you>Not you?</button>
     </section>
@@ -122,9 +126,23 @@
   <div class="details-modal" data-details-modal hidden>
     <button class="details-modal-backdrop" type="button" data-close-details aria-label="Close details"></button>
     <div class="details-modal-panel" role="dialog" aria-modal="true" aria-labelledby="details-title">
-      <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
+      <div class="details-envelope" aria-hidden="true">
+        <img class="details-envelope-art" src="/public/contact-details.png" alt="">
+      </div>
+      <article class="details-letter">
+        <div class="details-letter-paper" aria-hidden="true"></div>
+        <span class="details-letter-rule" aria-hidden="true"></span>
+        <img class="details-letter-seal" src="/public/envelopes/olive-seal.png" alt="" aria-hidden="true">
+        <span class="details-flourish details-flourish--tl" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--tr" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--bl" aria-hidden="true"></span>
+        <span class="details-flourish details-flourish--br" aria-hidden="true"></span>
+        <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
+        <div class="details-sheet">
       <div data-details-form-wrap>
-        <h2 id="details-title">Your Party</h2>
+        <h2 id="details-title">A note for the post</h2>
+        <p class="details-lede">Where should we send your formal invitation?</p>
+        <span class="details-diamond" aria-hidden="true"></span>
         <form class="household-form address-form" data-household-form>
           <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
           <label class="visually-hidden">First name <input name="firstName"></label>
@@ -134,13 +152,14 @@
           <div class="household-split">
             <div class="party-list" data-party-list></div>
             <div class="household-address">
-              <p class="household-label">Mailing Address</p>
+              <p class="household-label">Mailing address</p>
+              <p class="address-note">Please confirm where you’d like your invitation sent.</p>
               <label class="address-lookup">
-                Street Address
-                <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address" aria-autocomplete="list" aria-controls="address-suggestions">
+                Street address
+                <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions">
               </label>
               <ul class="address-suggestions" id="address-suggestions" data-address-suggestions hidden></ul>
-              <label>Apartment <input name="apt" autocomplete="address-line2" placeholder="Apartment"></label>
+              <label>Apartment / unit (optional) <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
               <input type="hidden" name="street">
               <input type="hidden" name="city">
               <input type="hidden" name="region">
@@ -149,20 +168,23 @@
             </div>
           </div>
           <div class="form-actions">
-            <button class="find-invite" type="submit">Save our details</button>
+            <button class="find-invite" type="submit">Confirm mailing details</button>
           </div>
           <p class="form-error" data-form-error></p>
         </form>
+        <button class="details-not-you" type="button" data-not-you>Not you?</button>
       </div>
       <div class="details-success" data-details-success hidden>
         <p>Success, your details have been updated.</p>
       </div>
+        </div>
+      </article>
     </div>
   </div>
 
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env29"></script>
+  <script type="module" src="/js/home.js?v=env40"></script>
 </body>
 </html>
