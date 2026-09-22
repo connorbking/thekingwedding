@@ -45,11 +45,52 @@ html:has(body.landing-body) {
   width: 100%;
   height: 100%;
   transform: none;
-  background: url("/public/stock-couple2.JPG") center 22% / cover no-repeat;
+  background: #0a0d0f;
 }
 
 .landing-body.is-open .candle-flame {
   display: none;
+}
+
+.invite-slides {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #0a0d0f;
+}
+
+.invite-slides[hidden] {
+  display: none !important;
+}
+
+.invite-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 1.6s ease,
+    transform 8s ease-out;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.invite-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invite-slide {
+    transition: opacity 0.4s ease;
+    transform: none;
+  }
 }
 
 .candle-flame {
@@ -1278,8 +1319,14 @@ html.invite-returning .household-count {
   gap: 5px;
   margin: 8px 0 0;
   font-family: "Bodoni Moda", serif;
-  font-size: 13px;
-  color: rgba(63, 11, 16, 0.4);
+  font-size: 16px;
+  line-height: 1.45;
+  color: #2a1614;
+}
+
+.party-member-phone,
+.party-member-email {
+  color: #241612;
 }
 
 .party-add-email {

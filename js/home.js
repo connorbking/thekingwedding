@@ -142,11 +142,121 @@ function showMonogramPng(show) {
   if (img) img.hidden = !show;
 }
 
+const INVITE_SLIDE_MS = 8000;
+let inviteSlideTimer = 0;
+let inviteSlideIndex = 0;
+let inviteSlideBusy = false;
+
+async function discoverInviteBgs() {
+  const bust = Date.now();
+  const endpoints = [`/public/invite-bg.json?t=${bust}`, `/api/invite-bg?t=${bust}`];
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { cache: "no-store" });
+      if (!response.ok) continue;
+      const data = await response.json();
+      const files = Array.isArray(data) ? data : data.files;
+      const urls = (Array.isArray(files) ? files : [])
+        .map((file) => String(file || "").trim())
+        .filter(Boolean)
+        .map((file) => `/public/invite-bg/${file.replace(/^.*\//, "")}`);
+      if (urls.length) return urls;
+    } catch {
+      /* try the next source */
+    }
+  }
+  return [];
+}
+
+function stopInviteSlideshow() {
+  window.clearInterval(inviteSlideTimer);
+  inviteSlideTimer = 0;
+  inviteSlideBusy = false;
+}
+
+function slideReady(img) {
+  return Boolean(img?.complete && img.naturalWidth);
+}
+
+function preloadSlide(frame) {
+  if (frame?.dataset.src) frame.src = frame.dataset.src;
+}
+
+function whenSlideReady(img) {
+  return new Promise((resolve) => {
+    if (slideReady(img)) {
+      resolve(true);
+      return;
+    }
+    if (!img) {
+      resolve(false);
+      return;
+    }
+    const done = () => {
+      img.removeEventListener("load", done);
+      img.removeEventListener("error", done);
+      resolve(slideReady(img));
+    };
+    img.addEventListener("load", done);
+    img.addEventListener("error", done);
+  });
+}
+
+async function showInviteSlide(slides, index) {
+  const frames = [...slides.querySelectorAll(".invite-slide")];
+  if (!frames.length || inviteSlideBusy) return;
+  const target = ((index % frames.length) + frames.length) % frames.length;
+  const current = frames[target];
+  preloadSlide(current);
+  preloadSlide(frames[(target + 1) % frames.length]);
+  inviteSlideBusy = true;
+  const ready = await whenSlideReady(current);
+  inviteSlideBusy = false;
+  if (!ready) {
+    if (frames.length > 1) showInviteSlide(slides, target + 1);
+    return;
+  }
+  inviteSlideIndex = target;
+  frames.forEach((frame, i) => {
+    frame.classList.toggle("is-active", i === inviteSlideIndex);
+  });
+}
+
+async function startInviteSlideshow() {
+  const slides = document.querySelector("[data-invite-slides]");
+  if (!slides) return;
+  stopInviteSlideshow();
+  const urls = await discoverInviteBgs();
+  if (!urls.length) {
+    slides.hidden = true;
+    slides.replaceChildren();
+    return;
+  }
+  slides.hidden = false;
+  slides.replaceChildren(
+    ...urls.map((url, index) => {
+      const img = document.createElement("img");
+      img.className = "invite-slide";
+      img.alt = "";
+      img.dataset.src = url;
+      if (index <= 1) img.src = url;
+      if (index === 0) img.classList.add("is-active");
+      return img;
+    }),
+  );
+  inviteSlideIndex = 0;
+  if (urls.length < 2 || prefersReducedMotion()) return;
+  inviteSlideTimer = window.setInterval(() => {
+    showInviteSlide(slides, inviteSlideIndex + 1);
+  }, INVITE_SLIDE_MS);
+}
+
 function showHousehold(guest) {
   hideKey3d();
   showMonogramPng(true);
   rememberGuest(guest);
   document.body.classList.add("is-open");
+  startInviteSlideshow();
   sealed.hidden = true;
   if (chooser) chooser.hidden = true;
   if (continuePanel) continuePanel.hidden = true;

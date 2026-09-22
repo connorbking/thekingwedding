@@ -2,8 +2,8 @@
   "name": "thekingwedding",
   "private": true,
   "scripts": {
-    "dev": "wrangler pages dev .",
-    "deploy": "wrangler pages deploy . --project-name=thekingwedding"
+    "dev": "node scripts/dev.mjs",
+    "deploy": "node scripts/list-invite-bg.mjs && wrangler pages deploy . --project-name=thekingwedding"
   },
   "devDependencies": {
     "wrangler": "^4.129.1"
