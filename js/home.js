@@ -143,13 +143,21 @@ function showMonogramPng(show) {
 }
 
 const INVITE_SLIDE_MS = 8000;
+const INVITE_ARROWS_ENABLED = false;
+const INVITE_BG_MOBILE = window.matchMedia("(max-width: 799px)");
 let inviteSlideTimer = 0;
 let inviteSlideIndex = 0;
 let inviteSlideBusy = false;
 
-async function discoverInviteBgs() {
+function inviteBgSet() {
+  return INVITE_BG_MOBILE.matches ? "invite-bg-mobile" : "invite-bg";
+}
+
+async function listInviteBgFiles(folder) {
   const bust = Date.now();
-  const endpoints = [`/public/invite-bg.json?t=${bust}`, `/api/invite-bg?t=${bust}`];
+  const jsonName = folder === "invite-bg-mobile" ? "invite-bg-mobile.json" : "invite-bg.json";
+  const variant = folder === "invite-bg-mobile" ? "mobile" : "desktop";
+  const endpoints = [`/public/${jsonName}?t=${bust}`, `/api/invite-bg?variant=${variant}&t=${bust}`];
   for (const endpoint of endpoints) {
     try {
       const response = await fetch(endpoint, { cache: "no-store" });
@@ -159,7 +167,7 @@ async function discoverInviteBgs() {
       const urls = (Array.isArray(files) ? files : [])
         .map((file) => String(file || "").trim())
         .filter(Boolean)
-        .map((file) => `/public/invite-bg/${file.replace(/^.*\//, "")}`);
+        .map((file) => `/public/${folder}/${file.replace(/^.*\//, "")}`);
       if (urls.length) return urls;
     } catch {
       /* try the next source */
@@ -168,10 +176,62 @@ async function discoverInviteBgs() {
   return [];
 }
 
-function stopInviteSlideshow() {
+async function discoverInviteBgs() {
+  const folder = inviteBgSet();
+  const urls = await listInviteBgFiles(folder);
+  if (urls.length) return urls;
+  if (folder === "invite-bg-mobile") return listInviteBgFiles("invite-bg");
+  return [];
+}
+
+function inviteNav() {
+  return document.querySelector("[data-invite-nav]");
+}
+
+function setInviteNavVisible(show) {
+  const nav = inviteNav();
+  if (nav) nav.hidden = !INVITE_ARROWS_ENABLED || !show;
+}
+
+function stopInviteTimer() {
   window.clearInterval(inviteSlideTimer);
   inviteSlideTimer = 0;
+}
+
+function restartInviteTimer(slides) {
+  stopInviteTimer();
+  const count = slides?.querySelectorAll(".invite-slide").length || 0;
+  if (count < 2 || prefersReducedMotion()) return;
+  inviteSlideTimer = window.setInterval(() => {
+    showInviteSlide(slides, inviteSlideIndex + 1);
+  }, INVITE_SLIDE_MS);
+}
+
+function stopInviteSlideshow() {
+  stopInviteTimer();
   inviteSlideBusy = false;
+  setInviteNavVisible(false);
+}
+
+function stepInviteSlide(delta) {
+  const slides = document.querySelector("[data-invite-slides]");
+  if (!slides || slides.hidden) return;
+  showInviteSlide(slides, inviteSlideIndex + delta);
+  restartInviteTimer(slides);
+}
+
+function bindInviteNav() {
+  const nav = inviteNav();
+  if (!nav || nav.dataset.bound) return;
+  nav.dataset.bound = "1";
+  nav.querySelector("[data-invite-prev]")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    stepInviteSlide(-1);
+  });
+  nav.querySelector("[data-invite-next]")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    stepInviteSlide(1);
+  });
 }
 
 function slideReady(img) {
@@ -209,6 +269,7 @@ async function showInviteSlide(slides, index) {
   const current = frames[target];
   preloadSlide(current);
   preloadSlide(frames[(target + 1) % frames.length]);
+  preloadSlide(frames[(target - 1 + frames.length) % frames.length]);
   inviteSlideBusy = true;
   const ready = await whenSlideReady(current);
   inviteSlideBusy = false;
@@ -245,11 +306,14 @@ async function startInviteSlideshow() {
     }),
   );
   inviteSlideIndex = 0;
-  if (urls.length < 2 || prefersReducedMotion()) return;
-  inviteSlideTimer = window.setInterval(() => {
-    showInviteSlide(slides, inviteSlideIndex + 1);
-  }, INVITE_SLIDE_MS);
+  setInviteNavVisible(urls.length > 1);
+  bindInviteNav();
+  restartInviteTimer(slides);
 }
+
+INVITE_BG_MOBILE.addEventListener("change", () => {
+  if (document.body.classList.contains("is-open")) startInviteSlideshow();
+});
 
 function showHousehold(guest) {
   hideKey3d();

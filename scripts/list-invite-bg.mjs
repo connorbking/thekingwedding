@@ -4,19 +4,33 @@ import { fileURLToPath } from "node:url";
 
 const IMAGE = /\.(jpe?g|png|webp|gif|avif)$/i;
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dir = join(root, "public", "invite-bg");
-const out = join(root, "public", "invite-bg.json");
 
-export async function writeInviteBgList() {
+const SETS = [
+  { dir: "invite-bg", out: "invite-bg.json" },
+  { dir: "invite-bg-mobile", out: "invite-bg-mobile.json" },
+];
+
+async function listImages(dir) {
   const names = (await readdir(dir).catch(() => [])).filter(
     (name) => IMAGE.test(name) && !name.startsWith("."),
   );
   names.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
-  await writeFile(out, `${JSON.stringify({ files: names }, null, 2)}\n`);
   return names;
 }
 
+export async function writeInviteBgList() {
+  const listed = {};
+  for (const set of SETS) {
+    const files = await listImages(join(root, "public", set.dir));
+    await writeFile(join(root, "public", set.out), `${JSON.stringify({ files }, null, 2)}\n`);
+    listed[set.dir] = files;
+  }
+  return listed;
+}
+
 if (fileURLToPath(import.meta.url).toLowerCase() === String(process.argv[1] || "").toLowerCase()) {
-  const files = await writeInviteBgList();
-  console.log(`Wrote ${files.length} invite backgrounds to public/invite-bg.json`);
+  const listed = await writeInviteBgList();
+  for (const [dir, files] of Object.entries(listed)) {
+    console.log(`Wrote ${files.length} photos to public/${dir}.json`);
+  }
 }
