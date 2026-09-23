@@ -1,6 +1,6 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js?v=cal1";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party25";
-import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k6";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party27";
+import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k7";
 import {
   findGuest,
   findGuestByName,
@@ -109,11 +109,6 @@ function doorMarkup(eventKey, guest) {
             <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
           </span>
           <span class="envelope-open-scene">
-            <button type="button" class="invite-sheet-close" aria-label="Close invitation">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6l12 12M18 6 6 18"></path>
-              </svg>
-            </button>
             <img class="envelope-opened" src="${art.opened}" alt="">
             <span class="invite-sheet">
               <span class="invite-sheet-head">
@@ -126,6 +121,7 @@ function doorMarkup(eventKey, guest) {
                 <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
                 <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
                 ${event.calendar ? `<a class="invite-sheet-calendar" href="${escapeHtml(event.calendar)}" download><svg class="invite-sheet-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="1.5"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path></svg>Add to Calendar</a>` : ""}
+                <button type="button" class="invite-sheet-back" data-close-letter>back</button>
               </span>
             </span>
           </span>
@@ -232,9 +228,25 @@ function setInviteNavVisible(show) {
   if (nav) nav.hidden = !INVITE_ARROWS_ENABLED || !show;
 }
 
+let inviteAdvanceTimer = 0;
+
 function stopInviteTimer() {
   window.clearInterval(inviteSlideTimer);
   inviteSlideTimer = 0;
+  window.clearTimeout(inviteAdvanceTimer);
+  inviteAdvanceTimer = 0;
+}
+
+function armInviteAdvance(openedAt) {
+  const slides = document.querySelector("[data-invite-slides]");
+  const delay = Math.max(0, INVITE_SLIDE_MS - (performance.now() - openedAt));
+  window.clearTimeout(inviteAdvanceTimer);
+  inviteAdvanceTimer = window.setTimeout(() => {
+    inviteAdvanceTimer = 0;
+    if (!document.body.classList.contains("is-open") || !slides || slides.hidden) return;
+    showInviteSlide(slides, inviteSlideIndex + 1);
+    restartInviteTimer(slides);
+  }, delay);
 }
 
 function restartInviteTimer(slides) {
@@ -373,9 +385,11 @@ INVITE_BG_MOBILE.addEventListener("change", () => {
   if (document.body.classList.contains("is-open")) startInviteSlideshow();
 });
 
-async function showHousehold(guest) {
+async function showHousehold(guest, { arrive = false } = {}) {
   hideKey3d();
-  showMonogramPng(true);
+  const staging = arrive && !prefersReducedMotion();
+  document.body.classList.toggle("is-arriving", staging);
+  showMonogramPng(!staging);
   rememberGuest(guest);
   sealed.hidden = true;
   if (chooser) chooser.hidden = true;
@@ -418,7 +432,32 @@ async function showHousehold(guest) {
 
   await startInviteSlideshow();
   document.body.classList.add("is-open");
-  restartInviteTimer(document.querySelector("[data-invite-slides]"));
+  if (!document.body.classList.contains("is-arriving")) {
+    restartInviteTimer(document.querySelector("[data-invite-slides]"));
+  }
+}
+
+function wipeLine(el) {
+  if (!el || el.hidden || !el.textContent.trim()) return false;
+  el.classList.add("is-written");
+  return true;
+}
+
+async function playArrival() {
+  showMonogramPng(true);
+  document.querySelector(".monogram")?.classList.add("is-written");
+  await wait(700);
+  await wait(220);
+  if (wipeLine(document.querySelector("[data-household-greeting]"))) await wait(700);
+  await wait(220);
+  if (wipeLine(document.querySelector(".names-invited"))) await wait(700);
+  document.querySelector(".invite-mark")?.classList.add("is-written");
+  await wait(400);
+  document.body.classList.remove("is-revealing");
+  document.body.classList.add("is-arrived-doors");
+  await wait(900);
+  document.body.classList.add("is-arrived-mail");
+  await wait(700);
 }
 
 const findInvite = form?.querySelector(".find-invite");
@@ -461,8 +500,49 @@ function cancelUnlock() {
   showMonogramPng(false);
   resetKey3d();
   hideIntroVideo();
+  stopSong();
   document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering", "is-intro", "is-revealing");
 }
+
+const song = document.querySelector("[data-song]");
+const songToggle = document.querySelector("[data-song-toggle]");
+
+function setSongMuted(muted) {
+  if (!song || !songToggle) return;
+  song.muted = muted;
+  songToggle.classList.toggle("is-muted", muted);
+  songToggle.setAttribute("aria-pressed", muted ? "true" : "false");
+  songToggle.setAttribute("aria-label", muted ? "Unmute music" : "Mute music");
+}
+
+function hideSongToggle() {
+  if (songToggle) songToggle.hidden = true;
+}
+
+function stopSong() {
+  if (!song) return;
+  song.pause();
+  song.currentTime = 0;
+  hideSongToggle();
+}
+
+function startSong() {
+  if (!song || prefersReducedMotion()) return;
+  setSongMuted(false);
+  try {
+    song.currentTime = 0;
+  } catch {
+    /* The file may still be loading. */
+  }
+  if (songToggle) songToggle.hidden = false;
+  song.play().catch(() => hideSongToggle());
+}
+
+song?.addEventListener("ended", hideSongToggle);
+songToggle?.addEventListener("click", () => {
+  if (!song) return;
+  setSongMuted(!song.muted);
+});
 
 function hideIntroVideo() {
   const wrap = document.querySelector("[data-intro-video]");
@@ -481,8 +561,9 @@ function playIntroVideo() {
   if (!wrap || !video || prefersReducedMotion()) return Promise.resolve();
   wrap.hidden = false;
   document.body.classList.add("is-intro");
-  video.muted = false;
+  video.muted = true;
   video.currentTime = 0;
+  if (!song || song.paused) startSong();
   return video
     .play()
     .then(
@@ -511,8 +592,11 @@ async function playUnlockSequence() {
     document.body.style.setProperty("--lock-oy", `${(center.lockY / window.innerHeight) * 100}%`);
   }
   document.body.classList.add("is-unlocking");
-  const played = await playKeyUnlock();
-  if (!played) return false;
+  const played = await playKeyUnlock(() => startSong());
+  if (!played) {
+    stopSong();
+    return false;
+  }
   document.body.classList.add("is-unlocked");
   await wait(220);
   hideKey3d();
@@ -550,11 +634,18 @@ form?.addEventListener("submit", async (event) => {
     preloadInviteAssets(guest);
     const played = await playUnlockSequence();
     if (!played) return;
-    await showHousehold(guest);
+    const arrive = !prefersReducedMotion();
+    await showHousehold(guest, { arrive });
     document.body.classList.add("is-revealing");
     document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
-    if (!prefersReducedMotion()) await wait(1500);
-    document.body.classList.remove("is-revealing");
+    if (arrive) {
+      const openedAt = performance.now();
+      await playArrival();
+      document.body.classList.remove("is-revealing", "is-arriving", "is-arrived-doors", "is-arrived-mail");
+      armInviteAdvance(openedAt);
+    } else {
+      document.body.classList.remove("is-revealing");
+    }
   } catch (error) {
     cancelUnlock();
     if (errorNode) {
@@ -719,7 +810,7 @@ function beginOpen(link) {
 }
 
 household?.addEventListener("keydown", (event) => {
-  if (event.target.closest(".invite-sheet-calendar")) return;
+  if (event.target.closest(".invite-sheet-calendar, .invite-sheet-back")) return;
   if (event.key !== "Enter" && event.key !== " ") return;
   const link = event.target.closest("[data-envelope]");
   if (!link || event.target !== link) return;
@@ -730,7 +821,7 @@ household?.addEventListener("keydown", (event) => {
 household?.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (event.target.closest(".invite-sheet-calendar")) return;
-  if (event.target.closest(".invite-sheet-close, [data-close-letter]")) {
+  if (event.target.closest(".invite-sheet-back, [data-close-letter]")) {
     event.preventDefault();
     event.stopPropagation();
     closeEnvelopes();
@@ -739,6 +830,7 @@ household?.addEventListener("click", (event) => {
   const link = event.target.closest("[data-envelope]");
   if (!link) return;
   if (link.classList.contains("is-opening") || link.classList.contains("is-selected")) {
+    if (guestEditInProgress()) return;
     if (event.target.closest(".envelope-letter, .envelope-open-scene")) return;
     closeEnvelopes();
     return;
@@ -760,10 +852,15 @@ household?.addEventListener("click", (event) => {
   });
 });
 
+function guestEditInProgress() {
+  return Boolean(document.querySelector("[data-party-member].is-editing"));
+}
+
 document.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (!household?.classList.contains("is-reading")) return;
   if (detailsModal && !detailsModal.hidden) return;
+  if (guestEditInProgress()) return;
   if (event.target.closest("[data-not-you]")) return;
   if (event.target.closest(".envelope-letter, .envelope-open-scene, .household-mail, [data-details-modal], [data-envelope]")) return;
   closeEnvelopes();
@@ -785,15 +882,20 @@ document.querySelectorAll("[data-open-details]").forEach((el) => {
 });
 
 detailsModal?.querySelectorAll("[data-close-details]").forEach((el) => {
-  el.addEventListener("click", () => closeDetailsModal(detailsModal));
+  el.addEventListener("click", () => {
+    if (el.classList.contains("details-modal-backdrop") && guestEditInProgress()) return;
+    closeDetailsModal(detailsModal);
+  });
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (detailsModal && !detailsModal.hidden) {
+    if (guestEditInProgress()) return;
     closeDetailsModal(detailsModal);
     return;
   }
+  if (guestEditInProgress()) return;
   if (household?.querySelector(".is-opening, .is-selected")) closeEnvelopes();
 });
 
@@ -819,6 +921,7 @@ function resetToLock() {
     "details-open",
   );
   hideIntroVideo();
+  stopSong();
   showMonogramPng(false);
   const home = new URL("/", window.location.origin);
   if (

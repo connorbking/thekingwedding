@@ -110,10 +110,6 @@ function memberContactLine(phone, email, address = {}) {
   return `${mail}<div class="party-member-reach">${reach.join("")}</div>`;
 }
 
-function guestCountLabel(count) {
-  return count === 1 ? "1 guest" : `${count} guests`;
-}
-
 function partyCrease() {
   return `<img class="party-crease" src="/public/crease.png" alt="" aria-hidden="true">`;
 }
@@ -180,7 +176,7 @@ function memberAddressFields(index, member) {
   return `
     <div class="party-member-address">
       <label class="address-lookup">Street address
-        <input name="memberAddress${index}" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
+        <input name="memberAddress${index}" type="text" autocomplete="off" placeholder="Start typing your address..." aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
       </label>
       <ul class="address-suggestions" id="address-suggestions-${index}" data-address-suggestions hidden></ul>
       <label>Apartment / unit (optional) <input name="memberApt${index}" autocomplete="address-line2" placeholder="Apartment or unit" value="${escapeAttr(apt)}"></label>
@@ -197,8 +193,8 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
   const fields = `
-    <label>First Name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name" placeholder="First Name"></label>
-    <label>Last Name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name" placeholder="Last Name"></label>
+    <label>First Name <input name="memberFirst${index}" value="${escapeAttr(first)}" autocomplete="given-name" placeholder="First Name"></label>
+    <label>Last Name <input name="memberLast${index}" value="${escapeAttr(last)}" autocomplete="family-name" placeholder="Last Name"></label>
     <label>Phone <input name="memberPhone${index}" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(201) 555-0100" value="${escapeAttr(formatPhone(member.phone || ""))}"></label>
     <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
     ${showRsvp ? "" : memberAddressFields(index, member)}
@@ -512,62 +508,21 @@ function refreshMemberSummary(card) {
   equalizeLetterPanels(card.closest("form"));
 }
 
-function validateHouseholdDetails(form) {
-  for (const scope of householdAddressScopes(form)) {
-    const fields = addressInputs(scope);
-    if (fields.search?.value.trim() || hasCompleteAddress(scope)) continue;
-    setMemberEditing(scope, true);
-    fields.search?.focus();
-    const errorNode = form.querySelector("[data-form-error]");
-    if (errorNode) errorNode.textContent = "Please enter a mailing address for each guest.";
-    return false;
-  }
-  return true;
-}
-
-async function resolveScopeAddress(form, scope) {
-  if (hasCompleteAddress(scope)) return true;
-  const query = addressInputs(scope).search?.value.trim() || "";
-  if (query.length < 4) return false;
-  const { suggestions, hint } = await lookupAddresses(query);
-  if (suggestions.length === 1) {
-    applyAddress(scope, suggestions[0]);
-    refreshMemberSummary(scope);
-    return true;
-  }
-  if (suggestions.length > 1) {
-    const list = addressInputs(scope).list;
-    if (list) {
-      list.innerHTML = suggestions
-        .map(
-          (row, index) =>
-            `<li><button type="button" data-address-index="${index}">${escapeAttr(row.label)}</button></li>`
-        )
-        .join("");
-      list.hidden = false;
-      list.querySelectorAll("[data-address-index]").forEach((button) => {
-        button.addEventListener("click", () => {
-          applyAddress(scope, suggestions[Number(button.dataset.addressIndex)]);
-          hideSuggestions(scope);
-          refreshMemberSummary(scope);
-        });
-      });
-    }
-  } else if (hint) {
-    const errorNode = form.querySelector("[data-form-error]");
-    if (errorNode) errorNode.textContent = hint;
-  }
-  return false;
-}
-
 async function resolveTypedAddress(form) {
   for (const scope of householdAddressScopes(form)) {
-    if (await resolveScopeAddress(form, scope)) continue;
-    setMemberEditing(scope, true);
-    addressInputs(scope).search?.focus();
-    return false;
+    if (hasCompleteAddress(scope)) continue;
+    const query = addressInputs(scope).search?.value.trim() || "";
+    if (query.length < 4) continue;
+    try {
+      const { suggestions } = await lookupAddresses(query);
+      if (suggestions.length === 1) {
+        applyAddress(scope, suggestions[0]);
+        refreshMemberSummary(scope);
+      }
+    } catch {
+      /* Keep the phone, email, and any address already saved for this guest. */
+    }
   }
-  return true;
 }
 
 function successNode(form) {
@@ -776,6 +731,7 @@ async function postSubmission(payload) {
 }
 
 function bindForm(form, eventName, guest) {
+  if (form.dataset.household === "true") form.noValidate = true;
   const partyMode = Boolean(guest.code && (guest.personalized || guest.members?.length || form.dataset.household));
   if (partyMode) {
     renderParty(form, guest, eventName);
@@ -858,16 +814,7 @@ function bindForm(form, eventName, guest) {
       return;
     }
 
-    if (form.dataset.household === "true") {
-      if (!validateHouseholdDetails(form)) return;
-      if (!(await resolveTypedAddress(form))) {
-        const errorNode = form.querySelector("[data-form-error]");
-        if (errorNode && !errorNode.textContent) {
-          errorNode.textContent = "Please choose a mailing address from the list for each guest.";
-        }
-        return;
-      }
-    }
+    if (form.dataset.household === "true") await resolveTypedAddress(form);
     const payload = partyMode ? serializeParty(form, eventName, guest) : serialize(form, eventName, guest);
     if (form.dataset.household === "true") payload.kind = "address";
     if (!partyMode && collectExtras(form).length > extraGuestSlots(guest)) {

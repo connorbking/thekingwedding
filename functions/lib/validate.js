@@ -54,13 +54,6 @@ function validateParty(body, event) {
   }
 
   const address = addressFields(guests[0] || {});
-  if (
-    !isRsvp &&
-    guests.some((guest) => !guest.street || !guest.city || !guest.region || !guest.postal || !guest.country)
-  ) {
-    return { error: "Please complete a mailing address for each guest." };
-  }
-
   const primary = guests[0] || {};
   return {
     submission: {

@@ -541,7 +541,7 @@ function upsert_(sheet, data) {
     info.width,
     match,
     Object.assign({}, data, primary, household),
-    { contact: true, forceAddress: isAddress }
+    { contact: true, forceAddress: isAddress && hasAddress_(household) }
   );
   if (match === -1 && primaryIndex !== -1) codes[primaryIndex] = groupCode;
 
@@ -554,13 +554,12 @@ function upsert_(sheet, data) {
       info.map,
       info.width,
       extraMatch,
-      Object.assign({}, household, guest),
-      { contact: Boolean(guest.phone || guest.email), forceAddress: isAddress }
+      Object.assign({ event: data.event, party: party, groupCode: groupCode, rsvp: guest.rsvp || "" }, guest),
+      { contact: Boolean(guest.phone || guest.email), forceAddress: isAddress && hasAddress_(guest) }
     );
     if (extraMatch === -1 && extraIndex !== -1) codes[extraIndex] = groupCode;
   });
 
-  stampHouseholdAddress_(sheet, values, info.map, info.width, groupCodesFor_(values, info.map), groupCode, party, address);
   return { ok: true, updated: match !== -1, party: party };
 }
 
@@ -642,12 +641,29 @@ function copyInvites_(fromRow, toRow, map) {
   });
 }
 
+function hasAddress_(data) {
+  const source = data || {};
+  return Boolean(
+    String(source.street || source.street1 || "").trim() ||
+      String(source.city || "").trim() ||
+      String(source.region || source.state || "").trim() ||
+      String(source.postal || source.zip || "").trim()
+  );
+}
+
 function groupCodesFor_(values, map) {
   let code = "";
+  let party = "";
   return values.map(function (row) {
+    const currentParty = String(cell_(row, map, "party") || "").trim().toLowerCase();
     const current = formatCode_(cell_(row, map, "group code"));
+    const named = String(cell_(row, map, "first name") || "").trim() || String(cell_(row, map, "last name") || "").trim();
+    if (currentParty && party && currentParty !== party && !current) code = "";
+    if (currentParty) party = currentParty;
     if (current) code = current;
-    return code;
+    if (current) return current;
+    if (code && named) return code;
+    return "";
   });
 }
 
@@ -702,25 +718,6 @@ function findGuestRow_(values, map, codes, groupCode, guest) {
   });
 }
 
-function findInGroup_(values, map, codes, groupCode, guest) {
-  return findGuestRow_(values, map, codes, groupCode, guest);
-}
-
-function stampHouseholdAddress_(sheet, values, map, width, codes, groupCode, party, address) {
-  if (!address.street && !address.city) return;
-  for (let i = 0; i < values.length; i += 1) {
-    const rowCode = formatCode_(cell_(values[i], map, "group code"));
-    const sameCode = groupCode && rowCode === groupCode;
-    const sameParty =
-      party &&
-      sameText_(cell_(values[i], map, "party"), party) &&
-      (cell_(values[i], map, "first name") || cell_(values[i], map, "last name"));
-    if (!sameCode && !sameParty) continue;
-    fillGuest_(values[i], map, address, { contact: false, forceAddress: true });
-    sheet.getRange(i + 2, 1, 1, width).setValues([values[i]]);
-  }
-}
-
 function updateParty_(sheet, data) {
   const info = headerIndex_(sheet);
   const lastRow = sheet.getLastRow();
@@ -747,6 +744,7 @@ function updateParty_(sheet, data) {
 
   const party = partyName_(data, existingParty);
   const writeAddress = String(data.kind || "").toLowerCase() !== "rsvp";
+  let written = 0;
 
   (data.guests || []).forEach(function (guest) {
     const index = findGuestRow_(values, info.map, codes, groupCode, guest);
@@ -770,21 +768,28 @@ function updateParty_(sheet, data) {
         postal: guest.postal || guest.zip || "",
       }
     );
+    const writeThisAddress = writeAddress && hasAddress_(next);
     if (index !== -1) {
-      writeRow_(sheet, values, info.map, info.width, index, next, { contact: true, forceAddress: writeAddress });
+      writeRow_(sheet, values, info.map, info.width, index, next, { contact: true, forceAddress: writeThisAddress });
       codes[index] = groupCode || codes[index];
+      written += 1;
       return;
     }
     if (!template) return;
     const row = new Array(info.width).fill("");
-    fillGuest_(row, info.map, next, { contact: true, forceAddress: writeAddress });
+    fillGuest_(row, info.map, next, { contact: true, forceAddress: writeThisAddress });
     copyInvites_(template, row, info.map);
     sheet.appendRow(row);
     values.push(row);
     codes.push(groupCode);
+    written += 1;
   });
 
-  return { ok: true, party: party, groupCode: groupCode };
+  if (!written) {
+    return { ok: false, error: "We could not match that guest to the list." };
+  }
+
+  return { ok: true, party: party, groupCode: groupCode, updated: true };
 }
 
 function normalizePersonName_(value) {
