@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//The King Wedding//Save the Date//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:jersey-2027-10-02@theking.wedding
+DTSTAMP:20260923T133000Z
+DTSTART:20271002T200000Z
+DTEND:20271003T020000Z
+SUMMARY:Alyssa & Connor · Whippany
+LOCATION:19 Woodcrest Road\, Whippany NJ 07981
+DESCRIPTION:Save the Date for Alyssa and Connor in Whippany\, New Jersey. Formal invitation to follow.
+URL:https://theking.wedding/jersey/save-the-date
+END:VEVENT
+END:VCALENDAR

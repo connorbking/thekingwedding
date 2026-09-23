@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//The King Wedding//Save the Date//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:shower-2027-06-05@theking.wedding
+DTSTAMP:20260923T133000Z
+DTSTART:20270605T180000Z
+DTEND:20270605T210000Z
+SUMMARY:Alyssa & Connor · Bridal Shower
+LOCATION:Exact Location TBD
+DESCRIPTION:Save the Date for Alyssa and Connor's bridal shower in New Jersey. Formal invitation to follow.
+URL:https://theking.wedding/shower/save-the-date
+END:VEVENT
+END:VCALENDAR

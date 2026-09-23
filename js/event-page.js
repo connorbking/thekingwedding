@@ -7,7 +7,7 @@ import {
   guestCanAccess,
   gateHref,
   withCode,
-  clearGuest,
+  markResetHome,
   isDualGuest,
 } from "./guests.js";
 
@@ -40,8 +40,8 @@ if (!guestCanAccess(guest, eventKey)) {
   document.querySelectorAll("[data-not-you]").forEach((el) => {
     el.addEventListener("click", (clickEvent) => {
       clickEvent.preventDefault();
-      clearGuest();
-      window.location.assign("/");
+      markResetHome();
+      window.location.replace("/");
     });
   });
 

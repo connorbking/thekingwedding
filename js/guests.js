@@ -1,6 +1,7 @@
 import { API, GUEST_CODES, LOCAL_PEOPLE, DEFAULT_PARTY_SIZE, EVENT_ORDER, sortEvents } from "./config.js";
 
 export const INVITE_STORAGE_KEY = "king.invite";
+export const RESET_HOME_KEY = "king.resetHome";
 
 const EVENT_KEYS = new Set(EVENT_ORDER);
 const RESERVED_PARAMS = new Set([
@@ -93,6 +94,7 @@ export function currentInviteCode() {
 }
 
 export function rememberGuest(guest) {
+  if (sessionStorage.getItem(RESET_HOME_KEY)) return;
   if (!guest?.code && !guest?.members?.length) return;
   sessionStorage.setItem(
     INVITE_STORAGE_KEY,
@@ -104,6 +106,20 @@ export function rememberGuest(guest) {
       members: guest.members || [],
     }),
   );
+}
+
+export function markResetHome() {
+  sessionStorage.setItem(RESET_HOME_KEY, "1");
+  sessionStorage.removeItem(INVITE_STORAGE_KEY);
+  sessionStorage.removeItem("king.detailsConfirmed");
+}
+
+export function consumeResetHome() {
+  if (!sessionStorage.getItem(RESET_HOME_KEY)) return false;
+  sessionStorage.removeItem(RESET_HOME_KEY);
+  sessionStorage.removeItem(INVITE_STORAGE_KEY);
+  sessionStorage.removeItem("king.detailsConfirmed");
+  return true;
 }
 
 export function clearGuest() {

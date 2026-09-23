@@ -13,7 +13,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css?v=type39">
+  <link rel="stylesheet" href="/css/home.css?v=type48">
+  <link rel="preload" as="image" href="/public/invite-bg/000.jpg" media="(min-width: 800px)">
+  <link rel="preload" as="image" href="/public/invite-bg-mobile/000.jpg" media="(max-width: 799px)">
   <script type="importmap">
   {
     "imports": {
@@ -25,6 +27,11 @@
   <script>
     (function () {
       try {
+        if (sessionStorage.getItem("king.resetHome")) {
+          sessionStorage.removeItem("king.resetHome");
+          sessionStorage.removeItem("king.invite");
+          sessionStorage.removeItem("king.detailsConfirmed");
+        }
         var q = new URLSearchParams(location.search);
         if (q.get("code") || q.get("gate") || sessionStorage.getItem("king.invite")) {
           document.documentElement.classList.add("invite-returning");
@@ -46,6 +53,12 @@
   </div>
 
   <canvas class="key3d-canvas" data-key3d hidden></canvas>
+  <div class="intro-video" data-intro-video hidden>
+    <div class="intro-video-scene">
+      <video src="/public/introVideo.mov" playsinline webkit-playsinline preload="auto"></video>
+      <img class="intro-video-frame" src="/public/background-with-frame.png" alt="">
+    </div>
+  </div>
   <main class="invitation-gate" data-gate-stage>
     <div class="monogram" aria-hidden="true">
       <span>A</span>
@@ -198,6 +211,6 @@
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env48"></script>
+  <script type="module" src="/js/home.js?v=env57"></script>
 </body>
 </html>

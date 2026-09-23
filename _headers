@@ -1,2 +1,5 @@
 /*
   Cache-Control: public, max-age=0, must-revalidate
+
+/public/calendar/*
+  Content-Type: text/calendar; charset=utf-8

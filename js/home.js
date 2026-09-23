@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js";
+import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js?v=cal1";
 import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party9";
 import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k6";
 import {
@@ -7,7 +7,8 @@ import {
   resolveGuest,
   readStoredGuest,
   rememberGuest,
-  clearGuest,
+  markResetHome,
+  consumeResetHome,
 } from "./guests.js";
 
 const sealed = document.querySelector("[data-sealed]");
@@ -92,8 +93,8 @@ function doorMarkup(eventKey, guest) {
   if (!invitedMembers.length) return "";
   const region = event.region || event.place;
   return `
-    <button type="button" class="event-door envelope-link${openedEnvelopes.has(eventKey) ? " is-opened" : ""}" data-envelope data-event="${eventKey}" aria-label="Open ${escapeHtml(event.shortTitle)}" aria-expanded="false">
-      <span class="envelope envelope--${eventKey}" aria-hidden="true">
+    <div class="event-door envelope-link${openedEnvelopes.has(eventKey) ? " is-opened" : ""}" data-envelope data-event="${eventKey}" role="button" tabindex="0" aria-label="Open ${escapeHtml(event.shortTitle)}" aria-expanded="false">
+      <span class="envelope envelope--${eventKey}">
         <span class="envelope-stack">
           <img class="envelope-open-flap" src="${art.openFlap}" alt="">
           <span class="envelope-sleeve">
@@ -124,6 +125,7 @@ function doorMarkup(eventKey, guest) {
                 <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
                 <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
                 <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
+                ${event.calendar ? `<a class="invite-sheet-calendar" href="${escapeHtml(event.calendar)}" download><svg class="invite-sheet-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="1.5"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path></svg>Add to Calendar</a>` : ""}
               </span>
             </span>
           </span>
@@ -133,7 +135,7 @@ function doorMarkup(eventKey, guest) {
         <strong>${escapeHtml(event.shortTitle)}</strong>
         <em>${escapeHtml(region)}</em>
       </span>
-    </button>
+    </div>
   `;
 }
 
@@ -148,9 +150,33 @@ const INVITE_BG_MOBILE = window.matchMedia("(max-width: 799px)");
 let inviteSlideTimer = 0;
 let inviteSlideIndex = 0;
 let inviteSlideBusy = false;
+let inviteBgUrls = null;
+let inviteBgPromise = null;
+const preloadedImages = new Map();
 
 function inviteBgSet() {
   return INVITE_BG_MOBILE.matches ? "invite-bg-mobile" : "invite-bg";
+}
+
+function preloadImage(url) {
+  if (!url) return Promise.resolve();
+  if (preloadedImages.has(url)) return preloadedImages.get(url);
+  const done = new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    const finish = () => {
+      if (typeof img.decode === "function") {
+        img.decode().then(() => resolve(url), () => resolve(url));
+        return;
+      }
+      resolve(url);
+    };
+    img.addEventListener("load", finish);
+    img.addEventListener("error", () => resolve(url));
+    img.src = url;
+  });
+  preloadedImages.set(url, done);
+  return done;
 }
 
 async function listInviteBgFiles(folder) {
@@ -177,11 +203,24 @@ async function listInviteBgFiles(folder) {
 }
 
 async function discoverInviteBgs() {
-  const folder = inviteBgSet();
-  const urls = await listInviteBgFiles(folder);
-  if (urls.length) return urls;
-  if (folder === "invite-bg-mobile") return listInviteBgFiles("invite-bg");
-  return [];
+  if (inviteBgUrls) return inviteBgUrls;
+  if (!inviteBgPromise) {
+    inviteBgPromise = (async () => {
+      const folder = inviteBgSet();
+      let urls = await listInviteBgFiles(folder);
+      if (!urls.length && folder === "invite-bg-mobile") urls = await listInviteBgFiles("invite-bg");
+      inviteBgUrls = urls;
+      if (urls[0]) preloadImage(urls[0]);
+      if (urls[1]) preloadImage(urls[1]);
+      return urls;
+    })();
+  }
+  return inviteBgPromise;
+}
+
+function resetInviteBgCache() {
+  inviteBgUrls = null;
+  inviteBgPromise = null;
 }
 
 function inviteNav() {
@@ -210,7 +249,14 @@ function restartInviteTimer(slides) {
 function stopInviteSlideshow() {
   stopInviteTimer();
   inviteSlideBusy = false;
+  inviteSlideIndex = 0;
   setInviteNavVisible(false);
+  const slides = document.querySelector("[data-invite-slides]");
+  if (slides) {
+    slides.hidden = true;
+    slides.replaceChildren();
+    delete slides.dataset.urls;
+  }
 }
 
 function stepInviteSlide(delta) {
@@ -286,41 +332,51 @@ async function showInviteSlide(slides, index) {
 async function startInviteSlideshow() {
   const slides = document.querySelector("[data-invite-slides]");
   if (!slides) return;
-  stopInviteSlideshow();
+  stopInviteTimer();
   const urls = await discoverInviteBgs();
   if (!urls.length) {
     slides.hidden = true;
     slides.replaceChildren();
+    delete slides.dataset.urls;
     return;
   }
+  await preloadImage(urls[0]);
+  const signature = urls.join("|");
+  if (slides.dataset.urls !== signature) {
+    slides.replaceChildren(
+      ...urls.map((url, index) => {
+        const img = document.createElement("img");
+        img.className = "invite-slide";
+        img.alt = "";
+        img.dataset.src = url;
+        if (index <= 1) img.src = url;
+        if (index === 0) img.classList.add("is-active");
+        return img;
+      }),
+    );
+    slides.dataset.urls = signature;
+  }
+  const first = slides.querySelector(".invite-slide");
+  if (first) {
+    preloadSlide(first);
+    await whenSlideReady(first);
+  }
   slides.hidden = false;
-  slides.replaceChildren(
-    ...urls.map((url, index) => {
-      const img = document.createElement("img");
-      img.className = "invite-slide";
-      img.alt = "";
-      img.dataset.src = url;
-      if (index <= 1) img.src = url;
-      if (index === 0) img.classList.add("is-active");
-      return img;
-    }),
-  );
   inviteSlideIndex = 0;
   setInviteNavVisible(urls.length > 1);
   bindInviteNav();
-  restartInviteTimer(slides);
+  if (document.body.classList.contains("is-open")) restartInviteTimer(slides);
 }
 
 INVITE_BG_MOBILE.addEventListener("change", () => {
+  resetInviteBgCache();
   if (document.body.classList.contains("is-open")) startInviteSlideshow();
 });
 
-function showHousehold(guest) {
+async function showHousehold(guest) {
   hideKey3d();
   showMonogramPng(true);
   rememberGuest(guest);
-  document.body.classList.add("is-open");
-  startInviteSlideshow();
   sealed.hidden = true;
   if (chooser) chooser.hidden = true;
   if (continuePanel) continuePanel.hidden = true;
@@ -359,6 +415,10 @@ function showHousehold(guest) {
   if (householdForm) {
     initHouseholdForm({ guest, form: householdForm });
   }
+
+  await startInviteSlideshow();
+  document.body.classList.add("is-open");
+  restartInviteTimer(document.querySelector("[data-invite-slides]"));
 }
 
 const findInvite = form?.querySelector(".find-invite");
@@ -381,10 +441,66 @@ function lockCenter() {
   };
 }
 
+function preloadInviteAssets(guest) {
+  const keys = sortEvents(guest.events)
+    .filter((key) => key !== "shower")
+    .filter((key) => doorMarkup(key, guest));
+  keys.forEach((key) => {
+    const art = ENVELOPE_ART[key];
+    if (!art) return;
+    Object.values(art).forEach((src) => {
+      if (typeof src !== "string") return;
+      const img = new Image();
+      img.src = src;
+    });
+  });
+  discoverInviteBgs();
+}
+
 function cancelUnlock() {
   showMonogramPng(false);
   resetKey3d();
-  document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
+  hideIntroVideo();
+  document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering", "is-intro", "is-revealing");
+}
+
+function hideIntroVideo() {
+  const wrap = document.querySelector("[data-intro-video]");
+  const video = wrap?.querySelector("video");
+  if (video) {
+    video.pause();
+    video.currentTime = 0;
+  }
+  if (wrap) wrap.hidden = true;
+  document.body.classList.remove("is-intro");
+}
+
+function playIntroVideo() {
+  const wrap = document.querySelector("[data-intro-video]");
+  const video = wrap?.querySelector("video");
+  if (!wrap || !video || prefersReducedMotion()) return Promise.resolve();
+  wrap.hidden = false;
+  document.body.classList.add("is-intro");
+  video.muted = false;
+  video.currentTime = 0;
+  return video
+    .play()
+    .then(
+      () =>
+        new Promise((resolve) => {
+          const done = () => {
+            video.removeEventListener("ended", done);
+            video.removeEventListener("error", done);
+            resolve();
+          };
+          video.addEventListener("ended", done);
+          video.addEventListener("error", done);
+        }),
+    )
+    .catch(() => {})
+    .finally(() => {
+      hideIntroVideo();
+    });
 }
 
 async function playUnlockSequence() {
@@ -402,6 +518,10 @@ async function playUnlockSequence() {
   hideKey3d();
   document.body.classList.add("is-entering");
   await wait(900);
+  const intro = playIntroVideo();
+  const slides = startInviteSlideshow();
+  await intro;
+  await slides;
   return true;
 }
 
@@ -427,11 +547,14 @@ form?.addEventListener("submit", async (event) => {
       if (errorNode) errorNode.textContent = missingMessage();
       return;
     }
+    preloadInviteAssets(guest);
     const played = await playUnlockSequence();
     if (!played) return;
-    showHousehold(guest);
+    await showHousehold(guest);
     document.body.classList.add("is-revealing");
     document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
+    if (!prefersReducedMotion()) await wait(1500);
+    document.body.classList.remove("is-revealing");
   } catch (error) {
     cancelUnlock();
     if (errorNode) {
@@ -452,6 +575,7 @@ form?.addEventListener("submit", async (event) => {
 });
 
 fetch("/api/invite?warm=1").catch(() => {});
+discoverInviteBgs();
 
 function setReading(open) {
   household?.classList.toggle("is-reading", open);
@@ -594,8 +718,18 @@ function beginOpen(link) {
   requestAnimationFrame(() => centerOpenLetter(link));
 }
 
+household?.addEventListener("keydown", (event) => {
+  if (event.target.closest(".invite-sheet-calendar")) return;
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const link = event.target.closest("[data-envelope]");
+  if (!link || event.target !== link) return;
+  event.preventDefault();
+  link.click();
+});
+
 household?.addEventListener("click", (event) => {
   if (event.button !== 0) return;
+  if (event.target.closest(".invite-sheet-calendar")) return;
   if (event.target.closest(".invite-sheet-close")) {
     event.preventDefault();
     closeEnvelopes();
@@ -629,6 +763,7 @@ document.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (!household?.classList.contains("is-reading")) return;
   if (detailsModal && !detailsModal.hidden) return;
+  if (event.target.closest("[data-not-you]")) return;
   if (event.target.closest(".envelope-letter, .envelope-open-scene, .household-mail, [data-details-modal], [data-envelope]")) return;
   closeEnvelopes();
 });
@@ -661,23 +796,59 @@ document.addEventListener("keydown", (event) => {
   if (household?.querySelector(".is-opening, .is-selected")) closeEnvelopes();
 });
 
+function resetToLock() {
+  openedEnvelopes.clear();
+  detailsConfirmed = false;
+  markResetHome();
+  document.documentElement.classList.remove("invite-returning");
+  closeEnvelopes();
+  closeDetailsModal(detailsModal);
+  stopInviteSlideshow();
+  window.clearInterval(wiggleTimer);
+  wiggleTimer = 0;
+  if (household) household.hidden = true;
+  if (sealed) sealed.hidden = false;
+  document.body.classList.remove(
+    "is-open",
+    "is-revealing",
+    "is-unlocking",
+    "is-unlocked",
+    "is-entering",
+    "is-intro",
+    "details-open",
+  );
+  hideIntroVideo();
+  showMonogramPng(false);
+  const home = new URL("/", window.location.origin);
+  if (
+    window.location.pathname === home.pathname &&
+    window.location.search === "" &&
+    window.location.hash === ""
+  ) {
+    window.location.reload();
+    return;
+  }
+  window.location.replace(home.href);
+}
+
 document.querySelectorAll("[data-not-you]").forEach((el) => {
-  el.addEventListener("click", () => {
-    openedEnvelopes.clear();
-    detailsConfirmed = false;
-    sessionStorage.removeItem("king.detailsConfirmed");
-    clearGuest();
-    window.location.assign("/");
+  el.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resetToLock();
   });
 });
 
 const params = new URLSearchParams(window.location.search);
+if (consumeResetHome()) {
+  document.documentElement.classList.remove("invite-returning");
+}
 const stored = readStoredGuest();
 if (params.get("code") || params.get("gate") || stored) {
   hideKey3d();
-  if (stored) showHousehold(stored);
+  if (stored) await showHousehold(stored);
   const returning = await resolveGuest();
-  if (returning) showHousehold(returning);
+  if (returning) await showHousehold(returning);
   else if (!stored && params.get("code") && errorNode) errorNode.textContent = missingMessage();
   document.documentElement.classList.remove("invite-returning");
 } else {

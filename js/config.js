@@ -17,6 +17,7 @@ export const EVENTS = {
     shortTitle: "Bridal Shower",
     place: "New Jersey",
     region: "New Jersey",
+    calendar: "/public/calendar/shower.ics",
   },
   como: {
     key: "como",
@@ -26,6 +27,7 @@ export const EVENTS = {
     shortTitle: "Lake Como",
     place: "Lake Como, Italy",
     region: "Italy",
+    calendar: "/public/calendar/como.ics",
   },
   jersey: {
     key: "jersey",
@@ -35,6 +37,7 @@ export const EVENTS = {
     shortTitle: "Whippany",
     place: "Whippany, New Jersey",
     region: "New Jersey",
+    calendar: "/public/calendar/whippany.ics",
   },
 };
 

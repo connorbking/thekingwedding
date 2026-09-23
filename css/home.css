@@ -215,7 +215,8 @@ html:has(body.landing-body) {
 
   .landing-body.is-entering .landing-photo,
   .landing-body.is-entering .invitation-gate,
-  .landing-body.is-revealing .landing-photo {
+  .landing-body.is-revealing .invitation-gate,
+  .landing-body.is-revealing .home-footer {
     animation: none;
     transition: none;
     transform: none;
@@ -867,6 +868,48 @@ html.invite-returning .household-count {
   font-size: clamp(8px, 2.3cqi, 14px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.invite-sheet-calendar {
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 2.15em;
+  padding: 0.55em 1.05em 0.5em;
+  border: 1px solid rgba(196, 164, 106, 0.58);
+  background: rgba(255, 250, 242, 0.28);
+  color: rgba(63, 11, 16, 0.72);
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 13px;
+  font-size: clamp(8px, 2.2cqi, 13px);
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.invite-sheet-calendar-icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.envelope-link.is-opening .invite-sheet-calendar {
+  pointer-events: auto;
+}
+
+.invite-sheet-calendar:hover,
+.invite-sheet-calendar:focus-visible {
+  border-color: rgba(92, 18, 24, 0.45);
+  color: rgba(63, 11, 16, 0.92);
+  outline: none;
 }
 
 @media (min-width: 900px) {
@@ -1876,8 +1919,7 @@ body.details-open {
 .landing-body:has(.household-desk.is-reading) .household-kicker,
 .landing-body:has(.household-desk.is-reading) .names,
 .landing-body:has(.household-desk.is-reading) .invite-mark,
-.household-desk.is-reading .household-count,
-.household-desk.is-reading .household-reset {
+.household-desk.is-reading .household-count {
   opacity: 0;
   pointer-events: none;
 }
@@ -2145,17 +2187,77 @@ html.invite-returning .invite-mark {
     opacity 0.7s ease-in;
 }
 
-.landing-body.is-revealing .landing-photo {
-  animation: room-reveal 1.15s ease;
+.landing-body.is-revealing .invitation-gate,
+.landing-body.is-revealing .home-footer {
+  animation: manager-fade-in 1.5s ease both;
+  pointer-events: none;
 }
 
-@keyframes room-reveal {
+.landing-body.is-revealing .invite-slide {
+  transition: none;
+}
+
+@keyframes manager-fade-in {
   from {
-    filter: brightness(0);
+    opacity: 0;
   }
   to {
-    filter: none;
+    opacity: 1;
   }
+}
+
+.intro-video {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  background: #000;
+}
+
+.intro-video[hidden] {
+  display: none !important;
+}
+
+.intro-video-scene {
+  --frame-w: 2560;
+  --frame-h: 1440;
+  --hole-x: 1073;
+  --hole-y: 391;
+  --hole-w: 419;
+  --hole-h: 661;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, calc(100dvh * var(--frame-w) / var(--frame-h)));
+  height: max(100%, calc(100vw * var(--frame-h) / var(--frame-w)));
+  transform: translate(-50%, -50%);
+}
+
+.intro-video-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.intro-video video {
+  position: absolute;
+  z-index: 1;
+  left: calc(100% * var(--hole-x) / var(--frame-w));
+  top: calc(100% * var(--hole-y) / var(--frame-h));
+  width: calc(100% * var(--hole-w) / var(--frame-w));
+  height: calc(100% * var(--hole-h) / var(--frame-h));
+  object-fit: cover;
+  background: #000;
+}
+
+.landing-body.is-intro .invitation-gate,
+.landing-body.is-intro .home-footer {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .name-form {
