@@ -296,6 +296,9 @@ function markHouseholdSaved(form) {
   if (wrap) wrap.hidden = true;
   success.hidden = false;
   document.dispatchEvent(new CustomEvent("king:details-saved"));
+  requestAnimationFrame(() => {
+    success.scrollIntoView({ block: "center", inline: "nearest" });
+  });
   window.setTimeout(() => closeDetailsModal(modal), 2000);
 }
 

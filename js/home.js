@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js?v=cal1";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party24";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party25";
 import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k6";
 import {
   findGuest,
@@ -109,11 +109,11 @@ function doorMarkup(eventKey, guest) {
             <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
           </span>
           <span class="envelope-open-scene">
-            <span class="invite-sheet-close" title="Back">
+            <button type="button" class="invite-sheet-close" aria-label="Close invitation">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15.2 5.8 8.8 12l6.4 6.2"></path>
+                <path d="M6 6l12 12M18 6 6 18"></path>
               </svg>
-            </span>
+            </button>
             <img class="envelope-opened" src="${art.opened}" alt="">
             <span class="invite-sheet">
               <span class="invite-sheet-head">
@@ -730,8 +730,9 @@ household?.addEventListener("keydown", (event) => {
 household?.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (event.target.closest(".invite-sheet-calendar")) return;
-  if (event.target.closest(".invite-sheet-close")) {
+  if (event.target.closest(".invite-sheet-close, [data-close-letter]")) {
     event.preventDefault();
+    event.stopPropagation();
     closeEnvelopes();
     return;
   }
