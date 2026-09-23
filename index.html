@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css?v=type48">
+  <link rel="stylesheet" href="/css/home.css?v=type49">
   <link rel="preload" as="image" href="/public/invite-bg/000.jpg" media="(min-width: 800px)">
   <link rel="preload" as="image" href="/public/invite-bg-mobile/000.jpg" media="(max-width: 799px)">
   <script type="importmap">
@@ -55,7 +55,9 @@
   <canvas class="key3d-canvas" data-key3d hidden></canvas>
   <div class="intro-video" data-intro-video hidden>
     <div class="intro-video-scene">
-      <video src="/public/introVideo.mov" playsinline webkit-playsinline preload="auto"></video>
+      <video playsinline webkit-playsinline preload="auto">
+        <source src="/public/introVideo.mp4" type="video/mp4">
+      </video>
       <img class="intro-video-frame" src="/public/background-with-frame.png" alt="">
     </div>
   </div>
@@ -155,7 +157,7 @@
         <div class="details-sheet">
       <div data-details-form-wrap>
         <h2 id="details-title">A note for the post</h2>
-        <p class="details-lede">Where should we send your formal invitation?</p>
+        <p class="details-lede">Please provide mobile numbers and emails for your party.</p>
         <span class="details-diamond" aria-hidden="true"></span>
         <form class="household-form address-form" data-household-form>
           <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
@@ -167,7 +169,7 @@
             <div class="party-list" data-party-list></div>
             <div class="household-address">
               <p class="household-label">Mailing address</p>
-              <p class="address-note">Please confirm where you’d like your invitation sent.</p>
+              <p class="address-note">Please confirm where your party's physical invitation will be sent.</p>
               <label class="address-lookup">
                 Street address
                 <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions">
@@ -211,6 +213,6 @@
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env57"></script>
+  <script type="module" src="/js/home.js?v=env58"></script>
 </body>
 </html>

@@ -670,7 +670,7 @@ function openSceneBox(link) {
   };
   scene.style.animation = "none";
   scene.style.opacity = "1";
-  scene.style.transform = "translateX(-50%) scale(1)";
+  scene.style.transform = `translateX(-50%) scale(${getComputedStyle(scene).getPropertyValue("--open-letter-scale").trim() || 1})`;
   void scene.offsetWidth;
   const box = scene.getBoundingClientRect();
   scene.style.animation = previous.animation;

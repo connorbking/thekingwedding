@@ -677,6 +677,7 @@ html.invite-returning .household-count {
 }
 
 .envelope-open-scene {
+  --open-letter-scale: 1.35;
   position: absolute;
   left: 50%;
   bottom: 0;
@@ -732,7 +733,7 @@ html.invite-returning .household-count {
 
   100% {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(var(--open-letter-scale, 1));
   }
 }
 
@@ -995,7 +996,7 @@ html.invite-returning .household-count {
   .envelope-link.is-opening .envelope-open-scene,
   .envelope-link.is-opening .invite-sheet {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(var(--open-letter-scale, 1));
   }
 }
 
