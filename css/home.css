@@ -1543,6 +1543,11 @@ html.invite-returning .household-count {
   cursor: pointer;
 }
 
+.party-member-contact > .party-add-email {
+  justify-self: start;
+  text-align: left;
+}
+
 .party-add-email:hover,
 .party-add-email:focus-visible {
   color: rgba(92, 18, 24, 0.88);
