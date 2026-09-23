@@ -33,20 +33,164 @@ function memberName(member) {
   return `${member.first_name || member.firstName || ""} ${member.last_name || member.lastName || ""}`.trim();
 }
 
-function memberContact(member) {
-  return [member.phone || "", member.email || ""].map((value) => String(value).trim()).filter(Boolean).join("  ·  ");
+function phoneDigits(value) {
+  let digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  return digits.slice(0, 10);
 }
 
-function memberContactLine(phone, email) {
-  const parts = [];
-  if (phone) parts.push(`<span class="party-member-phone" data-member-phone>${escapeAttr(phone)}</span>`);
-  if (email) parts.push(`<span class="party-member-email" data-member-email>${escapeAttr(email)}</span>`);
-  else parts.push(`<button type="button" class="party-add-email" data-edit-member>Add email →</button>`);
-  return parts.join("");
+function formatPhone(value) {
+  const digits = phoneDigits(value);
+  if (!digits) return "";
+  if (digits.length < 4) return digits;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function applyPhoneMask(input) {
+  const caretDigits = phoneDigits(input.value.slice(0, input.selectionStart ?? input.value.length)).length;
+  const formatted = formatPhone(input.value);
+  input.value = formatted;
+  let seen = 0;
+  let pos = formatted.length;
+  for (let i = 0; i < formatted.length; i += 1) {
+    if (/\d/.test(formatted[i])) {
+      seen += 1;
+      if (seen >= caretDigits) {
+        pos = i + 1;
+        break;
+      }
+    }
+  }
+  input.setSelectionRange(pos, pos);
+}
+
+function cityStateZip({ city, region, postal } = {}) {
+  const cityState = [city, region].map((value) => String(value || "").trim()).filter(Boolean).join(", ");
+  return [cityState, String(postal || "").trim()].filter(Boolean).join(" ");
+}
+
+function addressRecord(source = {}) {
+  if (source?.querySelector) {
+    const fields = addressInputs(source);
+    return {
+      street: fields.street?.value.trim() || "",
+      apt: fields.apt?.value.trim() || "",
+      city: fields.city?.value.trim() || "",
+      region: fields.region?.value.trim() || "",
+      postal: fields.postal?.value.trim() || "",
+      country: fields.country?.value.trim() || "",
+    };
+  }
+  return {
+    street: source.street || "",
+    apt: source.apt || "",
+    city: source.city || "",
+    region: source.region || "",
+    postal: source.postal || "",
+    country: source.country || "",
+  };
+}
+
+function memberContactLine(phone, email, address = {}) {
+  const street = String(address.street || "").trim();
+  const apt = String(address.apt || "").trim();
+  const locale = cityStateZip(address);
+  const mail = street || apt || locale
+    ? `<span class="party-member-mail" data-member-mail>${
+        street ? `<span class="party-member-street">${escapeAttr(street)}</span>` : ""
+      }${apt ? `<span class="party-member-apt">${escapeAttr(apt)}</span>` : ""}${
+        locale ? `<span class="party-member-cityline">${escapeAttr(locale)}</span>` : ""
+      }</span>`
+    : `<button type="button" class="party-add-email" data-edit-member>Add address →</button>`;
+  const reach = [];
+  if (phone) reach.push(`<span class="party-member-phone" data-member-phone>${escapeAttr(phone)}</span>`);
+  if (email) reach.push(`<span class="party-member-email" data-member-email>${escapeAttr(email)}</span>`);
+  else reach.push(`<button type="button" class="party-add-email" data-edit-member>Add email →</button>`);
+  return `${mail}<div class="party-member-reach">${reach.join("")}</div>`;
 }
 
 function guestCountLabel(count) {
   return count === 1 ? "1 guest" : `${count} guests`;
+}
+
+function partyCrease() {
+  return `<img class="party-crease" src="/public/crease.png" alt="" aria-hidden="true">`;
+}
+
+function equalizeLetterPanels(form) {
+  const root = form?.closest("[data-letter-folds]") || form;
+  if (!root || root.getClientRects().length === 0) return;
+  const panels = [...root.querySelectorAll("[data-letter-panel]")];
+  const guests = panels.filter((panel) => panel.classList.contains("party-member"));
+  panels.forEach((panel) => {
+    if (!panel.classList.contains("party-member")) panel.style.height = "";
+  });
+  if (!guests.length) return;
+  guests.forEach((panel) => {
+    panel.style.height = "";
+  });
+  const height = Math.ceil(
+    guests.reduce((max, panel) => {
+      if (panel.classList.contains("is-editing")) return max;
+      return Math.max(max, panel.getBoundingClientRect().height);
+    }, 0)
+  );
+  if (height < 8) return;
+  guests.forEach((panel) => {
+    if (panel.classList.contains("is-editing")) {
+      panel.style.height = "";
+      return;
+    }
+    panel.style.height = `${height}px`;
+  });
+}
+
+let letterFoldResizeBound = false;
+function watchLetterFolds(form) {
+  if (letterFoldResizeBound) return;
+  letterFoldResizeBound = true;
+  let timer = 0;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => equalizeLetterPanels(form), 80);
+  });
+}
+
+const EDIT_ICON = `<svg class="party-icon-edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const SAVE_ICON = `<svg class="party-icon-save" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l4 4v14H5V3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 3.2V8h8V3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 16.4h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+
+function formatAddressLine({ street, apt, city, region, postal, country } = {}, { includeCountry = false } = {}) {
+  const line1 = [street, apt].map((value) => String(value || "").trim()).filter(Boolean).join(", ");
+  const cityState = [city, region].map((value) => String(value || "").trim()).filter(Boolean).join(", ");
+  const line2 = [cityState, String(postal || "").trim()].filter(Boolean).join(" ");
+  const parts = [line1, line2];
+  if (includeCountry) parts.push(String(country || "").trim());
+  return parts.filter(Boolean).join(", ");
+}
+
+function memberAddressFields(index, member) {
+  const street = member.street || "";
+  const apt = member.apt || "";
+  const city = member.city || "";
+  const region = member.region || "";
+  const postal = member.postal || "";
+  const country = member.country || "United States";
+  const search = formatAddressLine({ street, apt, city, region, postal, country }, { includeCountry: false });
+  return `
+    <div class="party-member-address">
+      <label class="address-lookup">Street address
+        <input name="memberAddress${index}" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
+      </label>
+      <ul class="address-suggestions" id="address-suggestions-${index}" data-address-suggestions hidden></ul>
+      <label>Apartment / unit (optional) <input name="memberApt${index}" autocomplete="address-line2" placeholder="Apartment or unit" value="${escapeAttr(apt)}"></label>
+      <input type="hidden" name="memberStreet${index}" value="${escapeAttr(street)}">
+      <input type="hidden" name="memberCity${index}" value="${escapeAttr(city)}">
+      <input type="hidden" name="memberRegion${index}" value="${escapeAttr(region)}">
+      <input type="hidden" name="memberPostal${index}" value="${escapeAttr(postal)}">
+      <input type="hidden" name="memberCountry${index}" value="${escapeAttr(country)}">
+    </div>
+  `;
 }
 
 function memberTemplate(index, member, eventName, showRsvp = false) {
@@ -55,22 +199,25 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const fields = `
     <label>First Name <input name="memberFirst${index}" value="${escapeAttr(first)}" required autocomplete="given-name" placeholder="First Name"></label>
     <label>Last Name <input name="memberLast${index}" value="${escapeAttr(last)}" required autocomplete="family-name" placeholder="Last Name"></label>
-    <label>Phone <input name="memberPhone${index}" type="tel" value="${escapeAttr(member.phone || "")}" autocomplete="tel" placeholder="Phone"></label>
+    <label>Phone <input name="memberPhone${index}" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(201) 555-0100" value="${escapeAttr(formatPhone(member.phone || ""))}"></label>
     <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
+    ${showRsvp ? "" : memberAddressFields(index, member)}
   `;
 
   if (!showRsvp) {
     return `
-      <div class="party-member party-member--note" data-party-member data-member-id="${escapeAttr(member.id || "")}">
-        <span class="party-member-index">${String(index + 1).padStart(2, "0")}</span>
+      <div class="party-member party-member--note" data-party-member data-letter-panel data-member-id="${escapeAttr(member.id || "")}">
+        <div class="party-member-bar">
+          <span class="party-member-index">Guest ${index + 1}</span>
+          <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
+            <span data-edit-label>Edit</span>
+            ${EDIT_ICON}${SAVE_ICON}
+          </button>
+        </div>
         <div class="party-member-summary">
           <p class="party-member-name" data-member-name>${escapeAttr(memberName(member) || "Guest")}</p>
-          <p class="party-member-contact" data-member-contact>${memberContactLine(String(member.phone || "").trim(), String(member.email || "").trim())}</p>
+          <div class="party-member-contact" data-member-contact>${memberContactLine(formatPhone(member.phone || ""), String(member.email || "").trim(), member)}</div>
         </div>
-        <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
-          Edit
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        </button>
         <div class="party-edit" data-member-edit hidden>${fields}</div>
       </div>
     `;
@@ -82,7 +229,7 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
     <div class="party-member party-member--rsvp" data-party-member data-member-id="${escapeAttr(member.id || "")}">
       <p class="party-member-name" data-member-name>${escapeAttr(memberName(member) || "Guest")}</p>
       <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        ${EDIT_ICON}${SAVE_ICON}
       </button>
       <fieldset class="rsvp-choices rsvp-choices--inline">
         <legend>Reply</legend>
@@ -116,13 +263,20 @@ function collectMembers(form) {
   return [...form.querySelectorAll("[data-party-member]")].map((card) => {
     const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
     const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
+    const address = addressInputs(card);
     return {
       id: card.dataset.memberId || "",
       firstName: first,
       lastName: last,
-      phone: card.querySelector("input[name^='memberPhone']")?.value.trim() || "",
+      phone: formatPhone(card.querySelector("input[name^='memberPhone']")?.value || ""),
       email: card.querySelector("input[name^='memberEmail']")?.value.trim() || "",
       rsvp: card.querySelector("input[name^='memberRsvp']:checked")?.value || "",
+      street: address.street?.value.trim() || "",
+      apt: address.apt?.value.trim() || "",
+      city: address.city?.value.trim() || "",
+      region: address.region?.value.trim() || "",
+      postal: address.postal?.value.trim() || "",
+      country: address.country?.value.trim() || "United States",
     };
   }).filter((guest) => guest.firstName || guest.lastName);
 }
@@ -163,30 +317,71 @@ export function openDetailsModal(modal = document.querySelector("[data-details-m
   if (success) success.hidden = true;
   modal.hidden = false;
   document.body.classList.add("details-open");
-  modal.querySelector("[name='addressSearch']")?.focus();
+  equalizeLetterPanels(modal.querySelector("[data-household-form]"));
+  modal.querySelector("input[name^='memberFirst'], [name='addressSearch']")?.focus();
 }
 
-function composedAddress(form) {
-  if (!String(form.street?.value || "").trim()) return "";
-  return [form.street?.value, form.city?.value, form.region?.value, form.postal?.value, form.country?.value]
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .join(", ");
+function addressScope(node) {
+  return node.closest("[data-party-member]") || node.closest("form");
 }
 
-function applyAddress(form, suggestion) {
+function addressInputs(scope) {
+  if (!scope) return {};
+  if (scope.matches?.("[data-party-member]")) {
+    return {
+      search: scope.querySelector("input[name^='memberAddress']"),
+      street: scope.querySelector("input[name^='memberStreet']"),
+      apt: scope.querySelector("input[name^='memberApt']"),
+      city: scope.querySelector("input[name^='memberCity']"),
+      region: scope.querySelector("input[name^='memberRegion']"),
+      postal: scope.querySelector("input[name^='memberPostal']"),
+      country: scope.querySelector("input[name^='memberCountry']"),
+      list: scope.querySelector("[data-address-suggestions]"),
+    };
+  }
+  return {
+    search: scope.querySelector?.("[name='addressSearch']") || scope.addressSearch,
+    street: scope.querySelector?.("[name='street']") || scope.street,
+    apt: scope.querySelector?.("[name='apt']") || scope.apt,
+    city: scope.querySelector?.("[name='city']") || scope.city,
+    region: scope.querySelector?.("[name='region']") || scope.region,
+    postal: scope.querySelector?.("[name='postal']") || scope.postal,
+    country: scope.querySelector?.("[name='country']") || scope.country,
+    list: scope.querySelector?.("[data-address-suggestions]"),
+  };
+}
+
+function composedAddress(scope) {
+  const fields = addressInputs(scope);
+  return formatAddressLine({
+    street: fields.street?.value,
+    apt: fields.apt?.value,
+    city: fields.city?.value,
+    region: fields.region?.value,
+    postal: fields.postal?.value,
+    country: fields.country?.value,
+  });
+}
+
+function applyAddress(scope, suggestion) {
   if (!suggestion) return;
-  fillInput(form, "street", suggestion.street);
-  fillInput(form, "city", suggestion.city);
-  fillInput(form, "region", suggestion.region);
-  fillInput(form, "postal", suggestion.postal);
-  fillInput(form, "country", suggestion.country || "United States");
-  fillInput(form, "apt", suggestion.apt || "", true);
-  if (form.addressSearch) form.addressSearch.value = suggestion.label || composedAddress(form);
+  const fields = addressInputs(scope);
+  const set = (input, value, allowEmpty = false) => {
+    if (!input) return;
+    if (!allowEmpty && (value == null || value === "")) return;
+    input.value = value ?? "";
+  };
+  set(fields.street, suggestion.street);
+  set(fields.city, suggestion.city);
+  set(fields.region, suggestion.region);
+  set(fields.postal, suggestion.postal);
+  set(fields.country, suggestion.country || "United States");
+  set(fields.apt, suggestion.apt || "", true);
+  if (fields.search) fields.search.value = suggestion.label || composedAddress(scope);
 }
 
-function hideSuggestions(form) {
-  const list = form.querySelector("[data-address-suggestions]");
+function hideSuggestions(scope) {
+  const list = addressInputs(scope).list;
   if (!list) return;
   list.hidden = true;
   list.innerHTML = "";
@@ -204,21 +399,20 @@ async function lookupAddresses(query) {
 function bindAddressLookup(form) {
   if (form.dataset.addressBound === "true") return;
   form.dataset.addressBound = "true";
-  const search = form.querySelector("[name='addressSearch']");
-  const list = form.querySelector("[data-address-suggestions]");
-  if (!search || !list) return;
 
   let timer = 0;
   let request = 0;
 
-  const render = (suggestions, hint = "") => {
+  const render = (scope, suggestions, hint = "") => {
+    const list = addressInputs(scope).list;
+    if (!list) return;
     if (!suggestions.length) {
       if (hint) {
         list.innerHTML = `<li class="address-hint">${escapeAttr(hint)}</li>`;
         list.hidden = false;
         return;
       }
-      hideSuggestions(form);
+      hideSuggestions(scope);
       return;
     }
     list.innerHTML = suggestions
@@ -230,68 +424,116 @@ function bindAddressLookup(form) {
     list.hidden = false;
     list.querySelectorAll("[data-address-index]").forEach((button) => {
       button.addEventListener("click", () => {
-        applyAddress(form, suggestions[Number(button.dataset.addressIndex)]);
-        hideSuggestions(form);
+        applyAddress(scope, suggestions[Number(button.dataset.addressIndex)]);
+        hideSuggestions(scope);
+        refreshMemberSummary(scope);
       });
     });
   };
 
-  search.addEventListener("input", () => {
-    ["street", "city", "region", "postal"].forEach((name) => {
-      if (form[name]) form[name].value = "";
+  form.addEventListener("input", (event) => {
+    if (!event.target.matches("[name='addressSearch'], input[name^='memberAddress']")) return;
+    const scope = addressScope(event.target);
+    const fields = addressInputs(scope);
+    [fields.street, fields.city, fields.region, fields.postal].forEach((input) => {
+      if (input) input.value = "";
     });
-    const query = search.value.trim();
+    const query = event.target.value.trim();
     window.clearTimeout(timer);
     const current = ++request;
     if (query.length < 4) {
-      hideSuggestions(form);
+      hideSuggestions(scope);
       return;
     }
     timer = window.setTimeout(async () => {
       try {
         const { suggestions, hint } = await lookupAddresses(query);
         if (current !== request) return;
-        render(suggestions, hint);
+        render(scope, suggestions, hint);
       } catch {
-        if (current === request) hideSuggestions(form);
+        if (current === request) hideSuggestions(scope);
       }
     }, 280);
   });
 
   document.addEventListener("click", (event) => {
-    if (!form.contains(event.target)) hideSuggestions(form);
+    if (form.contains(event.target) && event.target.closest("[data-address-suggestions]")) return;
+    form.querySelectorAll("[data-address-suggestions]").forEach((list) => {
+      list.hidden = true;
+      list.innerHTML = "";
+    });
   });
 }
 
-function hasCompleteAddress(form) {
+function hasCompleteAddress(scope) {
+  const fields = addressInputs(scope);
   return Boolean(
-    form.street?.value.trim() &&
-    form.city?.value.trim() &&
-    form.region?.value.trim() &&
-    form.postal?.value.trim() &&
-    form.country?.value.trim()
+    fields.street?.value.trim() &&
+    fields.city?.value.trim() &&
+    fields.region?.value.trim() &&
+    fields.postal?.value.trim() &&
+    (fields.country?.value.trim() || "United States")
   );
 }
 
-function validateHouseholdDetails(form) {
-  if (form.addressSearch?.value.trim() || hasCompleteAddress(form)) return true;
-  form.addressSearch?.focus();
-  const errorNode = form.querySelector("[data-form-error]");
-  if (errorNode) errorNode.textContent = "Please enter your mailing address.";
-  return false;
+function householdAddressScopes(form) {
+  const cards = [...form.querySelectorAll("[data-party-member]")];
+  return cards.length ? cards : [form];
 }
 
-async function resolveTypedAddress(form) {
-  if (hasCompleteAddress(form)) return true;
-  const query = form.addressSearch?.value.trim() || "";
+function setMemberEditing(card, open) {
+  if (!card?.matches?.("[data-party-member]")) return;
+  card.classList.toggle("is-editing", open);
+  const panel = card.querySelector("[data-member-edit]");
+  if (panel) panel.hidden = !open;
+  const toggle = card.querySelector(".party-edit-toggle");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", open ? "Save guest details" : "Edit guest");
+    const label = toggle.querySelector("[data-edit-label]");
+    if (label) label.textContent = open ? "Save" : "Edit";
+  }
+  equalizeLetterPanels(card.closest("form"));
+}
+
+function refreshMemberSummary(card) {
+  if (!card?.matches?.("[data-party-member]")) return;
+  const name = card.querySelector("[data-member-name]");
+  const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
+  const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
+  const phone = formatPhone(card.querySelector("input[name^='memberPhone']")?.value || "");
+  const email = card.querySelector("input[name^='memberEmail']")?.value.trim() || "";
+  if (name) name.textContent = `${first} ${last}`.trim() || "Guest";
+  const contact = card.querySelector("[data-member-contact]");
+  if (contact) contact.innerHTML = memberContactLine(phone, email, addressRecord(card));
+  equalizeLetterPanels(card.closest("form"));
+}
+
+function validateHouseholdDetails(form) {
+  for (const scope of householdAddressScopes(form)) {
+    const fields = addressInputs(scope);
+    if (fields.search?.value.trim() || hasCompleteAddress(scope)) continue;
+    setMemberEditing(scope, true);
+    fields.search?.focus();
+    const errorNode = form.querySelector("[data-form-error]");
+    if (errorNode) errorNode.textContent = "Please enter a mailing address for each guest.";
+    return false;
+  }
+  return true;
+}
+
+async function resolveScopeAddress(form, scope) {
+  if (hasCompleteAddress(scope)) return true;
+  const query = addressInputs(scope).search?.value.trim() || "";
   if (query.length < 4) return false;
   const { suggestions, hint } = await lookupAddresses(query);
   if (suggestions.length === 1) {
-    applyAddress(form, suggestions[0]);
+    applyAddress(scope, suggestions[0]);
+    refreshMemberSummary(scope);
     return true;
   }
   if (suggestions.length > 1) {
-    const list = form.querySelector("[data-address-suggestions]");
+    const list = addressInputs(scope).list;
     if (list) {
       list.innerHTML = suggestions
         .map(
@@ -302,8 +544,9 @@ async function resolveTypedAddress(form) {
       list.hidden = false;
       list.querySelectorAll("[data-address-index]").forEach((button) => {
         button.addEventListener("click", () => {
-          applyAddress(form, suggestions[Number(button.dataset.addressIndex)]);
-          hideSuggestions(form);
+          applyAddress(scope, suggestions[Number(button.dataset.addressIndex)]);
+          hideSuggestions(scope);
+          refreshMemberSummary(scope);
         });
       });
     }
@@ -312,6 +555,16 @@ async function resolveTypedAddress(form) {
     if (errorNode) errorNode.textContent = hint;
   }
   return false;
+}
+
+async function resolveTypedAddress(form) {
+  for (const scope of householdAddressScopes(form)) {
+    if (await resolveScopeAddress(form, scope)) continue;
+    setMemberEditing(scope, true);
+    addressInputs(scope).search?.focus();
+    return false;
+  }
+  return true;
 }
 
 function successNode(form) {
@@ -369,12 +622,6 @@ function ensureRsvpField(form, eventName) {
   form.querySelector(".form-grid")?.after(field);
 }
 
-function fillInput(form, name, value, allowEmpty = false) {
-  if (!form[name]) return;
-  if (!allowEmpty && (value == null || value === "")) return;
-  form[name].value = value ?? "";
-}
-
 function hidePrimaryFields(form) {
   ["firstName", "lastName", "phone", "email"].forEach((name) => {
     const input = form.querySelector(`[name='${name}']`);
@@ -419,10 +666,6 @@ function partyList(form) {
   return list;
 }
 
-function householdAddress(members) {
-  return members.find((row) => row.street) || members[0] || {};
-}
-
 function namedMember(member) {
   return Boolean(
     String(member.first_name || member.firstName || "").trim() &&
@@ -433,7 +676,6 @@ function namedMember(member) {
 function renderParty(form, guest, eventName) {
   const members = (guest.members || []).filter(namedMember).map((member) => ({ ...member }));
   if (!members.length) members.push({ first_name: "", last_name: "" });
-  const address = householdAddress(members);
 
   if (form.dataset.formKind !== "rsvp") form.dataset.formKind = "address";
   form.classList.add("is-party");
@@ -444,36 +686,22 @@ function renderParty(form, guest, eventName) {
     hideAddressFields(form);
   } else {
     form.querySelectorAll(".rsvp-choices").forEach((node) => node.remove());
-    fillInput(form, "street", address.street);
-    fillInput(form, "apt", address.apt);
-    fillInput(form, "city", address.city);
-    fillInput(form, "region", address.region);
-    fillInput(form, "postal", address.postal);
-    fillInput(form, "country", address.country || form.country?.value);
-    if (form.addressSearch) {
-      form.addressSearch.value = composedAddress(form);
-    }
-    if (!form.dataset.household && !form.querySelector("[data-address-cap]")) {
-      const cap = document.createElement("p");
-      cap.className = "guest-cap";
-      cap.setAttribute("data-address-cap", "");
-      cap.textContent = "Mailing Address";
-      form.querySelector("[name='street']")?.closest("label")?.before(cap);
-    }
   }
 
   partyList(form).innerHTML = members.length
     ? `
-    <div class="party-head">
-      <p class="guest-cap">Your party</p>
-      <p class="party-count">${guestCountLabel(members.length)}</p>
+    <div class="party-head" data-letter-panel>
+      <p class="party-count">Your Party: ${members.length}</p>
     </div>
-    ${members.map((member, index) => memberTemplate(index, member, eventName, showRsvp)).join("")}
+    ${partyCrease()}
+    ${members.map((member, index) => `${memberTemplate(index, member, eventName, showRsvp)}${partyCrease()}`).join("")}
   `
     : "";
 
   const extras = form.querySelector("[data-guest-list]");
   if (extras) extras.hidden = true;
+  watchLetterFolds(form);
+  equalizeLetterPanels(form);
 }
 
 function serializeParty(form, eventName, guest) {
@@ -493,12 +721,12 @@ function serializeParty(form, eventName, guest) {
     email: primary.email || "",
     rsvp: primary.rsvp || "",
     kind: form.dataset.formKind || "address",
-    street: form.street?.value.trim() || "",
-    apt: form.apt?.value.trim() || "",
-    city: form.city?.value.trim() || "",
-    region: form.region?.value.trim() || "",
-    postal: form.postal?.value.trim() || "",
-    country: form.country?.value.trim() || "",
+    street: primary.street || "",
+    apt: primary.apt || "",
+    city: primary.city || "",
+    region: primary.region || "",
+    postal: primary.postal || "",
+    country: primary.country || "",
     guests,
     partySize: guests.length,
   };
@@ -580,34 +808,38 @@ function bindForm(form, eventName, guest) {
     const editBtn = eventClick.target.closest("[data-edit-member]");
     if (editBtn) {
       const card = editBtn.closest("[data-party-member]");
-      const open = card.classList.toggle("is-editing");
-      const panel = card.querySelector("[data-member-edit]");
-      if (panel) panel.hidden = !open;
-      editBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      editBtn.setAttribute("aria-label", open ? "Done editing guest" : "Edit guest");
+      const open = !card.classList.contains("is-editing");
+      setMemberEditing(card, open);
       if (open) {
-        const focusName = editBtn.classList.contains("party-add-email") ? "memberEmail" : "memberFirst";
+        const label = editBtn.textContent || "";
+        const focusName = label.includes("address")
+          ? "memberAddress"
+          : editBtn.classList.contains("party-add-email")
+            ? "memberEmail"
+            : "memberFirst";
         card.querySelector(`input[name^='${focusName}']`)?.focus();
       }
     }
   });
 
+  form.addEventListener("keydown", (keyEvent) => {
+    const input = keyEvent.target;
+    if (!input.matches?.("input[type='tel']")) return;
+    if (keyEvent.ctrlKey || keyEvent.metaKey || keyEvent.altKey) return;
+    if (keyEvent.key.length === 1 && !/\d/.test(keyEvent.key)) keyEvent.preventDefault();
+  });
+
   form.addEventListener("input", (inputEvent) => {
+    if (inputEvent.target.matches("input[type='tel']")) {
+      applyPhoneMask(inputEvent.target);
+    }
     const button = form.querySelector("[type='submit']");
     if (form.dataset.household === "true" && button?.classList.contains("is-saved")) {
       button.textContent = "Confirm mailing details";
       button.classList.remove("is-saved");
     }
     const card = inputEvent.target.closest("[data-party-member]");
-    const name = card?.querySelector("[data-member-name]");
-    if (!name) return;
-    const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
-    const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
-    const phone = card.querySelector("input[name^='memberPhone']")?.value.trim() || "";
-    const email = card.querySelector("input[name^='memberEmail']")?.value.trim() || "";
-    name.textContent = `${first} ${last}`.trim() || "Guest";
-    const contact = card.querySelector("[data-member-contact]");
-    if (contact) contact.innerHTML = memberContactLine(phone, email);
+    if (card) refreshMemberSummary(card);
   });
 
   form.addEventListener("submit", async (submitEvent) => {
@@ -628,11 +860,8 @@ function bindForm(form, eventName, guest) {
       if (!(await resolveTypedAddress(form))) {
         const errorNode = form.querySelector("[data-form-error]");
         if (errorNode && !errorNode.textContent) {
-          errorNode.textContent = form.addressSearch?.value.trim()
-            ? "Please choose your mailing address from the list."
-            : "Please enter your mailing address.";
+          errorNode.textContent = "Please choose a mailing address from the list for each guest.";
         }
-        form.addressSearch?.focus();
         return;
       }
     }

@@ -469,6 +469,18 @@ p {
   height: 100%;
 }
 
+.party-edit-toggle .party-icon-save {
+  display: none;
+}
+
+.party-member.is-editing .party-edit-toggle .party-icon-edit {
+  display: none;
+}
+
+.party-member.is-editing .party-edit-toggle .party-icon-save {
+  display: block;
+}
+
 .party-edit {
   display: none !important;
   grid-column: 1 / -1;

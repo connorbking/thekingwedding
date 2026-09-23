@@ -175,6 +175,12 @@ function extrasList_(data) {
         phone: String((guest && guest.phone) || "").trim(),
         email: String((guest && guest.email) || "").trim(),
         rsvp: (guest && guest.rsvp) || "",
+        street: String((guest && (guest.street || guest.street1)) || "").trim(),
+        apt: String((guest && (guest.apt || guest.street2)) || "").trim(),
+        city: String((guest && guest.city) || "").trim(),
+        region: String((guest && (guest.region || guest.state)) || "").trim(),
+        postal: String((guest && (guest.postal || guest.zip)) || "").trim(),
+        country: String((guest && guest.country) || "").trim(),
       };
     })
     .filter(function (guest) {
@@ -740,48 +746,42 @@ function updateParty_(sheet, data) {
   }
 
   const party = partyName_(data, existingParty);
-  const household = {
-    event: data.event,
-    party: party,
-    groupCode: groupCode,
-    street: data.street || data.street1 || "",
-    apt: data.apt || data.street2 || "",
-    city: data.city || "",
-    region: data.region || data.state || "",
-    postal: data.postal || data.zip || "",
-  };
+  const writeAddress = String(data.kind || "").toLowerCase() !== "rsvp";
 
   (data.guests || []).forEach(function (guest) {
     const index = findGuestRow_(values, info.map, codes, groupCode, guest);
-    const next = Object.assign({}, household, guest, {
-      firstName: guest.firstName || guest.first_name || "",
-      lastName: guest.lastName || guest.last_name || "",
-      phone: guest.phone || "",
-      email: guest.email || "",
-      rsvp: guest.rsvp || "",
-    });
+    const next = Object.assign(
+      {
+        event: data.event,
+        party: party,
+        groupCode: groupCode,
+      },
+      guest,
+      {
+        firstName: guest.firstName || guest.first_name || "",
+        lastName: guest.lastName || guest.last_name || "",
+        phone: guest.phone || "",
+        email: guest.email || "",
+        rsvp: guest.rsvp || "",
+        street: guest.street || guest.street1 || "",
+        apt: guest.apt || guest.street2 || "",
+        city: guest.city || "",
+        region: guest.region || guest.state || "",
+        postal: guest.postal || guest.zip || "",
+      }
+    );
     if (index !== -1) {
-      writeRow_(sheet, values, info.map, info.width, index, next, { contact: true });
+      writeRow_(sheet, values, info.map, info.width, index, next, { contact: true, forceAddress: writeAddress });
       codes[index] = groupCode || codes[index];
       return;
     }
     if (!template) return;
     const row = new Array(info.width).fill("");
-    fillGuest_(row, info.map, next, { contact: true });
+    fillGuest_(row, info.map, next, { contact: true, forceAddress: writeAddress });
     copyInvites_(template, row, info.map);
     sheet.appendRow(row);
     values.push(row);
     codes.push(groupCode);
-  });
-
-  stampHouseholdAddress_(sheet, values, info.map, info.width, groupCodesFor_(values, info.map), groupCode, party, {
-    street: household.street,
-    apt: household.apt,
-    city: household.city,
-    region: household.region,
-    postal: household.postal,
-    party: party,
-    groupCode: groupCode,
   });
 
   return { ok: true, party: party, groupCode: groupCode };
