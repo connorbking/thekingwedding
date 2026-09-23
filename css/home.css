@@ -1191,7 +1191,8 @@ html.invite-returning .household-count {
   }
 
   .details-letter {
-    padding: 42px 22px 44px;
+    --letter-pad-x: 22px;
+    padding: 42px var(--letter-pad-x) 44px;
   }
 
   .details-letter-rule {
@@ -1209,7 +1210,8 @@ html.invite-returning .household-count {
   }
 
   .details-modal-panel h2 {
-    font-size: clamp(16px, 5vw, 20px);
+    font-size: clamp(18px, 5.2vw, 22px);
+    font-weight: 700;
     letter-spacing: 0.18em;
     margin: 6px 0 10px;
   }
@@ -1271,6 +1273,7 @@ html.invite-returning .household-count {
 .household-form {
   max-width: none;
   margin: 0;
+  overflow: visible;
   color: rgba(63, 11, 16, 0.72);
 }
 
@@ -1292,19 +1295,20 @@ html.invite-returning .household-count {
 .household-form .guest-cap {
   margin: 0;
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 11px;
+  font-size: 13px;
   font-style: normal;
-  font-weight: 400;
-  letter-spacing: 0.22em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(63, 11, 16, 0.48);
+  color: rgba(63, 11, 16, 0.72);
 }
 
 .household-form label {
-  color: rgba(63, 11, 16, 0.48);
+  color: rgba(63, 11, 16, 0.78);
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -1316,9 +1320,14 @@ html.invite-returning .household-count {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: rgba(63, 11, 16, 0.82);
+  color: #000;
+  -webkit-text-fill-color: #000;
+  caret-color: #000;
   font-family: "Bodoni Moda", serif;
   font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
   padding: 0.3rem 0 0.45rem;
 }
 
@@ -1339,6 +1348,7 @@ html.invite-returning .household-count {
 
 .household-form input::placeholder {
   color: rgba(63, 11, 16, 0.32);
+  -webkit-text-fill-color: rgba(63, 11, 16, 0.32);
   font-size: 1rem;
 }
 
@@ -1346,6 +1356,7 @@ html.invite-returning .household-count {
   display: flex;
   flex-direction: column;
   gap: 0;
+  overflow: visible;
 }
 
 .household-form .party-member {
@@ -1363,43 +1374,108 @@ html.invite-returning .household-count {
   letter-spacing: 0.18em;
 }
 
+.letter-folds {
+  display: flex;
+  flex-direction: column;
+  --fold-pad: 2.5rem;
+  --fold-min: 14rem;
+}
+
+.letter-folds .party-list {
+  display: contents;
+}
+
+.letter-folds [data-letter-panel] {
+  box-sizing: border-box;
+}
+
+.letter-folds .party-member--note {
+  min-height: var(--fold-min);
+  padding-top: var(--fold-pad);
+  padding-bottom: var(--fold-pad);
+}
+
+.letter-folds .party-head,
+.letter-folds .form-actions {
+  height: auto;
+  min-height: 0;
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.letter-folds .form-actions {
+  position: relative;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+  padding-top: 80px;
+}
+
 .party-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0 0 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0;
   padding: 0;
   border: 0;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .party-head .guest-cap,
 .household-form .party-count {
   margin: 0;
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 11px;
+  font-size: 13px;
   font-style: normal;
-  letter-spacing: 0.22em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(63, 11, 16, 0.48);
+  color: rgba(63, 11, 16, 0.72);
+}
+
+.party-crease {
+  display: block;
+  flex: none;
+  width: calc(100% + 2 * (var(--letter-pad-x, 46px) + var(--sheet-pad-x, 8px)));
+  max-width: none;
+  height: 22px;
+  margin: 0 calc(-1 * (var(--letter-pad-x, 46px) + var(--sheet-pad-x, 8px)));
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
 }
 
 .party-member--note {
   position: relative;
-  display: block;
-  padding: 26px 4.5rem 8px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 0;
   border: 0;
   background: none;
+  box-sizing: border-box;
+}
+
+.party-member-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
 }
 
 .party-member-index {
   display: block;
   position: static;
-  margin: 0 0 8px;
+  margin: 0;
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  color: rgba(63, 11, 16, 0.22);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(63, 11, 16, 0.62);
 }
 
 .party-member-summary {
@@ -1419,10 +1495,10 @@ html.invite-returning .household-count {
 }
 
 .party-member-contact {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 28px;
   margin: 8px 0 0;
   font-family: "Bodoni Moda", serif;
   font-size: 16px;
@@ -1431,8 +1507,27 @@ html.invite-returning .household-count {
 }
 
 .party-member-phone,
-.party-member-email {
+.party-member-email,
+.party-member-mail {
   color: #241612;
+}
+
+.party-member-mail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  max-width: none;
+}
+
+.party-member-reach {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  text-align: right;
+  min-width: 0;
 }
 
 .party-add-email {
@@ -1453,14 +1548,18 @@ html.invite-returning .household-count {
   color: rgba(92, 18, 24, 0.88);
 }
 
+.party-member--note.is-editing .party-member-summary {
+  display: none;
+}
+
 .party-member--note.is-editing .party-add-email {
   visibility: hidden;
 }
 
 .party-member--note .party-edit-toggle {
-  position: absolute;
-  top: 48px;
-  right: 0;
+  position: static;
+  top: auto;
+  right: auto;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1470,10 +1569,11 @@ html.invite-returning .household-count {
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(63, 11, 16, 0.28);
+  color: rgba(63, 11, 16, 0.72);
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 9px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   opacity: 1;
 }
@@ -1494,20 +1594,28 @@ html.invite-returning .household-count {
 .party-member--note.is-editing .party-edit {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
-  margin-top: 14px;
+  margin-top: 6px;
+}
+
+.party-member-address {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 8px;
 }
 
 .household-form .party-member--note,
-.household-form .party-member--note.is-editing {
-  display: block;
+.household-form .party-member--note.is-editing,
+.household-form .party-member--note:last-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
   grid-template-columns: none;
+  padding-top: var(--fold-pad, 2.5rem);
+  padding-bottom: var(--fold-pad, 2.5rem);
   border: 0;
   background: none;
-}
-
-.household-form .party-member--note:last-child {
-  padding-bottom: 8px;
-  border: 0;
 }
 
 .address-note {
@@ -1522,21 +1630,28 @@ html.invite-returning .household-count {
 
 .details-not-you {
   display: block;
-  margin: 16px auto 4px;
+  margin: 18px auto 0;
   padding: 0;
   border: 0;
   background: none;
-  color: rgba(63, 11, 16, 0.34);
+  color: rgba(63, 11, 16, 0.68);
   font-family: "Bodoni Moda", serif;
-  font-size: 10px;
+  font-size: 13px;
   font-style: italic;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
   cursor: pointer;
 }
 
+.details-modal .form-actions .details-not-you {
+  position: static;
+  margin: 0;
+}
+
 .details-not-you:hover {
-  color: rgba(63, 11, 16, 0.7);
+  color: rgba(92, 18, 24, 0.95);
 }
 
 @media (max-width: 799px) {
@@ -1561,17 +1676,18 @@ html.invite-returning .household-count {
 
 .household-form .form-error {
   color: rgba(92, 18, 24, 0.7);
+  font-size: 1.05rem;
 }
 
-.household-form .form-error {
-  font-size: 1.05rem;
+.household-form .form-error:empty {
+  display: none;
 }
 
 .household-form .form-actions .find-invite {
   display: inline-block;
   width: auto;
   min-width: 22rem;
-  margin: 8px auto 0;
+  margin: 0 auto;
   padding: 0.95rem 2.6rem;
   border: 0;
   border-radius: 2px;
@@ -1661,7 +1777,7 @@ body.details-open {
   z-index: 1;
   width: min(720px, calc(100vw - 48px));
   max-width: 720px;
-  margin: max(4vh, 24px) auto max(8vh, 48px);
+  margin: 16px auto 16px;
   padding: 0;
   overflow: visible;
   border: 0;
@@ -1692,7 +1808,8 @@ body.details-open {
   z-index: 1;
   height: auto;
   overflow: visible;
-  padding: 52px 46px 52px;
+  --letter-pad-x: 46px;
+  padding: 52px var(--letter-pad-x) 52px;
   border: 0;
   background: none;
   box-shadow: none;
@@ -1796,24 +1913,30 @@ body.details-open {
 }
 
 .details-modal .form-actions {
-  margin-top: 3rem;
-  margin-bottom: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  margin-bottom: 0;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .details-sheet {
   position: relative;
   z-index: 2;
   overflow: visible;
-  padding: 10px 8px 0;
+  --sheet-pad-x: 8px;
+  padding: 10px var(--sheet-pad-x) 0;
   text-align: left;
 }
 
 .details-modal-panel h2 {
   margin: 14px 0 16px;
   font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: clamp(18px, 3.2vw, 26px);
-  font-weight: 400;
+  font-size: clamp(20px, 3.4vw, 28px);
+  font-weight: 700;
   letter-spacing: 0.28em;
   text-align: center;
   text-transform: uppercase;
@@ -2657,7 +2780,8 @@ html.invite-returning .invite-mark {
   }
 
   .details-letter {
-    padding: 42px 22px 44px;
+    --letter-pad-x: 22px;
+    padding: 42px var(--letter-pad-x) 44px;
   }
 
   .details-letter-rule {
@@ -2675,7 +2799,8 @@ html.invite-returning .invite-mark {
   }
 
   .details-modal-panel h2 {
-    font-size: clamp(16px, 5vw, 20px);
+    font-size: clamp(18px, 5.2vw, 22px);
+    font-weight: 700;
     letter-spacing: 0.18em;
     margin: 6px 0 10px;
   }

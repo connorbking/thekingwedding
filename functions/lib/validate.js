@@ -34,6 +34,7 @@ function validateParty(body, event) {
       phone: text(guest.phone, { min: 0, max: 40 }),
       email: text(guest.email, { min: 0, max: 200 }),
       rsvp: normalizeRsvp(guest.rsvp),
+      ...addressFields(guest),
     }))
     .filter((guest) => guest.firstName || guest.lastName);
 
@@ -52,9 +53,12 @@ function validateParty(body, event) {
     return { error: "Please reply for each guest." };
   }
 
-  const address = addressFields(body);
-  if (!isRsvp && (!address.street || !address.city || !address.region || !address.postal || !address.country)) {
-    return { error: "Please complete the mailing address for your party." };
+  const address = addressFields(guests[0] || {});
+  if (
+    !isRsvp &&
+    guests.some((guest) => !guest.street || !guest.city || !guest.region || !guest.postal || !guest.country)
+  ) {
+    return { error: "Please complete a mailing address for each guest." };
   }
 
   const primary = guests[0] || {};

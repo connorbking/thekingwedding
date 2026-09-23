@@ -58,7 +58,7 @@ export async function appendGuest(env, submission) {
   return callSheet(env, {
     method: "POST",
     body: {
-      action: isRsvp && guests.length ? "party" : "upsert",
+      action: guests.length ? "party" : "upsert",
       kind: submission.kind || (isRsvp ? "rsvp" : "address"),
       event: submission.event,
       rsvp: submission.rsvp,
@@ -77,7 +77,7 @@ export async function appendGuest(env, submission) {
       accessCode: submission.accessCode,
       groupCode: submission.accessCode,
       additionalGuests: extras,
-      guests: isRsvp ? guests : undefined,
+      guests: guests.length ? guests : undefined,
     },
   });
 }

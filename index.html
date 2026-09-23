@@ -11,9 +11,9 @@
   <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/shared.css">
-  <link rel="stylesheet" href="/css/home.css?v=type49">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Great+Vibes&family=Italiana&family=Bodoni+Moda:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/shared.css?v=save1">
+  <link rel="stylesheet" href="/css/home.css?v=type74">
   <link rel="preload" as="image" href="/public/invite-bg/000.jpg" media="(min-width: 800px)">
   <link rel="preload" as="image" href="/public/invite-bg-mobile/000.jpg" media="(max-width: 799px)">
   <script type="importmap">
@@ -156,39 +156,23 @@
         <button class="details-modal-close" type="button" data-close-details aria-label="Close">&times;</button>
         <div class="details-sheet">
       <div data-details-form-wrap>
-        <h2 id="details-title">A note for the post</h2>
-        <p class="details-lede">Please provide mobile numbers and emails for your party.</p>
-        <span class="details-diamond" aria-hidden="true"></span>
+        <h2 id="details-title">Contact Information</h2>
+        <p class="details-lede">Please provide a mobile number, email, and mailing address for each guest.</p>
         <form class="household-form address-form" data-household-form>
           <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off">
           <label class="visually-hidden">First name <input name="firstName"></label>
           <label class="visually-hidden">Last name <input name="lastName"></label>
           <label class="visually-hidden">Phone <input name="phone" type="tel"></label>
           <label class="visually-hidden">Email <input name="email" type="email"></label>
-          <div class="household-split">
-            <div class="party-list" data-party-list></div>
-            <div class="household-address">
-              <p class="household-label">Mailing address</p>
-              <p class="address-note">Please confirm where your party's physical invitation will be sent.</p>
-              <label class="address-lookup">
-                Street address
-                <input name="addressSearch" type="text" autocomplete="off" placeholder="Start typing your address..." required aria-required="true" aria-autocomplete="list" aria-controls="address-suggestions">
-              </label>
-              <ul class="address-suggestions" id="address-suggestions" data-address-suggestions hidden></ul>
-              <label>Apartment / unit (optional) <input name="apt" autocomplete="address-line2" placeholder="Apartment or unit"></label>
-              <input type="hidden" name="street">
-              <input type="hidden" name="city">
-              <input type="hidden" name="region">
-              <input type="hidden" name="postal">
-              <input type="hidden" name="country" value="United States">
-            </div>
+          <div class="letter-folds" data-letter-folds>
+          <div class="party-list" data-party-list></div>
+          <div class="form-actions" data-letter-panel>
+            <button class="find-invite" type="submit">Confirm details</button>
+            <button class="details-not-you" type="button" data-not-you>Not you?</button>
           </div>
-          <div class="form-actions">
-            <button class="find-invite" type="submit">Confirm mailing details</button>
           </div>
           <p class="form-error" data-form-error></p>
         </form>
-        <button class="details-not-you" type="button" data-not-you>Not you?</button>
       </div>
       <div class="details-success" data-details-success hidden>
         <p>Success, your details have been updated.</p>
@@ -213,6 +197,6 @@
   <footer class="home-footer">
     <a class="admin-link" href="/admin/">Host login</a>
   </footer>
-  <script type="module" src="/js/home.js?v=env58"></script>
+  <script type="module" src="/js/home.js?v=env72"></script>
 </body>
 </html>

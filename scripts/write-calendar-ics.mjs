@@ -12,13 +12,13 @@ PRODID:-//The King Wedding//Save the Date//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
-UID:como-2027-09-11@theking.wedding
-DTSTAMP:20260923T133000Z
-DTSTART:20270911T140000Z
-DTEND:20270911T200000Z
+UID:como-2027-09-10@theking.wedding
+DTSTAMP:20260923T173700Z
+DTSTART;VALUE=DATE:20270910
+DTEND;VALUE=DATE:20270913
 SUMMARY:Alyssa & Connor · Lake Como
 LOCATION:Exact Location TBD
-DESCRIPTION:Save the Date for Alyssa and Connor at Lake Como\\, Italy. Formal invitation to follow.
+DESCRIPTION:Save the Date for Alyssa and Connor at Lake Como\\, Italy on September 10-12\\, 2027. Formal invitation to follow.
 URL:https://theking.wedding/como/save-the-date
 END:VEVENT
 END:VCALENDAR
@@ -30,12 +30,12 @@ CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
 UID:jersey-2027-10-02@theking.wedding
-DTSTAMP:20260923T133000Z
-DTSTART:20271002T200000Z
-DTEND:20271003T020000Z
+DTSTAMP:20260923T173700Z
+DTSTART;TZID=America/New_York:20271002T160000
+DTEND;TZID=America/New_York:20271003T000000
 SUMMARY:Alyssa & Connor · Whippany
 LOCATION:19 Woodcrest Road\\, Whippany NJ 07981
-DESCRIPTION:Save the Date for Alyssa and Connor in Whippany\\, New Jersey. Formal invitation to follow.
+DESCRIPTION:Save the Date for Alyssa and Connor in Whippany\\, New Jersey from 4:00 PM to midnight Eastern on October 2\\, 2027. Formal invitation to follow.
 URL:https://theking.wedding/jersey/save-the-date
 END:VEVENT
 END:VCALENDAR
