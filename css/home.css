@@ -227,7 +227,6 @@ html:has(body.landing-body) {
   .landing-body.is-arriving .monogram > span,
   .landing-body.is-arriving .household-kicker,
   .landing-body.is-arriving .names-invited,
-  .landing-body.is-arriving .invite-mark,
   .landing-body.is-arriving .event-doors,
   .landing-body.is-arriving .household-mail,
   .landing-body.is-arriving .household-reset {
@@ -353,7 +352,7 @@ html.invite-returning .invitation-gate {
   margin: 0 0 10px;
   max-width: min(100%, 720px);
   font-family: "Bodoni Moda", serif;
-  font-size: 15px;
+  font-size: 18px;
   letter-spacing: 0.18em;
   line-height: 1.45;
   text-transform: uppercase;
@@ -1094,7 +1093,7 @@ html.invite-returning .household-count {
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-top: max(12px, env(safe-area-inset-top));
+    padding-top: max(48px, calc(env(safe-area-inset-top) + 20px));
     padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
   }
 
@@ -1108,7 +1107,7 @@ html.invite-returning .household-count {
   }
 
   .household-kicker {
-    font-size: 13px;
+    font-size: 16px;
     letter-spacing: 0.08em;
     padding: 0 4px;
   }
@@ -2069,7 +2068,6 @@ body.details-open {
 
 .landing-body:has(.household-desk.is-reading) .household-kicker,
 .landing-body:has(.household-desk.is-reading) .names,
-.landing-body:has(.household-desk.is-reading) .invite-mark,
 .household-desk.is-reading .household-count {
   opacity: 0;
   pointer-events: none;
@@ -2184,8 +2182,7 @@ body.details-open {
   justify-content: center;
 }
 
-.names-invited,
-.invite-mark {
+.names-invited {
   display: none;
 }
 
@@ -2213,22 +2210,10 @@ html.invite-returning .names-invited {
 html.invite-returning .names {
   width: auto;
   max-width: 100%;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  padding-bottom: 46px;
   font-size: clamp(18px, 5.2vw, 34px);
   letter-spacing: clamp(0.1em, 1.6vw, 0.32em);
-}
-
-.invite-mark {
-  width: 6px;
-  height: 6px;
-  margin: 12px 0 28px;
-  border: 1px solid rgba(228, 199, 157, 0.72);
-  transform: rotate(45deg);
-}
-
-.landing-body.is-open .invite-mark,
-html.invite-returning .invite-mark {
-  display: block;
 }
 
 .date {
@@ -2382,14 +2367,6 @@ html.invite-returning .monogram-rule {
 .landing-body.is-arriving .household-kicker.is-written,
 .landing-body.is-arriving .names-invited.is-written {
   animation: monogram-write 0.7s linear forwards;
-}
-
-.landing-body.is-arriving .invite-mark {
-  opacity: 0;
-}
-
-.landing-body.is-arriving .invite-mark.is-written {
-  animation: invite-fade 0.4s ease forwards;
 }
 
 .landing-body.is-arriving:not(.is-arrived-doors) .event-doors {
@@ -3130,7 +3107,7 @@ html.invite-returning .monogram-rule {
     justify-content: flex-start;
     overflow-x: hidden;
     overflow-y: auto;
-    padding-top: max(16px, env(safe-area-inset-top));
+    padding-top: max(48px, calc(env(safe-area-inset-top) + 20px));
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 

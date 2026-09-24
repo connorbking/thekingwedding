@@ -95,17 +95,9 @@ export function currentInviteCode() {
 
 export function rememberGuest(guest) {
   if (sessionStorage.getItem(RESET_HOME_KEY)) return;
-  if (!guest?.code && !guest?.members?.length) return;
-  sessionStorage.setItem(
-    INVITE_STORAGE_KEY,
-    JSON.stringify({
-      code: guest.code || "",
-      events: guest.events || [],
-      greeting: guest.greeting || "",
-      maxParty: guest.maxParty,
-      members: guest.members || [],
-    }),
-  );
+  const code = normalizeCode(guest?.code);
+  if (!code) return;
+  sessionStorage.setItem(INVITE_STORAGE_KEY, JSON.stringify({ code }));
 }
 
 export function markResetHome() {
@@ -129,15 +121,16 @@ export function clearGuest() {
 export function readStoredGuest() {
   try {
     const stored = JSON.parse(sessionStorage.getItem(INVITE_STORAGE_KEY) || "null");
-    if (!stored?.code && !stored?.members?.length) return null;
-    return guestFromMatch(stored.code || "", stored);
+    const code = normalizeCode(stored?.code);
+    if (!code) return null;
+    return { code };
   } catch {
     return null;
   }
 }
 
 async function inviteFromApi(params) {
-  const response = await fetch(`${API.invite}?${params}`);
+  const response = await fetch(`${API.invite}?${params}`, { cache: "no-store" });
   const data = await response.json().catch(() => ({}));
   if (data.ambiguous) {
     const error = new Error("ambiguous");
@@ -202,18 +195,18 @@ export async function resolveGuest(eventName = "") {
   }
 
   const stored = readStoredGuest();
-  if (stored?.code) {
-    try {
-      const fresh = await findGuest(stored.code, eventName);
-      if (fresh) {
-        rememberGuest(fresh);
-        return fresh;
-      }
-    } catch {
-      return stored;
+  if (!stored?.code) return null;
+  try {
+    const fresh = await findGuest(stored.code, eventName);
+    if (fresh) {
+      rememberGuest(fresh);
+      return fresh;
     }
+  } catch {
+    return null;
   }
-  return stored;
+  clearGuest();
+  return null;
 }
 
 export function guestCanAccess(guest, eventKey) {

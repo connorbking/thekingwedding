@@ -1,4 +1,4 @@
-import { currentInviteCode, withCode } from "./guests.js";
+import { currentInviteCode, withCode } from "./guests.js?v=fresh1";
 
 const VIEW_IDS = ["save-the-date", "rsvp", "faq"];
 

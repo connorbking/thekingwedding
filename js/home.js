@@ -9,7 +9,7 @@ import {
   rememberGuest,
   markResetHome,
   consumeResetHome,
-} from "./guests.js";
+} from "./guests.js?v=fresh1";
 
 const sealed = document.querySelector("[data-sealed]");
 const chooser = document.querySelector("[data-chooser]");
@@ -475,8 +475,6 @@ async function playArrival() {
   if (wipeLine(document.querySelector("[data-household-greeting]"))) await wait(700);
   await wait(220);
   if (wipeLine(document.querySelector(".names-invited"))) await wait(700);
-  document.querySelector(".invite-mark")?.classList.add("is-written");
-  await wait(400);
   document.body.classList.remove("is-revealing");
   document.body.classList.add("is-arrived-doors");
   await wait(900);
@@ -1183,10 +1181,9 @@ if (consumeResetHome()) {
 const stored = readStoredGuest();
 if (params.get("code") || params.get("gate") || stored) {
   hideKey3d();
-  if (stored) await showHousehold(stored);
   const returning = await resolveGuest();
   if (returning) await showHousehold(returning);
-  else if (!stored && params.get("code") && errorNode) errorNode.textContent = missingMessage();
+  else if ((params.get("code") || stored) && errorNode) errorNode.textContent = missingMessage();
   document.documentElement.classList.remove("invite-returning");
 } else {
   initKey3d();

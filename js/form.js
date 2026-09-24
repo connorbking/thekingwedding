@@ -1,5 +1,5 @@
 import { API } from "./config.js";
-import { extraGuestSlots } from "./guests.js";
+import { extraGuestSlots } from "./guests.js?v=fresh1";
 
 function eventPlace(eventName) {
   if (eventName === "como") return "Lake Como";

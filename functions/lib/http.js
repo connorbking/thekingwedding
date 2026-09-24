@@ -4,6 +4,7 @@ export function json(body, status = 200, headers = {}) {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      "CDN-Cache-Control": "no-store",
       ...headers,
     },
   });

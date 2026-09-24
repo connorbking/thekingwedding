@@ -9,7 +9,7 @@ import {
   withCode,
   markResetHome,
   isDualGuest,
-} from "./guests.js";
+} from "./guests.js?v=fresh1";
 
 const eventKey = document.body.dataset.event;
 const guest = await resolveGuest(eventKey);
