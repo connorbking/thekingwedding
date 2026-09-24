@@ -223,6 +223,22 @@ html:has(body.landing-body) {
     filter: none;
     opacity: 1;
   }
+
+  .landing-body.is-arriving .monogram,
+  .landing-body.is-arriving .monogram > span,
+  .landing-body.is-arriving .household-kicker,
+  .landing-body.is-arriving .names-invited,
+  .landing-body.is-arriving .invite-mark,
+  .landing-body.is-arriving .event-doors,
+  .landing-body.is-arriving .household-mail,
+  .landing-body.is-arriving .household-reset {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    clip-path: none;
+    animation: none;
+    pointer-events: auto;
+  }
 }
 
 .landing-overlay {
@@ -913,6 +929,33 @@ html.invite-returning .household-count {
   outline: none;
 }
 
+.invite-sheet-back {
+  pointer-events: none;
+  margin-top: 0.35em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(63, 11, 16, 0.62);
+  font-family: "Cinzel", "Bodoni Moda", serif;
+  font-size: 11px;
+  font-size: clamp(7px, 1.7cqi, 11px);
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
+  cursor: pointer;
+}
+
+.envelope-link.is-opening .invite-sheet-back {
+  pointer-events: auto;
+}
+
+.invite-sheet-back:hover,
+.invite-sheet-back:focus-visible {
+  color: rgba(63, 11, 16, 0.92);
+  outline: none;
+}
+
 @media (min-width: 900px) {
   .envelope--como .invite-sheet-body,
   .envelope--jersey .invite-sheet-body {
@@ -928,39 +971,6 @@ html.invite-returning .household-count {
   .envelope--jersey .invite-sheet-meta {
     font-size: clamp(9px, 2.8cqi, 17px);
   }
-}
-
-.invite-sheet-close {
-  position: absolute;
-  top: 17%;
-  right: 9%;
-  left: auto;
-  z-index: 9;
-  display: grid;
-  place-items: center;
-  width: clamp(36px, 8cqi, 46px);
-  height: clamp(36px, 8cqi, 46px);
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: rgba(63, 11, 16, 0.72);
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.letter-dismiss {
-  display: none;
-}
-
-.invite-sheet-close svg {
-  width: 54%;
-  height: 54%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .envelope-link.is-selected .envelope-caption {
@@ -1158,32 +1168,6 @@ html.invite-returning .household-count {
 
   .invite-sheet-meta {
     letter-spacing: 0.07em;
-  }
-
-  .invite-sheet-close {
-    display: none;
-  }
-
-  .household-desk.is-reading .letter-dismiss {
-    position: fixed;
-    top: max(10px, env(safe-area-inset-top));
-    right: max(10px, env(safe-area-inset-right));
-    z-index: 35;
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(246, 239, 228, 0.94);
-    color: #3a1218;
-    font-family: "Bodoni Moda", serif;
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
   }
 
   .picker-bar {
@@ -2354,6 +2338,104 @@ html.invite-returning .invite-mark {
   transition: none;
 }
 
+.landing-body.is-open .monogram,
+html.invite-returning .monogram {
+  height: 177px;
+  margin-bottom: 28px;
+  font-size: 135px;
+}
+
+.landing-body.is-open .monogram-rule,
+html.invite-returning .monogram-rule {
+  width: 108px;
+  height: 153px;
+  margin: 0 33px;
+}
+
+.landing-body.is-arriving .monogram {
+  clip-path: inset(0 100% 0 0);
+}
+
+.landing-body.is-arriving .monogram.is-written {
+  animation: monogram-write 0.7s linear forwards;
+}
+
+.landing-body.is-arriving .household-kicker,
+.landing-body.is-arriving .names-invited {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  clip-path: inset(0 100% 0 0);
+  opacity: 1;
+}
+
+.landing-body.is-arriving .household-kicker.is-written,
+.landing-body.is-arriving .names-invited.is-written {
+  animation: monogram-write 0.7s linear forwards;
+}
+
+.landing-body.is-arriving .invite-mark {
+  opacity: 0;
+}
+
+.landing-body.is-arriving .invite-mark.is-written {
+  animation: invite-fade 0.4s ease forwards;
+}
+
+.landing-body.is-arriving:not(.is-arrived-doors) .event-doors {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  pointer-events: none;
+}
+
+.landing-body.is-arrived-doors .event-doors {
+  visibility: visible;
+  animation: invite-rise 0.9s ease forwards;
+}
+
+.landing-body.is-arriving:not(.is-arrived-mail) .household-mail,
+.landing-body.is-arriving:not(.is-arrived-mail) .household-reset {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.landing-body.is-arrived-mail .household-mail,
+.landing-body.is-arrived-mail .household-reset {
+  visibility: visible;
+  animation: invite-fade 0.7s ease forwards;
+}
+
+@keyframes monogram-write {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes invite-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes invite-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes manager-fade-in {
   from {
     opacity: 0;
@@ -2415,6 +2497,52 @@ html.invite-returning .invite-mark {
 .landing-body.is-intro .home-footer {
   opacity: 0;
   pointer-events: none;
+}
+
+.song-toggle {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff6df;
+  opacity: 1;
+  cursor: pointer;
+  filter: drop-shadow(0 1px 1px #000) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85));
+}
+
+.song-toggle[hidden] {
+  display: none !important;
+}
+
+.song-toggle:focus-visible {
+  outline: 2px solid #fff6df;
+  outline-offset: 3px;
+}
+
+.song-toggle svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.song-toggle .song-icon--off {
+  display: none;
+}
+
+.song-toggle.is-muted .song-icon--on {
+  display: none;
+}
+
+.song-toggle.is-muted .song-icon--off {
+  display: block;
 }
 
 .name-form {
@@ -2733,10 +2861,23 @@ html.invite-returning .invite-mark {
     font-size: 64px;
   }
 
+  .landing-body.is-open .monogram,
+  html.invite-returning .monogram {
+    height: 144px;
+    font-size: 96px;
+  }
+
   .monogram-rule {
     width: 52px;
     height: 74px;
     margin: 0 10px;
+  }
+
+  .landing-body.is-open .monogram-rule,
+  html.invite-returning .monogram-rule {
+    width: 78px;
+    height: 111px;
+    margin: 0 15px;
   }
 
   .names {

@@ -236,7 +236,7 @@ export function resetKey3d() {
   placeIdle();
 }
 
-export async function playKeyUnlock() {
+export async function playKeyUnlock(onMove) {
   if (loadPromise) await loadPromise;
   if (!ready || !pivot) return true;
   const hole = lockHole();
@@ -270,6 +270,7 @@ export async function playKeyUnlock() {
   };
 
   try {
+    onMove?.();
     await playUnlockClock(2680, (t) => {
       const pathT = across(t, 0, 0.72);
       pivot.position.x = bezier(from.x, c1.x, c2.x, to.x, pathT);
