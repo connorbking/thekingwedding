@@ -2454,7 +2454,9 @@ html.invite-returning .monogram-rule {
 }
 
 .intro-video[hidden] {
-  display: none !important;
+  display: block !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .intro-video-scene {
@@ -2501,8 +2503,8 @@ html.invite-returning .monogram-rule {
 
 .song-toggle {
   position: fixed;
+  top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 60;
   display: grid;
   place-items: center;

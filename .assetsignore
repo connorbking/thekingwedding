@@ -10,3 +10,7 @@ package.json
 package-lock.json
 .dev.vars
 README.md
+public/*.psd
+public/*.obj
+public/*.mtl
+public/tripo_material_*.jpeg

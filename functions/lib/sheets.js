@@ -23,23 +23,39 @@ async function callSheet(env, { method = "POST", action, body }) {
     });
   }
 
+  const payload = method === "GET" ? undefined : JSON.stringify({ action, ...body });
+  const headers = method === "GET" ? {} : { "Content-Type": "text/plain;charset=utf-8" };
   let response;
   try {
     response = await fetch(target.toString(), {
       method,
-      redirect: "follow",
+      redirect: "manual",
       signal: AbortSignal.timeout(20000),
-      headers: method === "GET" ? {} : { "Content-Type": "text/plain;charset=utf-8" },
-      body: method === "GET" ? undefined : JSON.stringify({ action, ...body }),
+      headers,
+      body: payload,
     });
-  } catch {
-    const error = new Error("The guest list took too long to respond. Please try again.");
-    error.status = 504;
-    throw error;
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) {
+        const error = new Error("The Google Sheet did not accept that request.");
+        error.status = 502;
+        throw error;
+      }
+      response = await fetch(location, {
+        method: "GET",
+        redirect: "follow",
+        signal: AbortSignal.timeout(20000),
+      });
+    }
+  } catch (error) {
+    if (error.status) throw error;
+    const wrapped = new Error("The guest list took too long to respond. Please try again.");
+    wrapped.status = 504;
+    throw wrapped;
   }
 
   const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.error) {
+  if (!response.ok || data.ok === false || data.error) {
     const error = new Error(data.error || "The Google Sheet did not accept that request.");
     error.status = response.ok ? 502 : response.status;
     throw error;
@@ -55,7 +71,7 @@ export async function appendGuest(env, submission) {
   const guests = Array.isArray(submission.guests) ? submission.guests : [];
   const extras = guests.length > 1 ? guests.slice(1) : submission.extras || [];
   const isRsvp = submission.kind === "rsvp";
-  return callSheet(env, {
+  const data = await callSheet(env, {
     method: "POST",
     body: {
       action: guests.length ? "party" : "upsert",
@@ -76,10 +92,17 @@ export async function appendGuest(env, submission) {
       country: submission.country,
       accessCode: submission.accessCode,
       groupCode: submission.accessCode,
+      code: submission.accessCode,
       additionalGuests: extras,
       guests: guests.length ? guests : undefined,
     },
   });
+  if (data.updated === false) {
+    const error = new Error("We could not match that guest on the list, so the address was not saved.");
+    error.status = 502;
+    throw error;
+  }
+  return data;
 }
 
 function groupCode(row) {

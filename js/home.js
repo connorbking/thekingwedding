@@ -549,36 +549,96 @@ function hideIntroVideo() {
   const video = wrap?.querySelector("video");
   if (video) {
     video.pause();
-    video.currentTime = 0;
+    try {
+      if (video.readyState >= 1) video.currentTime = 0;
+    } catch {
+      /* Some phones reject a seek before the first frame exists. */
+    }
   }
   if (wrap) wrap.hidden = true;
   document.body.classList.remove("is-intro");
+}
+
+function primeIntroVideo() {
+  const video = document.querySelector("[data-intro-video] video");
+  if (!video || video.dataset.primed === "true") return;
+  video.dataset.primed = "true";
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  if (video.readyState === 0) video.load();
+}
+
+function waitForVideo(video, timeoutMs) {
+  if (video.readyState >= 3) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const finish = (ok) => {
+      video.removeEventListener("canplay", onReady);
+      video.removeEventListener("error", onError);
+      window.clearTimeout(timer);
+      resolve(ok);
+    };
+    const onReady = () => finish(true);
+    const onError = () => finish(false);
+    video.addEventListener("canplay", onReady);
+    video.addEventListener("error", onError);
+    const timer = window.setTimeout(() => finish(video.readyState >= 2), timeoutMs);
+  });
+}
+
+async function startIntroPlayback(video) {
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) video.load();
+  const ready = await waitForVideo(video, 8000);
+  if (!ready && video.error) return false;
+  try {
+    if (video.readyState >= 1 && video.currentTime > 0.05) video.currentTime = 0;
+  } catch {
+    /* Keep the frame the phone already decoded. */
+  }
+  try {
+    await video.play();
+    return true;
+  } catch {
+    const again = await waitForVideo(video, 4000);
+    if (!again) return false;
+    try {
+      await video.play();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 function playIntroVideo() {
   const wrap = document.querySelector("[data-intro-video]");
   const video = wrap?.querySelector("video");
   if (!wrap || !video || prefersReducedMotion()) return Promise.resolve();
+  primeIntroVideo();
   wrap.hidden = false;
   document.body.classList.add("is-intro");
-  video.muted = true;
-  video.currentTime = 0;
   if (!song || song.paused) startSong();
-  return video
-    .play()
-    .then(
-      () =>
-        new Promise((resolve) => {
-          const done = () => {
-            video.removeEventListener("ended", done);
-            video.removeEventListener("error", done);
-            resolve();
-          };
-          video.addEventListener("ended", done);
-          video.addEventListener("error", done);
-        }),
-    )
-    .catch(() => {})
+  return startIntroPlayback(video)
+    .then((playing) => {
+      if (!playing) return;
+      const seconds = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 12;
+      return new Promise((resolve) => {
+        const done = () => {
+          video.removeEventListener("ended", done);
+          video.removeEventListener("error", done);
+          window.clearTimeout(timer);
+          resolve();
+        };
+        video.addEventListener("ended", done);
+        video.addEventListener("error", done);
+        const timer = window.setTimeout(done, seconds * 1000 + 2500);
+      });
+    })
     .finally(() => {
       hideIntroVideo();
     });
@@ -592,6 +652,7 @@ async function playUnlockSequence() {
     document.body.style.setProperty("--lock-oy", `${(center.lockY / window.innerHeight) * 100}%`);
   }
   document.body.classList.add("is-unlocking");
+  primeIntroVideo();
   const played = await playKeyUnlock(() => startSong());
   if (!played) {
     stopSong();
@@ -667,6 +728,7 @@ form?.addEventListener("submit", async (event) => {
 
 fetch("/api/invite?warm=1").catch(() => {});
 discoverInviteBgs();
+primeIntroVideo();
 
 function setReading(open) {
   household?.classList.toggle("is-reading", open);
