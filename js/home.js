@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js?v=cal1";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party30";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party31";
 import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k7";
 import {
   findGuest,

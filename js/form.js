@@ -173,11 +173,18 @@ function memberAddressFields(index, member) {
   const postal = member.postal || "";
   const country = member.country || "United States";
   const search = formatAddressLine({ street, apt, city, region, postal, country }, { includeCountry: false });
+  const sameAddress = index > 0
+    ? `<button type="button" class="same-address" data-same-as-guest>(Same as Guest 1)</button>`
+    : "";
   return `
     <div class="party-member-address">
-      <label class="address-lookup">Street address
-        <input name="memberAddress${index}" type="text" maxlength="120" autocomplete="off" placeholder="Start typing your address..." aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
-      </label>
+      <div class="address-lookup">
+        <span class="address-lookup-label">
+          <label for="member-address-${index}">Street address</label>
+          ${sameAddress}
+        </span>
+        <input id="member-address-${index}" name="memberAddress${index}" type="text" maxlength="120" autocomplete="off" placeholder="Start typing your address..." aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
+      </div>
       <ul class="address-suggestions" id="address-suggestions-${index}" data-address-suggestions hidden></ul>
       <label>Apartment / unit (optional) <input name="memberApt${index}" maxlength="40" autocomplete="address-line2" placeholder="Apartment or unit" value="${escapeAttr(apt)}"></label>
       <input type="hidden" name="memberStreet${index}" maxlength="40" value="${escapeAttr(street)}">
@@ -495,6 +502,16 @@ function setMemberEditing(card, open) {
   equalizeLetterPanels(card.closest("form"));
 }
 
+function copyGuestAddress(from, to) {
+  const source = addressInputs(from);
+  const target = addressInputs(to);
+  ["street", "apt", "city", "region", "postal", "country", "search"].forEach((key) => {
+    if (!source[key] || !target[key]) return;
+    target[key].value = source[key].value;
+  });
+  hideSuggestions(to);
+}
+
 function refreshMemberSummary(card) {
   if (!card?.matches?.("[data-party-member]")) return;
   const phone = formatPhone(card.querySelector("input[name^='memberPhone']")?.value || "");
@@ -746,6 +763,16 @@ function bindForm(form, eventName, guest) {
   form.dataset.bound = "true";
 
   form.addEventListener("click", (eventClick) => {
+    const sameAddress = eventClick.target.closest("[data-same-as-guest]");
+    if (sameAddress) {
+      eventClick.preventDefault();
+      const card = sameAddress.closest("[data-party-member]");
+      const source = form.querySelector("[data-party-member]");
+      if (!card || !source || card === source) return;
+      copyGuestAddress(source, card);
+      refreshMemberSummary(card);
+      return;
+    }
     if (eventClick.target.closest("[data-add-guest]")) {
       if (partyMode) return;
       const max = extraGuestSlots(guest);

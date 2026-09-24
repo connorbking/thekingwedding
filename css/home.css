@@ -1578,6 +1578,39 @@ html.invite-returning .household-count {
   margin-top: 8px;
 }
 
+.address-lookup-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.address-lookup-label label {
+  margin: 0;
+}
+
+.same-address {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(92, 18, 24, 0.72);
+  font-family: "Bodoni Moda", serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.same-address:hover,
+.same-address:focus-visible {
+  color: rgba(92, 18, 24, 0.95);
+  outline: none;
+}
+
 .household-form .party-member--note,
 .household-form .party-member--note.is-editing,
 .household-form .party-member--note:last-child {
