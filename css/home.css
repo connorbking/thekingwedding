@@ -2550,6 +2550,11 @@ html.invite-returning .monogram-rule {
   gap: 10px;
 }
 
+html.code-arrival .name-fields,
+html.code-arrival .name-form .find-invite {
+  display: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

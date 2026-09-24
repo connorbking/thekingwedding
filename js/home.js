@@ -825,8 +825,59 @@ form?.addEventListener("input", () => {
   else if (errorNode.textContent.startsWith("Please enter your first")) errorNode.textContent = "";
 });
 
+function markUnlocking() {
+  playSong();
+  if (findInvite) {
+    findInvite.disabled = true;
+    findInvite.setAttribute("aria-busy", "true");
+    findInvite.classList.add("is-loading");
+  }
+  if (form) form.dataset.unlocking = "true";
+  document.activeElement?.blur();
+}
+
+function clearUnlocking() {
+  if (form) form.dataset.unlocking = "false";
+  if (findInvite && !document.body.classList.contains("is-open")) {
+    findInvite.disabled = false;
+    findInvite.removeAttribute("aria-busy");
+    findInvite.classList.remove("is-loading");
+  }
+}
+
+function showLookupError(error) {
+  cancelUnlock();
+  if (!errorNode) return;
+  errorNode.textContent = error?.ambiguous
+    ? ambiguousMessage()
+    : error?.lookupError
+      ? error.message
+      : missingMessage();
+}
+
+async function revealGuest(guest) {
+  await loadEventSettings();
+  preloadInviteAssets(guest);
+  const played = await playUnlockSequence();
+  if (!played) return false;
+  const arrive = !prefersReducedMotion();
+  await showHousehold(guest, { arrive });
+  document.body.classList.add("is-revealing");
+  document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
+  if (arrive) {
+    const openedAt = performance.now();
+    await playArrival();
+    document.body.classList.remove("is-revealing", "is-arriving", "is-arrived-doors", "is-arrived-mail");
+    armInviteAdvance(openedAt);
+  } else {
+    document.body.classList.remove("is-revealing");
+  }
+  return true;
+}
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (document.documentElement.classList.contains("code-arrival")) return;
   if (form.dataset.unlocking === "true") return;
   const nameMessage = nameFieldMessage();
   if (nameMessage) {
@@ -835,14 +886,7 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
   if (errorNode) errorNode.textContent = "";
-  playSong();
-  if (findInvite) {
-    findInvite.disabled = true;
-    findInvite.setAttribute("aria-busy", "true");
-    findInvite.classList.add("is-loading");
-  }
-  form.dataset.unlocking = "true";
-  document.activeElement?.blur();
+  markUnlocking();
   try {
     const [guest] = await Promise.all([
       findGuestByName(form.firstName.value, form.lastName.value),
@@ -852,40 +896,44 @@ form?.addEventListener("submit", async (event) => {
       if (errorNode) errorNode.textContent = missingMessage();
       return;
     }
-    await loadEventSettings();
-    preloadInviteAssets(guest);
-    const played = await playUnlockSequence();
-    if (!played) return;
-    const arrive = !prefersReducedMotion();
-    await showHousehold(guest, { arrive });
-    document.body.classList.add("is-revealing");
-    document.body.classList.remove("is-unlocking", "is-unlocked", "is-entering");
-    if (arrive) {
-      const openedAt = performance.now();
-      await playArrival();
-      document.body.classList.remove("is-revealing", "is-arriving", "is-arrived-doors", "is-arrived-mail");
-      armInviteAdvance(openedAt);
-    } else {
-      document.body.classList.remove("is-revealing");
-    }
+    await revealGuest(guest);
   } catch (error) {
-    cancelUnlock();
-    if (errorNode) {
-      errorNode.textContent = error.ambiguous
-        ? ambiguousMessage()
-        : error.lookupError
-          ? error.message
-          : missingMessage();
-    }
+    showLookupError(error);
   } finally {
-    form.dataset.unlocking = "false";
-    if (findInvite && !document.body.classList.contains("is-open")) {
-      findInvite.disabled = false;
-      findInvite.removeAttribute("aria-busy");
-      findInvite.classList.remove("is-loading");
-    }
+    clearUnlocking();
   }
 });
+
+const CODE_LANDING_PAUSE = 1500;
+
+async function arriveFromCode(code) {
+  initKey3d();
+  let manual = false;
+  const markManual = () => {
+    if (document.documentElement.classList.contains("code-arrival")) return;
+    manual = true;
+  };
+  form?.addEventListener("submit", markManual);
+  try {
+    const [guest] = await Promise.all([findGuest(code), wait(CODE_LANDING_PAUSE)]);
+    if (manual || form?.dataset.unlocking === "true") return;
+    if (!guest) {
+      document.documentElement.classList.remove("code-arrival");
+      if (errorNode) errorNode.textContent = missingMessage();
+      return;
+    }
+    if (errorNode) errorNode.textContent = "";
+    markUnlocking();
+    await revealGuest(guest);
+  } catch (error) {
+    if (manual || form?.dataset.unlocking === "true") return;
+    document.documentElement.classList.remove("code-arrival");
+    showLookupError(error);
+  } finally {
+    form?.removeEventListener("submit", markManual);
+    if (!manual) clearUnlocking();
+  }
+}
 
 if (!prefersReducedMotion()) primeIntroVideo();
 
@@ -1229,11 +1277,15 @@ if (consumeResetHome()) {
   document.documentElement.classList.remove("invite-returning");
 }
 const stored = readStoredGuest();
-if (params.get("code") || params.get("gate") || stored) {
+const arrivalCode = params.get("code");
+if (arrivalCode && !params.get("gate")) {
+  document.documentElement.classList.remove("invite-returning");
+  await arriveFromCode(arrivalCode);
+} else if (params.get("gate") || stored) {
   hideKey3d();
   const returning = await resolveGuest();
   if (returning) await showHousehold(returning);
-  else if ((params.get("code") || stored) && errorNode) errorNode.textContent = missingMessage();
+  else if (stored && errorNode) errorNode.textContent = missingMessage();
   document.documentElement.classList.remove("invite-returning");
 } else {
   initKey3d();
