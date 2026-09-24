@@ -4,6 +4,7 @@ Thumbs.db
 node_modules
 .wrangler
 .dev.vars
+.seed/
 .vercel
 .idea
 
@@ -11,3 +12,6 @@ node_modules
 local/
 *.xlsx
 *.xls
+
+# Source model is over GitHub's 100 MB limit
+public/key.obj

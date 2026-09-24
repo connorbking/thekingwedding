@@ -1,5 +1,6 @@
 /**
- * Guest list for https://theking.wedding
+ * Sheet sync for https://theking.wedding
+ * The site reads and writes D1. This web app writes replies back to the sheet.
  *
  * Open this spreadsheet → Extensions → Apps Script → paste this file → Save.
  * After editing, Deploy → Manage deployments → New version
@@ -9,6 +10,13 @@
  *   Who has access: Anyone
  * Copy the web app URL, then:
  *   npx wrangler pages secret put GOOGLE_SHEETS_WEBAPP_URL --project-name=thekingwedding
+ *
+ * Sheet ↔ site database:
+ * Project settings → Script properties → SYNC_SECRET (same value as the Pages secret).
+ * Reload the sheet, then Guest list → Install automatic sync.
+ * Edits in this sheet push to the site database. Replies saved on the site
+ * are written back here. A Site ID column is added the first time this runs;
+ * leave those values in place so renamed guests stay matched.
  */
 const SPREADSHEET_ID = "1VyFole7kJOnJjGnI07sDxjmlgYa2HUtrk9mxH46o7gE";
 const SHEET_GID = 338671760;
@@ -36,8 +44,11 @@ const HEADERS = [
 
 const RSVP_CHOICES = ["Yes", "No"];
 
+const SYNC_URL = "https://theking.wedding/api/sync";
+
 const ALIASES = {
   party: "party",
+  "site id": "site id",
   "group code": "group code",
   code: "group code",
   "invite code": "group code",
@@ -83,6 +94,7 @@ function sheet_(options) {
   })[0];
   const sheet = named || byId || ss.getSheets()[0];
   ensureHeaders_(sheet);
+  ensureSiteId_(sheet);
   if (!opts.readOnly) {
     try {
       ensureRsvpValidation_(sheet);
@@ -109,13 +121,19 @@ function ensureHeaders_(sheet) {
     return normalizeHeader_(name) === "group code";
   });
   if (hasGroupCode) return;
-
   let insertAt = existing.length + 1;
   existing.forEach(function (name, index) {
     if (normalizeHeader_(name) === "party") insertAt = index + 2;
   });
   sheet.insertColumnAfter(insertAt - 1);
   sheet.getRange(1, insertAt).setValue("Group Code");
+}
+
+function ensureSiteId_(sheet) {
+  const info = headerIndex_(sheet);
+  if (info.map["site id"] !== undefined) return;
+  const col = Math.max(sheet.getLastColumn(), 1) + 1;
+  sheet.getRange(1, col).setValue("Site ID");
 }
 
 function ensureRsvpValidation_(sheet) {
@@ -157,53 +175,6 @@ function headerIndex_(sheet) {
     }
   });
   return { map: map, width: existing.length, headers: existing };
-}
-
-function extrasList_(data) {
-  let extras = data.additionalGuests;
-  if (!extras && Array.isArray(data.guests) && data.guests.length > 1) {
-    extras = data.guests.slice(1);
-  }
-  if (!extras) return [];
-  if (typeof extras === "string") return [];
-  return extras
-    .map(function (guest) {
-      return {
-        id: guest && guest.id,
-        firstName: String((guest && guest.firstName) || (guest && guest.first_name) || "").trim(),
-        lastName: String((guest && guest.lastName) || (guest && guest.last_name) || "").trim(),
-        phone: String((guest && guest.phone) || "").trim(),
-        email: String((guest && guest.email) || "").trim(),
-        rsvp: (guest && guest.rsvp) || "",
-        street: String((guest && (guest.street || guest.street1)) || "").trim(),
-        apt: String((guest && (guest.apt || guest.street2)) || "").trim(),
-        city: String((guest && guest.city) || "").trim(),
-        region: String((guest && (guest.region || guest.state)) || "").trim(),
-        postal: String((guest && (guest.postal || guest.zip)) || "").trim(),
-        country: String((guest && guest.country) || "").trim(),
-      };
-    })
-    .filter(function (guest) {
-      return guest.firstName || guest.lastName;
-    });
-}
-
-function primaryFrom_(data) {
-  const guest = Array.isArray(data.guests) && data.guests[0] ? data.guests[0] : {};
-  return {
-    firstName: data.firstName || data.first_name || guest.firstName || guest.first_name || "",
-    lastName: data.lastName || data.last_name || guest.lastName || guest.last_name || "",
-    phone: data.phone || guest.phone || "",
-    email: data.email || guest.email || "",
-    id: data.id || guest.id || "",
-  };
-}
-
-function partyName_(data, existing) {
-  const explicit = String(data.party || data.greeting || "").trim();
-  if (explicit) return explicit;
-  if (existing) return existing;
-  return String(data.lastName || data.last_name || "").trim();
 }
 
 function isYes_(value) {
@@ -297,56 +268,6 @@ function cell_(row, map, name) {
   return index === undefined ? "" : asText_(row[index]);
 }
 
-function setCell_(row, map, name, value) {
-  if (map[name] === undefined) return;
-  row[map[name]] = value;
-}
-
-function fillGuest_(row, map, data, options) {
-  const opts = options || {};
-  const first = data.firstName || data.first_name || "";
-  const last = data.lastName || data.last_name || "";
-  const phone = data.phone || "";
-  const email = data.email || "";
-  const street = data.street || data.street1 || "";
-  const apt = data.apt || data.street2 || "";
-  const city = data.city || "";
-  const region = data.region || data.state || "";
-  const postal = data.postal || data.zip || "";
-  const party = String(data.party || "").trim();
-  const groupCode = String(data.groupCode || data.accessCode || data.code || "")
-    .trim()
-    .toUpperCase();
-
-  if (first) setCell_(row, map, "first name", first);
-  if (last) setCell_(row, map, "last name", last);
-  if (opts.contact) {
-    if (phone) setCell_(row, map, "phone", phone);
-    if (email) setCell_(row, map, "email", email);
-  }
-  if (opts.forceAddress || street || city || region || postal) {
-    if (opts.forceAddress || street) setCell_(row, map, "street address 1", street);
-    if (opts.forceAddress || apt || street) setCell_(row, map, "street address 2", apt);
-    if (opts.forceAddress || city) setCell_(row, map, "city", city);
-    if (opts.forceAddress || region) setCell_(row, map, "state/province", region);
-    if (opts.forceAddress || postal) setCell_(row, map, "zip/postal code", postal);
-  }
-  if (party && !String(cell_(row, map, "party") || "").trim()) {
-    setCell_(row, map, "party", party);
-  }
-  if (groupCode && !String(cell_(row, map, "group code") || "").trim()) {
-    setCell_(row, map, "group code", groupCode);
-  }
-
-  const rsvp = normalizeRsvp_(data.rsvp);
-  const flags = eventFlags_(data.event);
-  if (rsvp) {
-    if (flags.jersey) setCell_(row, map, "rsvp whippany", rsvp);
-    if (flags.como) setCell_(row, map, "rsvp como", rsvp);
-    if (flags.shower) setCell_(row, map, "rsvp bridal", rsvp);
-  }
-}
-
 function sameText_(a, b) {
   return String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
 }
@@ -397,23 +318,6 @@ function findRow_(values, map, data, options) {
   return -1;
 }
 
-function writeRow_(sheet, values, map, width, index, data, options) {
-  if (index === -1) {
-    const row = new Array(width).fill("");
-    fillGuest_(row, map, data, options);
-    sheet.appendRow(row);
-    values.push(row);
-    return values.length - 1;
-  }
-  fillGuest_(values[index], map, data, options);
-  sheet.getRange(index + 2, 1, 1, width).setValues([values[index]]);
-  return index;
-}
-
-function rowId_(first, last, email, index) {
-  return [first, last, email, index].join("|");
-}
-
 function parseId_(id) {
   const parts = String(id || "").split("|");
   return {
@@ -422,177 +326,6 @@ function parseId_(id) {
     email: parts[2] || "",
     index: Number(parts[3]),
   };
-}
-
-function list_(sheet) {
-  const info = headerIndex_(sheet);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
-  const values = sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
-  const guests = values
-    .map(function (row, index) {
-      function get(name) {
-        return cell_(row, info.map, name);
-      }
-      const first = asText_(get("first name"));
-      const last = asText_(get("last name"));
-      const email = asText_(get("email"));
-      const party = asText_(get("party"));
-      const groupCode = formatCode_(get("group code"));
-      if (!first && !last && !email && !party && !groupCode) return null;
-      const events = eventsFromRow_(get);
-      const rsvp = rsvpFromRow_(get);
-      return {
-        id: rowId_(first, last, email, index),
-        party: party,
-        access_code: groupCode,
-        group_code: groupCode,
-        first_name: first,
-        last_name: last,
-        phone: formatPhone_(get("phone")),
-        email: email,
-        street: asText_(get("street address 1")),
-        apt: asText_(get("street address 2")),
-        city: asText_(get("city")),
-        region: asText_(get("state/province")),
-        postal: formatPostal_(get("zip/postal code")),
-        events: events,
-        event: events[0] || "",
-        jersey: events.indexOf("jersey") !== -1,
-        como: events.indexOf("como") !== -1,
-        shower: events.indexOf("shower") !== -1,
-        invite: {
-          jersey: events.indexOf("jersey") !== -1,
-          como: events.indexOf("como") !== -1,
-          shower: events.indexOf("shower") !== -1,
-        },
-        rsvp: rsvp,
-        rsvp_jersey: rsvp.jersey,
-        rsvp_como: rsvp.como,
-        rsvp_shower: rsvp.shower,
-      };
-    })
-    .filter(Boolean);
-
-  return fillDownGroupCodes_(guests);
-}
-
-function fillDownGroupCodes_(guests) {
-  let code = "";
-  let party = "";
-  return guests.map(function (row) {
-    const currentParty = String(row.party || "").trim().toLowerCase();
-    const current = String(row.group_code || row.access_code || "").trim().toUpperCase();
-    const named = String(row.first_name || "").trim() || String(row.last_name || "").trim();
-    if (currentParty && party && currentParty !== party && !current) {
-      code = "";
-    }
-    if (currentParty) party = currentParty;
-    if (current) {
-      code = current;
-    } else if (code && named) {
-      row.group_code = code;
-      row.access_code = code;
-    }
-    return row;
-  });
-}
-
-function upsert_(sheet, data) {
-  const info = headerIndex_(sheet);
-  const lastRow = sheet.getLastRow();
-  const values =
-    lastRow < 2 ? [] : sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
-  const codes = groupCodesFor_(values, info.map);
-  const primary = primaryFrom_(data);
-  const requested = formatCode_(data.groupCode || data.accessCode || data.code);
-  const match = findGuestRow_(values, info.map, codes, requested, Object.assign({}, data, primary));
-  const existingParty = match === -1 ? "" : String(cell_(values[match], info.map, "party") || "").trim();
-  const party = partyName_(data, existingParty);
-  const existingCode = match === -1 ? "" : codes[match] || formatCode_(cell_(values[match], info.map, "group code"));
-  const groupOnSheet = requested && codes.indexOf(requested) !== -1;
-  const groupCode = existingCode || (groupOnSheet ? requested : "");
-  const isAddress = String(data.kind || "").toLowerCase() !== "rsvp";
-  const address = {
-    street: data.street || data.street1 || "",
-    apt: data.apt || data.street2 || "",
-    city: data.city || "",
-    region: data.region || data.state || "",
-    postal: data.postal || data.zip || "",
-    party: party,
-    groupCode: groupCode,
-  };
-  const household = Object.assign(
-    {
-      event: data.event,
-      rsvp: data.rsvp || "",
-    },
-    address
-  );
-
-  if (isAddress && match === -1) {
-    return { ok: false, error: "We could not match that guest to the list." };
-  }
-
-  const primaryIndex = writeRow_(
-    sheet,
-    values,
-    info.map,
-    info.width,
-    match,
-    Object.assign({}, data, primary, household),
-    { contact: true, forceAddress: isAddress && hasAddress_(household) }
-  );
-  if (match === -1 && primaryIndex !== -1) codes[primaryIndex] = groupCode;
-
-  extrasList_(data).forEach(function (guest) {
-    const extraMatch = findGuestRow_(values, info.map, codes, groupCode || requested, guest);
-    if (extraMatch === -1 && isAddress) return;
-    const extraIndex = writeRow_(
-      sheet,
-      values,
-      info.map,
-      info.width,
-      extraMatch,
-      Object.assign({ event: data.event, party: party, groupCode: groupCode, rsvp: guest.rsvp || "" }, guest),
-      { contact: Boolean(guest.phone || guest.email), forceAddress: isAddress && hasAddress_(guest) }
-    );
-    if (extraMatch === -1 && extraIndex !== -1) codes[extraIndex] = groupCode;
-  });
-
-  return { ok: true, updated: match !== -1, party: party };
-}
-
-function deleteById_(sheet, id) {
-  const parsed = parseId_(id);
-  const info = headerIndex_(sheet);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return false;
-  const values = sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
-
-  let match = -1;
-  if (Number.isInteger(parsed.index) && values[parsed.index]) {
-    const row = values[parsed.index];
-    if (
-      sameText_(cell_(row, info.map, "first name"), parsed.first) &&
-      sameText_(cell_(row, info.map, "last name"), parsed.last) &&
-      sameText_(cell_(row, info.map, "email"), parsed.email)
-    ) {
-      match = parsed.index;
-    }
-  }
-
-  if (match === -1) {
-    match = findRow_(values, info.map, {
-      firstName: parsed.first,
-      lastName: parsed.last,
-      email: parsed.email,
-    });
-  }
-
-  if (match === -1) return false;
-  sheet.deleteRow(match + 2);
-  return true;
 }
 
 function json_(body) {
@@ -615,30 +348,13 @@ function doPost(e) {
   }
   try {
     const data = parse_(e);
-    const sheet = sheet_();
-    if (data.action === "delete") {
-      return json_({ ok: deleteById_(sheet, data.id) });
-    }
-    if (data.action === "list") {
-      return json_({ submissions: list_(sheet) });
-    }
-    if (data.action === "party") {
-      return json_(updateParty_(sheet, data));
-    }
-    return json_(upsert_(sheet, data));
+    if (data.action !== "contact") return json_({ error: "Unknown request." });
+    return json_(updateContacts_(sheet_(), data));
   } catch (error) {
     return json_({ error: error.message || "The guest list could not be updated." });
   } finally {
     lock.releaseLock();
   }
-}
-
-function copyInvites_(fromRow, toRow, map) {
-  ["invite whippany", "invite como", "invite bridal"].forEach(function (name) {
-    if (map[name] === undefined) return;
-    if (String(cell_(toRow, map, name) || "").trim()) return;
-    setCell_(toRow, map, name, cell_(fromRow, map, name));
-  });
 }
 
 function hasAddress_(data) {
@@ -718,204 +434,316 @@ function findGuestRow_(values, map, codes, groupCode, guest) {
   });
 }
 
-function updateParty_(sheet, data) {
+function doGet() {
+  return json_({ ok: true, service: "theking.wedding" });
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("Guest list")
+    .addItem("Push sheet to site", "pushSheetToD1")
+    .addItem("Pull replies from site", "pullRepliesFromD1")
+    .addItem("Install automatic sync", "installD1Sync")
+    .addToUi();
+}
+
+function installD1Sync() {
+  if (!syncSecret_()) {
+    throw new Error("Add script property SYNC_SECRET first. Project settings, then Script properties.");
+  }
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    const handler = trigger.getHandlerFunction();
+    if (handler === "syncSheetEdit" || handler === "syncSheetChange" || handler === "pullRepliesFromD1") {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  ScriptApp.newTrigger("syncSheetEdit").forSpreadsheet(SPREADSHEET_ID).onEdit().create();
+  ScriptApp.newTrigger("syncSheetChange").forSpreadsheet(SPREADSHEET_ID).onChange().create();
+  ScriptApp.newTrigger("pullRepliesFromD1").timeBased().everyMinutes(10).create();
+  SpreadsheetApp.getActive().toast("Automatic sync is on.");
+}
+
+function syncSheetEdit(event) {
+  if (isQuiet_()) return;
+  const range = event && event.range;
+  if (!range || !isGuestSheet_(range.getSheet())) return;
+  if (range.getRow() === 1 && range.getNumRows() === 1) return;
+  pushRows_(range.getSheet(), range.getRow(), range.getNumRows(), "sheet");
+}
+
+function syncSheetChange(event) {
+  if (isQuiet_()) return;
+  const type = String((event && event.changeType) || "");
+  if (type !== "REMOVE_ROW" && type !== "INSERT_ROW") return;
+  const sheet = event.source.getActiveSheet();
+  if (!isGuestSheet_(sheet)) return;
+  pushAll_("keep-site");
+}
+
+function pushSheetToD1() {
+  const result = pushAll_("sheet");
+  SpreadsheetApp.getActive().toast("Sent " + result.count + " guests to the site.");
+  return result;
+}
+
+function pullRepliesFromD1() {
+  const props = PropertiesService.getScriptProperties();
+  const result = syncFetch_({ action: "pull", since: props.getProperty("D1_CONTACT_SINCE") || "" });
+  withQuiet_(function () {
+    applyContacts_(result.guests || []);
+  });
+  if (result.now) props.setProperty("D1_CONTACT_SINCE", result.now);
+  return result;
+}
+
+function isGuestSheet_(sheet) {
+  return sheet.getName() === SHEET_NAME || sheet.getSheetId() === SHEET_GID;
+}
+
+function isQuiet_() {
+  return PropertiesService.getScriptProperties().getProperty("SYNC_QUIET") === "1";
+}
+
+function withQuiet_(fn) {
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty("SYNC_QUIET", "1");
+  try {
+    return fn();
+  } finally {
+    props.deleteProperty("SYNC_QUIET");
+  }
+}
+
+function syncSecret_() {
+  return PropertiesService.getScriptProperties().getProperty("SYNC_SECRET") || "";
+}
+
+function syncFetch_(payload) {
+  const secret = syncSecret_();
+  if (!secret) throw new Error("Add script property SYNC_SECRET first.");
+  const response = UrlFetchApp.fetch(SYNC_URL, {
+    method: "post",
+    contentType: "application/json",
+    headers: { Authorization: "Bearer " + secret },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+  const body = JSON.parse(response.getContentText() || "{}");
+  if (response.getResponseCode() >= 400) {
+    throw new Error(body.error || "The site database could not be updated.");
+  }
+  return body;
+}
+
+function pushAll_(contact) {
+  const sheet = sheet_();
+  const lastRow = sheet.getLastRow();
+  return pushRows_(sheet, 2, Math.max(lastRow - 1, 0), contact, true);
+}
+
+function pushRows_(sheet, startRow, rowCount, contact, replace) {
+  withQuiet_(function () {
+    ensureSiteId_(sheet);
+  });
+  const packed = guestsForSync_(sheet, startRow, rowCount);
+  const result = syncFetch_({
+    action: "push",
+    replace: Boolean(replace),
+    contact: contact || "sheet",
+    guests: packed.guests,
+  });
+  withQuiet_(function () {
+    writeSiteIds_(sheet, packed.info, result.ids || []);
+  });
+  return result;
+}
+
+function guestsForSync_(sheet, startRow, rowCount) {
   const info = headerIndex_(sheet);
   const lastRow = sheet.getLastRow();
-  const values =
-    lastRow < 2 ? [] : sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
+  const first = Math.max(2, startRow || 2);
+  const end = Math.min(lastRow, (startRow || 2) + Math.max(rowCount, 0) - 1);
+  if (lastRow < 2 || end < first) return { info: info, guests: [] };
+  const values = sheet.getRange(2, 1, end - 1, info.width).getValues();
+  let code = "";
+  let party = "";
+  const guests = [];
+  values.forEach(function (row, index) {
+    const sheetRow = index + 2;
+    function get(name) {
+      return cell_(row, info.map, name);
+    }
+    const firstName = asText_(get("first name"));
+    const lastName = asText_(get("last name"));
+    const currentParty = asText_(get("party"));
+    const currentCode = formatCode_(get("group code"));
+    if (currentParty && party && currentParty.toLowerCase() !== party && !currentCode) code = "";
+    if (currentParty) party = currentParty.toLowerCase();
+    if (currentCode) code = currentCode;
+    if (sheetRow < first) return;
+    if (!firstName && !lastName) return;
+    const events = eventsFromRow_(get);
+    const rsvp = rsvpFromRow_(get);
+    guests.push({
+      siteId: asText_(get("site id")),
+      row: sheetRow,
+      party: currentParty,
+      groupCode: currentCode || code,
+      firstName: firstName,
+      lastName: lastName,
+      phone: formatPhone_(get("phone")),
+      email: asText_(get("email")),
+      street: asText_(get("street address 1")),
+      apt: asText_(get("street address 2")),
+      city: asText_(get("city")),
+      region: asText_(get("state/province")),
+      postal: formatPostal_(get("zip/postal code")),
+      jersey: events.indexOf("jersey") !== -1,
+      como: events.indexOf("como") !== -1,
+      shower: events.indexOf("shower") !== -1,
+      rsvpJersey: rsvp.jersey,
+      rsvpComo: rsvp.como,
+      rsvpShower: rsvp.shower,
+    });
+  });
+  return { info: info, guests: guests };
+}
+
+function writeSiteIds_(sheet, info, ids) {
+  const col = info.map["site id"];
+  if (col === undefined || !ids || !ids.length) return;
+  ids.forEach(function (item) {
+    if (!item || !item.siteId || !item.row) return;
+    const cell = sheet.getRange(item.row, col + 1);
+    if (!asText_(cell.getValue())) cell.setValue(item.siteId);
+  });
+}
+
+function updateContacts_(sheet, data) {
+  const info = headerIndex_(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: false, error: "The guest list is empty." };
+  const values = sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
   const codes = groupCodesFor_(values, info.map);
-  let groupCode = formatCode_(data.groupCode || data.accessCode || data.code);
-  const firstGuest = (data.guests && data.guests[0]) || data;
-  const hint = findGuestRow_(values, info.map, codes, groupCode, firstGuest);
-  if (hint !== -1 && (!groupCode || codes.indexOf(groupCode) === -1)) {
-    groupCode = codes[hint] || groupCode;
-  }
-  if (!groupCode && hint === -1) return { ok: false, error: "Missing group code." };
+  const guests = Array.isArray(data.guests) && data.guests.length ? data.guests : [data];
+  const isAddress = String(data.kind || "").toLowerCase() !== "rsvp";
+  const requested = formatCode_(data.groupCode || data.accessCode || data.code);
+  let updated = 0;
 
-  let template = hint !== -1 ? values[hint] : null;
-  let existingParty = hint !== -1 ? String(cell_(values[hint], info.map, "party") || "").trim() : "";
-  if (groupCode) {
+  guests.forEach(function (guest) {
+    const match = findContactRow_(values, info.map, codes, requested, guest);
+    if (match === -1) return;
+    const row = values[match];
+    function set(name, value) {
+      const index = info.map[name];
+      if (index === undefined || value === undefined || value === null || value === "") return;
+      row[index] = value;
+    }
+    set("phone", guest.phone);
+    set("email", guest.email);
+    if (isAddress && hasAddress_(guest)) {
+      set("street address 1", guest.street || guest.street1 || "");
+      set("street address 2", guest.apt || guest.street2 || "");
+      set("city", guest.city || "");
+      set("state/province", guest.region || guest.state || "");
+      set("zip/postal code", guest.postal || guest.zip || "");
+    }
+    const rsvp = normalizeRsvp_(guest.rsvp);
+    if (String(data.kind || "").toLowerCase() === "rsvp" && rsvp) {
+      const flags = eventFlags_(data.event);
+      if (flags.jersey) set("rsvp whippany", rsvp);
+      if (flags.como) set("rsvp como", rsvp);
+      if (flags.shower) set("rsvp bridal", rsvp);
+    }
+    const siteIndex = info.map["site id"];
+    if (siteIndex !== undefined && !asText_(row[siteIndex]) && guest.id) row[siteIndex] = guest.id;
+    sheet.getRange(match + 2, 1, 1, info.width).setValues([row]);
+    values[match] = row;
+    updated += 1;
+  });
+
+  return { ok: updated > 0, updated: updated > 0 };
+}
+
+function findContactRow_(values, map, codes, groupCode, guest) {
+  const siteId = asText_(guest.id || guest.siteId);
+  const siteIndex = map["site id"];
+  if (siteId && siteIndex !== undefined) {
     for (let i = 0; i < values.length; i += 1) {
-      if (codes[i] !== groupCode) continue;
-      if (!template) template = values[i];
-      if (!existingParty) existingParty = String(cell_(values[i], info.map, "party") || "").trim();
+      if (asText_(values[i][siteIndex]) === siteId) return i;
     }
   }
+  const parsed = parseId_(siteId);
+  if (Number.isInteger(parsed.index) && values[parsed.index]) {
+    const row = values[parsed.index];
+    if (
+      sameText_(cell_(row, map, "first name"), parsed.first) &&
+      sameText_(cell_(row, map, "last name"), parsed.last)
+    ) {
+      return parsed.index;
+    }
+  }
+  return findGuestRow_(values, map, codes, groupCode, guest);
+}
 
-  const party = partyName_(data, existingParty);
-  const writeAddress = String(data.kind || "").toLowerCase() !== "rsvp";
-  let written = 0;
+function applyContacts_(guests) {
+  if (!guests.length) return;
+  const sheet = sheet_();
+  const info = headerIndex_(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const values = sheet.getRange(2, 1, lastRow - 1, info.width).getValues();
+  let code = "";
+  let party = "";
+  const codes = values.map(function (row) {
+    const currentParty = asText_(cell_(row, info.map, "party"));
+    const current = formatCode_(cell_(row, info.map, "group code"));
+    if (currentParty && party && currentParty.toLowerCase() !== party && !current) code = "";
+    if (currentParty) party = currentParty.toLowerCase();
+    if (current) code = current;
+    return current || code;
+  });
 
-  (data.guests || []).forEach(function (guest) {
-    const index = findGuestRow_(values, info.map, codes, groupCode, guest);
-    const next = Object.assign(
-      {
-        event: data.event,
-        party: party,
-        groupCode: groupCode,
-      },
-      guest,
-      {
-        firstName: guest.firstName || guest.first_name || "",
-        lastName: guest.lastName || guest.last_name || "",
-        phone: guest.phone || "",
-        email: guest.email || "",
-        rsvp: guest.rsvp || "",
-        street: guest.street || guest.street1 || "",
-        apt: guest.apt || guest.street2 || "",
-        city: guest.city || "",
-        region: guest.region || guest.state || "",
-        postal: guest.postal || guest.zip || "",
+  guests.forEach(function (guest) {
+    let match = -1;
+    const siteIndex = info.map["site id"];
+    if (siteIndex !== undefined && guest.id) {
+      for (let i = 0; i < values.length; i += 1) {
+        if (asText_(values[i][siteIndex]) === guest.id) match = i;
       }
-    );
-    const writeThisAddress = writeAddress && hasAddress_(next);
-    if (index !== -1) {
-      writeRow_(sheet, values, info.map, info.width, index, next, { contact: true, forceAddress: writeThisAddress });
-      codes[index] = groupCode || codes[index];
-      written += 1;
-      return;
     }
-    if (!template) return;
-    const row = new Array(info.width).fill("");
-    fillGuest_(row, info.map, next, { contact: true, forceAddress: writeThisAddress });
-    copyInvites_(template, row, info.map);
-    sheet.appendRow(row);
-    values.push(row);
-    codes.push(groupCode);
-    written += 1;
-  });
-
-  if (!written) {
-    return { ok: false, error: "We could not match that guest to the list." };
-  }
-
-  return { ok: true, party: party, groupCode: groupCode, updated: true };
-}
-
-function normalizePersonName_(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/['’`]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/^\s+|\s+$/g, "");
-}
-
-function householdKey_(row) {
-  const code = String(row.group_code || row.access_code || "").trim().toUpperCase();
-  if (code) return "code:" + code;
-  const party = String(row.party || "").trim().toLowerCase();
-  if (party) return "party:" + party;
-  return "solo:" + String(row.id || "");
-}
-
-function partyRecord_(party, event) {
-  if (!party.length) return { found: false, byName: true };
-
-  const members = party.filter(function (row) {
-    return String(row.first_name || "").trim() || String(row.last_name || "").trim();
-  });
-  const events = [];
-  members.forEach(function (row) {
-    (row.events || []).forEach(function (key) {
-      if (events.indexOf(key) === -1) events.push(key);
-    });
-  });
-  if (event && events.indexOf(event) === -1) return { found: false, byName: true };
-
-  const coded = party.filter(function (row) {
-    return row.group_code;
-  })[0];
-  const named = party.filter(function (row) {
-    return row.party;
-  })[0];
-  const code = (coded && coded.group_code) || formatCode_((named && named.party) || "");
-
-  return {
-    found: true,
-    byName: true,
-    code: code,
-    greeting: (named && named.party) || "",
-    maxParty: Math.min(12, Math.max(members.length + 4, 2)),
-    events: events,
-    guests: members,
-  };
-}
-
-function lookupInviteByName_(sheet, firstName, lastName, event) {
-  const first = normalizePersonName_(firstName);
-  const last = normalizePersonName_(lastName);
-  if (!first || !last) return { found: false, byName: true };
-
-  const guests = list_(sheet);
-  const hits = guests.filter(function (row) {
-    return normalizePersonName_(row.first_name) === first && normalizePersonName_(row.last_name) === last;
-  });
-  if (!hits.length) return { found: false, byName: true };
-
-  const keys = [];
-  hits.forEach(function (row) {
-    const key = householdKey_(row);
-    if (keys.indexOf(key) === -1) keys.push(key);
-  });
-  if (keys.length !== 1) return { found: true, ambiguous: true, byName: true };
-
-  return partyRecord_(
-    guests.filter(function (row) {
-      return householdKey_(row) === keys[0];
-    }),
-    event
-  );
-}
-
-function lookupInvite_(sheet, code, event) {
-  const wanted = String(code || "").trim().toUpperCase();
-  if (!wanted) return { found: false };
-
-  const guests = list_(sheet).filter(function (row) {
-    return row.group_code === wanted;
-  });
-  if (!guests.length) return { found: false };
-
-  const events = [];
-  guests.forEach(function (row) {
-    (row.events || []).forEach(function (key) {
-      if (events.indexOf(key) === -1) events.push(key);
-    });
-  });
-  const party = guests
-    .map(function (row) {
-      return row.party;
-    })
-    .filter(Boolean)[0] || "";
-
-  return {
-    found: true,
-    code: wanted,
-    greeting: party,
-    maxParty: Math.min(12, Math.max(guests.length + 4, 2)),
-    events: events,
-    guests: guests,
-  };
-}
-
-function doGet(e) {
-  try {
-    const params = (e && e.parameter) || {};
-    const action = params.action;
-    const sheet = sheet_({ readOnly: true });
-    if (action === "list") {
-      return json_({ submissions: list_(sheet) });
+    if (match === -1) {
+      const hits = [];
+      values.forEach(function (row, index) {
+        if (
+          sameText_(cell_(row, info.map, "first name"), guest.firstName) &&
+          sameText_(cell_(row, info.map, "last name"), guest.lastName) &&
+          (!guest.groupCode || codes[index] === formatCode_(guest.groupCode))
+        ) {
+          hits.push(index);
+        }
+      });
+      if (hits.length === 1) match = hits[0];
     }
-    if (action === "invite") {
-      const first = String(params.first || "").trim();
-      const last = String(params.last || "").trim();
-      if (first && last) {
-        return json_(lookupInviteByName_(sheet, first, last, String(params.event || "").toLowerCase()));
-      }
-      return json_(lookupInvite_(sheet, params.code, String(params.event || "").toLowerCase()));
+    if (match === -1) return;
+    const row = values[match];
+    function set(name, value) {
+      const index = info.map[name];
+      if (index === undefined || !asText_(value)) return;
+      row[index] = value;
     }
-    return json_({ ok: true, service: "theking.wedding" });
-  } catch (error) {
-    return json_({ error: String(error && error.message ? error.message : error), submissions: [] });
-  }
+    set("phone", guest.phone);
+    set("email", guest.email);
+    set("street address 1", guest.street);
+    set("street address 2", guest.apt);
+    set("city", guest.city);
+    set("state/province", guest.region);
+    set("zip/postal code", guest.postal);
+    set("rsvp whippany", guest.rsvpJersey);
+    set("rsvp como", guest.rsvpComo);
+    set("rsvp bridal", guest.rsvpShower);
+    if (siteIndex !== undefined && !asText_(row[siteIndex]) && guest.id) row[siteIndex] = guest.id;
+    sheet.getRange(match + 2, 1, 1, info.width).setValues([row]);
+    values[match] = row;
+  });
 }

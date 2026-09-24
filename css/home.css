@@ -278,6 +278,12 @@ html:has(body.landing-body) {
   overflow: hidden;
 }
 
+html:not(.invite-returning) .landing-body:not(.is-open):not(.is-entering):not(.is-unlocking):not(.is-intro) .invitation-gate {
+  overflow: visible;
+  transform: scale(var(--gate-fit, 1));
+  transform-origin: center center;
+}
+
 html:has(body.landing-body.is-open) {
   height: 100%;
   overflow: hidden;
@@ -293,9 +299,12 @@ html:has(body.landing-body.is-open) {
   width: min(100%, 920px);
   height: 100dvh;
   max-height: 100dvh;
-  justify-content: center;
-  padding-top: 4vh;
-  padding-bottom: 3rem;
+  justify-content: safe center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: max(4vh, env(safe-area-inset-top));
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
 }
 
 .landing-body.is-open .date,
@@ -318,9 +327,12 @@ html.invite-returning .invitation-gate {
   width: min(100%, 920px);
   height: 100dvh;
   max-height: 100dvh;
-  justify-content: center;
-  padding-top: 4vh;
-  padding-bottom: 3rem;
+  justify-content: safe center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: max(4vh, env(safe-area-inset-top));
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
 }
 
 .household-desk {
@@ -429,28 +441,40 @@ html.invite-returning .household-count {
 .envelope--como,
 .envelope--jersey,
 .envelope--shower {
-  --closed-body-h: calc(var(--env-width) * 719 / 1373);
-  --closed-flap-h: calc(var(--env-width) * 486 / 1338);
+  --closed-body-h: calc(var(--env-width) * 686 / 1024);
   --env-height: var(--closed-body-h);
-  height: var(--closed-body-h);
+  height: auto;
+  aspect-ratio: 1024 / 686;
 }
 
 .envelope--como {
-  --seal-top: 52%;
-  --seal-size: 24%;
-  --env-zoom: 1.42;
+  --seal-top: 60%;
+  --seal-size: 22%;
+  --paper-x: 0.292;
+  --paper-y: 0.036;
+  --paper-w: 0.662;
+  --paper-h: 0.864;
+  --paper-aspect: 0.66;
 }
 
 .envelope--jersey {
-  --seal-top: 52%;
-  --seal-size: 24%;
-  --env-zoom: 1.41;
+  --seal-top: 60%;
+  --seal-size: 22%;
+  --paper-x: 0.31;
+  --paper-y: 0.097;
+  --paper-w: 0.442;
+  --paper-h: 0.735;
+  --paper-aspect: 0.645;
 }
 
 .envelope--shower {
-  --seal-top: 52%;
-  --seal-size: 24%;
-  --env-zoom: 1.16;
+  --seal-top: 60%;
+  --seal-size: 22%;
+  --paper-x: 0.2;
+  --paper-y: 0.116;
+  --paper-w: 0.517;
+  --paper-h: 0.767;
+  --paper-aspect: 0.8;
 }
 
 .envelope-link:has(.envelope--como),
@@ -553,7 +577,7 @@ html.invite-returning .household-count {
 .envelope-link.is-selected .envelope--como,
 .envelope-link.is-selected .envelope--jersey,
 .envelope-link.is-selected .envelope--shower {
-  height: var(--closed-body-h);
+  height: auto;
 }
 
 .envelope-link.is-selected:hover .envelope,
@@ -612,8 +636,8 @@ html.invite-returning .household-count {
 .envelope--como .envelope-body,
 .envelope--jersey .envelope-body,
 .envelope--shower .envelope-body {
-  height: var(--closed-body-h);
-  object-fit: fill;
+  height: auto;
+  object-fit: contain;
 }
 
 .envelope--como .envelope-closed-flap,
@@ -693,27 +717,66 @@ html.invite-returning .household-count {
 }
 
 .envelope-open-scene {
-  --open-letter-scale: 1.35;
+  --open-letter-scale: 1;
   position: absolute;
   left: 50%;
   bottom: 0;
   z-index: 6;
   width: max-content;
-  max-width: min(860px, 94vw);
   transform: translateX(-50%) scale(0.4);
   transform-origin: 50% 100%;
   opacity: 0;
   pointer-events: none;
 }
 
-.envelope-opened {
-  display: block;
-  width: auto;
+.envelope-opened-env {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: -18%;
+  width: 116%;
+  max-width: none;
   height: auto;
-  max-width: min(860px, 94vw);
-  max-height: min(90dvh, 980px);
-  object-fit: contain;
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.28));
+}
+
+.letter-frame {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(640px, var(--letter-max-w, 92vw), calc(var(--letter-max-h, 78dvh) * var(--paper-aspect, 0.66)));
+  aspect-ratio: var(--paper-aspect, 0.66);
+}
+
+.envelope-opened {
+  position: absolute;
+  left: calc(-100% * var(--paper-x, 0.3) / var(--paper-w, 0.66));
+  top: calc(-100% * var(--paper-y, 0.04) / var(--paper-h, 0.86));
+  width: calc(100% / var(--paper-w, 0.66));
+  height: auto;
+  max-width: none;
+  max-height: none;
+  pointer-events: none;
   filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.32));
+}
+
+.envelope--jersey {
+  --letter-shift-x: -45px;
+}
+
+.envelope--jersey .envelope-open-scene {
+  --open-letter-scale: 0.85;
+}
+
+.envelope--jersey .envelope-opened,
+.envelope--jersey .invite-sheet-back {
+  transform: translateX(var(--letter-shift-x));
+}
+
+.envelope--jersey .envelope-opened-env {
+  transform: translateX(calc(-50% + var(--letter-shift-x)));
 }
 
 .envelope-link.is-opening .envelope-crop,
@@ -772,119 +835,41 @@ html.invite-returning .household-count {
   pointer-events: none;
 }
 
-.invite-sheet-head,
-.invite-sheet-body {
+.invite-sheet-actions {
   position: absolute;
+  top: 66%;
+  right: 8%;
+  left: 8%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 0 0.35em;
+  gap: 0.7em;
   text-align: center;
+  pointer-events: none;
 }
 
-.invite-sheet-head {
-  top: 21.4%;
-  right: 17%;
-  left: 28%;
-  height: 7.4%;
+.envelope--como .invite-sheet-actions {
+  top: calc(65% + 72px);
 }
 
-.invite-sheet-body {
-  top: 45.8%;
-  right: 17%;
-  bottom: 15%;
-  left: 28%;
-  justify-content: flex-start;
-  gap: 0.42em;
-  padding-top: 0.35em;
+.envelope--jersey .invite-sheet-actions {
+  top: calc(70% + 80px);
 }
 
-.envelope--como .invite-sheet-head {
-  top: 21.3%;
-  right: 17%;
-  left: 28%;
-  height: 7.6%;
+.envelope--shower .invite-sheet-actions {
+  top: 67%;
 }
 
-.envelope--como .invite-sheet-body {
-  top: 45.6%;
-  right: 17%;
-  bottom: 15%;
-  left: 28%;
-}
-
-.envelope--jersey .invite-sheet-head {
-  top: 22.4%;
-  right: 18%;
-  left: 30%;
-  height: 8%;
-}
-
-.envelope--jersey .invite-sheet-body {
-  top: 45.3%;
-  right: 18%;
-  bottom: 16%;
-  left: 30%;
-}
-
-.envelope--shower .invite-sheet-head {
-  top: 26.5%;
-  right: 12%;
-  left: 35%;
-  height: 7.4%;
-}
-
-.envelope--shower .invite-sheet-body {
-  top: 49.4%;
-  right: 12%;
-  bottom: 16%;
-  left: 35%;
-}
-
-.invite-sheet-script,
-.invite-sheet-names,
-.invite-sheet-meta {
+.invite-sheet-soon {
   display: block;
-  max-width: 100%;
-  line-height: 1.3;
-}
-
-.invite-sheet-script {
-  font-family: "Great Vibes", "Snell Roundhand", cursive;
-  font-size: 36px;
-  font-size: clamp(14px, 5.5cqi, 36px);
-  font-style: normal;
+  max-width: 16em;
+  font-family: "Bodoni Moda", serif;
+  font-size: clamp(14px, 3.4cqi, 20px);
+  font-style: italic;
   font-weight: 400;
   letter-spacing: 0.02em;
-  text-transform: none;
-  white-space: nowrap;
-  color: rgba(92, 18, 24, 0.66);
-}
-
-.invite-sheet-names {
-  font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 16px;
-  font-size: clamp(9px, 2.65cqi, 16px);
-  font-weight: 400;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.invite-sheet-rule {
-  width: 42%;
-  height: 1px;
-  margin: 0.15em 0 0.2em;
-  background: linear-gradient(90deg, transparent, rgba(196, 164, 106, 0.55), transparent);
-}
-
-.invite-sheet-meta {
-  font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 14px;
-  font-size: clamp(8px, 2.3cqi, 14px);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  line-height: 1.35;
+  color: rgba(63, 11, 16, 0.78);
 }
 
 .invite-sheet-calendar {
@@ -892,15 +877,15 @@ html.invite-returning .household-count {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  margin-top: 2.15em;
+  margin-top: 0;
   padding: 0.55em 1.05em 0.5em;
   border: 1px solid rgba(196, 164, 106, 0.58);
-  background: rgba(255, 250, 242, 0.28);
-  color: rgba(63, 11, 16, 0.72);
+  background: rgba(255, 250, 242, 0.72);
+  color: rgba(63, 11, 16, 0.88);
   font-family: "Cinzel", "Bodoni Moda", serif;
   font-size: 13px;
-  font-size: clamp(8px, 2.2cqi, 13px);
-  letter-spacing: 0.16em;
+  font-size: clamp(16px, 3.38cqi, 18px);
+  letter-spacing: 0.12em;
   line-height: 1.2;
   text-transform: uppercase;
   text-decoration: none;
@@ -931,19 +916,38 @@ html.invite-returning .household-count {
 
 .invite-sheet-back {
   pointer-events: none;
-  margin-top: 0.35em;
+  position: absolute;
+  top: 5%;
+  right: 10%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
   padding: 0;
-  border: 0;
-  background: none;
-  color: rgba(63, 11, 16, 0.62);
-  font-family: "Cinzel", "Bodoni Moda", serif;
-  font-size: 11px;
-  font-size: clamp(7px, 1.7cqi, 11px);
-  letter-spacing: 0.14em;
-  line-height: 1.2;
-  text-decoration: underline;
-  text-underline-offset: 0.28em;
+  border: 1px solid rgba(58, 18, 24, 0.45);
+  border-radius: 50%;
+  background: #f7f1e4;
+  color: #2a1210;
+  font-family: "Bodoni Moda", serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: none;
   cursor: pointer;
+  box-shadow: 0 1px 5px rgba(40, 24, 12, 0.22);
+}
+
+.envelope--jersey .invite-sheet-back {
+  top: 8%;
+  right: -8%;
+}
+.envelope--shower .invite-sheet-back {
+  top: 3%;
+  right: 4%;
 }
 
 .envelope-link.is-opening .invite-sheet-back {
@@ -952,24 +956,25 @@ html.invite-returning .household-count {
 
 .invite-sheet-back:hover,
 .invite-sheet-back:focus-visible {
-  color: rgba(63, 11, 16, 0.92);
+  color: rgba(36, 18, 16, 0.88);
   outline: none;
 }
 
 @media (min-width: 900px) {
-  .envelope--como .invite-sheet-body,
-  .envelope--jersey .invite-sheet-body {
-    gap: 0.55em;
+  .envelope--jersey .envelope-open-scene {
+    --open-letter-scale: 0.85;
   }
 
-  .envelope--como .invite-sheet-names,
-  .envelope--jersey .invite-sheet-names {
-    font-size: clamp(11px, 3.2cqi, 21px);
+  .envelope--jersey {
+    --letter-shift-x: -55px;
   }
 
-  .envelope--como .invite-sheet-meta,
-  .envelope--jersey .invite-sheet-meta {
-    font-size: clamp(9px, 2.8cqi, 17px);
+  .envelope--jersey .invite-sheet-back {
+    right: -10%;
+  }
+
+  .envelope--jersey .invite-sheet-actions {
+    top: calc(70% + 140px);
   }
 }
 
@@ -1149,25 +1154,18 @@ html.invite-returning .household-count {
     margin: 0;
   }
 
-  .envelope-open-scene,
-  .envelope-opened {
-    max-width: min(860px, 96vw);
+  .letter-frame {
+    width: min(var(--letter-max-w, 96vw), calc(var(--letter-max-h, 78dvh) * var(--paper-aspect, 0.66)));
   }
 
-  .envelope-opened {
-    max-height: min(86dvh, 980px);
+  .invite-sheet-calendar {
+    margin-top: 0.45em;
   }
 
-  .invite-sheet-body {
-    gap: 0.28em;
-  }
-
-  .invite-sheet-names {
-    letter-spacing: 0.1em;
-  }
-
-  .invite-sheet-meta {
-    letter-spacing: 0.07em;
+  .invite-sheet-back {
+    width: 44px;
+    height: 44px;
+    font-size: 30px;
   }
 
   .picker-bar {
@@ -1232,10 +1230,11 @@ html.invite-returning .household-count {
   }
 
   .details-modal-close {
-    top: 6px;
-    right: 6px;
+    top: 10px;
+    right: 10px;
     width: 44px;
     height: 44px;
+    font-size: 30px;
   }
 
   .household-form input,
@@ -1267,17 +1266,6 @@ html.invite-returning .household-count {
     width: min(100%, 22rem);
     min-height: 48px;
     white-space: normal;
-  }
-}
-
-@media (max-width: 380px) {
-  .invite-sheet-script {
-    font-size: clamp(13px, 5.1cqi, 28px);
-  }
-
-  .invite-sheet-names,
-  .invite-sheet-meta {
-    letter-spacing: 0.05em;
   }
 }
 
@@ -1347,6 +1335,22 @@ html.invite-returning .household-count {
   outline: none;
   border-bottom-color: rgba(168, 132, 64, 0.88);
   box-shadow: 0 1px 0 rgba(168, 132, 64, 0.4);
+}
+
+.household-form input:-webkit-autofill,
+.household-form input:-webkit-autofill:hover,
+.household-form input:-webkit-autofill:focus,
+.household-form input:-webkit-autofill:active,
+.household-form input:autofill,
+.household-form textarea:-webkit-autofill,
+.household-form textarea:-webkit-autofill:hover,
+.household-form textarea:-webkit-autofill:focus,
+.household-form textarea:autofill {
+  -webkit-text-fill-color: #000;
+  caret-color: #000;
+  background-color: transparent !important;
+  background-image: none !important;
+  transition: background-color 99999s ease-out;
 }
 
 .household-form input:focus-visible,
@@ -1564,7 +1568,7 @@ html.invite-returning .household-count {
   color: rgba(92, 18, 24, 0.88);
 }
 
-.party-member--note.is-editing .party-member-summary {
+.party-member--note.is-editing .party-member-contact {
   display: none;
 }
 
@@ -1801,6 +1805,7 @@ body.details-open {
   background: transparent;
   color: #2e1c16;
   box-shadow: none;
+  pointer-events: none;
 }
 
 .details-envelope {
@@ -1829,6 +1834,7 @@ body.details-open {
   border: 0;
   background: none;
   box-shadow: none;
+  pointer-events: auto;
   animation: letter-rise 0.55s ease;
 }
 
@@ -1981,17 +1987,22 @@ body.details-open {
 
 .details-modal-close {
   position: absolute;
-  top: 10px;
-  right: 12px;
-  z-index: 6;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  background: none;
-  color: rgba(36, 18, 16, 0.5);
-  font-size: 22px;
+  top: 14px;
+  right: 14px;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(58, 18, 24, 0.45);
+  border-radius: 50%;
+  background: #f7f1e4;
+  color: #2a1210;
+  font-size: 28px;
+  font-weight: 500;
   line-height: 1;
   cursor: pointer;
+  box-shadow: 0 1px 5px rgba(40, 24, 12, 0.22);
 }
 
 .details-modal-close:hover,
@@ -2098,13 +2109,14 @@ body.details-open {
   align-items: center;
   justify-content: center;
   width: auto;
-  height: 118px;
-  margin: 0 0 34px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 clamp(12px, 3.2dvh, 34px);
   font-family: "Italiana", serif;
   font-weight: 400;
-  font-size: 90px;
+  font-size: clamp(52px, 10dvh, 90px);
   letter-spacing: 2px;
-  line-height: 0.9;
+  line-height: 1;
   color: #e4c79d;
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.72),
@@ -2116,9 +2128,9 @@ body.details-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 102px;
-  margin: 0 22px;
+  width: clamp(40px, 7dvh, 72px);
+  height: clamp(56px, 10dvh, 102px);
+  margin: 0 clamp(8px, 2vw, 22px);
   flex: 0 0 auto;
 }
 
@@ -2152,16 +2164,15 @@ body.details-open {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  width: 480px;
+  width: min(480px, 100%);
   max-width: 100%;
   margin: 0;
   font-family: "Bodoni Moda", serif;
-  font-size: 24px;
+  font-size: clamp(16px, 4.6vw, 24px);
   font-weight: 400;
-  letter-spacing: 8px;
+  letter-spacing: clamp(0.08em, 1.1vw, 0.28em);
   line-height: 1;
   text-transform: uppercase;
-  white-space: nowrap;
   color: #e4c79d;
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.72),
@@ -2202,9 +2213,10 @@ html.invite-returning .names-invited {
 .landing-body.is-open .names,
 html.invite-returning .names {
   width: auto;
+  max-width: 100%;
   margin-bottom: 2px;
-  font-size: clamp(22px, 3.1vw, 34px);
-  letter-spacing: 0.32em;
+  font-size: clamp(18px, 5.2vw, 34px);
+  letter-spacing: clamp(0.1em, 1.6vw, 0.32em);
 }
 
 .invite-mark {
@@ -2221,11 +2233,11 @@ html.invite-returning .invite-mark {
 }
 
 .date {
-  margin: 17px 0 clamp(20px, 6vh, 73px);
+  margin: clamp(8px, 1.6dvh, 17px) 0 clamp(8px, 4dvh, 73px);
   font-family: "Bodoni Moda", serif;
-  font-size: 15px;
+  font-size: clamp(12px, 1.8vw, 15px);
   font-weight: 400;
-  letter-spacing: 8px;
+  letter-spacing: clamp(0.18em, 1vw, 0.42em);
   line-height: 1;
   text-transform: uppercase;
   color: #e4c79d;
@@ -2249,8 +2261,8 @@ html.invite-returning .invite-mark {
 
 .lock-wrapper {
   position: relative;
-  width: min(275px, 28dvh);
-  margin: 0 auto clamp(12px, 2.2vh, 24px);
+  width: min(275px, 26dvh, 70vw);
+  margin: 0 auto clamp(8px, 2dvh, 24px);
 }
 
 .lock-hotspot {
@@ -2340,16 +2352,16 @@ html.invite-returning .invite-mark {
 
 .landing-body.is-open .monogram,
 html.invite-returning .monogram {
-  height: 177px;
-  margin-bottom: 28px;
-  font-size: 135px;
+  height: auto;
+  margin-bottom: clamp(10px, 2.4dvh, 28px);
+  font-size: clamp(72px, 16dvh, 135px);
 }
 
 .landing-body.is-open .monogram-rule,
 html.invite-returning .monogram-rule {
-  width: 108px;
-  height: 153px;
-  margin: 0 33px;
+  width: clamp(52px, 11dvh, 108px);
+  height: clamp(74px, 15dvh, 153px);
+  margin: 0 clamp(10px, 2.4vw, 33px);
 }
 
 .landing-body.is-arriving .monogram {
@@ -2495,6 +2507,21 @@ html.invite-returning .monogram-rule {
   background: #000;
 }
 
+@media (max-width: 799px) {
+  .landing-scene {
+    background-image: url("/public/landing-mobile.jpg");
+  }
+
+  .intro-video-scene {
+    --frame-w: 782;
+    --frame-h: 1280;
+    --hole-x: 207;
+    --hole-y: 344;
+    --hole-w: 372;
+    --hole-h: 592;
+  }
+}
+
 .landing-body.is-intro .invitation-gate,
 .landing-body.is-intro .home-footer {
   opacity: 0;
@@ -2595,6 +2622,44 @@ html.invite-returning .monogram-rule {
 .name-input:focus {
   outline: none;
   border-color: var(--gold-light);
+}
+
+.name-input:-webkit-autofill,
+.name-input:-webkit-autofill:hover,
+.name-input:-webkit-autofill:focus,
+.name-input:-webkit-autofill:active,
+.name-input:autofill {
+  -webkit-text-fill-color: #e4c79d;
+  caret-color: #e4c79d;
+  background-color: rgba(18, 23, 25, 0.18) !important;
+  background-image: none !important;
+  transition: background-color 99999s ease-out;
+}
+
+.name-input.is-invalid {
+  border-color: #f3e2c4;
+  box-shadow: 0 0 0 1px rgba(243, 226, 196, 0.45);
+}
+
+.name-input.is-invalid:-webkit-autofill,
+.name-input.is-invalid:autofill {
+  box-shadow: 0 0 0 1px rgba(243, 226, 196, 0.45);
+}
+
+.name-form .form-error {
+  margin: 14px 0 0;
+  text-align: center;
+  font-family: "Bodoni Moda", serif;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  color: #f3e2c4;
+}
+
+.name-form .form-error:empty {
+  display: none;
 }
 
 .find-invite {
@@ -2769,9 +2834,9 @@ html.invite-returning .monogram-rule {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 310px;
+  width: min(310px, 86vw);
   max-width: 100%;
-  margin-top: clamp(16px, 3.8vh, 40px);
+  margin-top: clamp(8px, 2.2dvh, 40px);
   color: var(--gold);
 }
 
@@ -2789,7 +2854,7 @@ html.invite-returning .monogram-rule {
 }
 
 .fleur-rule--faint {
-  margin-top: 28px;
+  margin-top: clamp(8px, 2dvh, 28px);
   opacity: 0.62;
 }
 
@@ -2803,11 +2868,11 @@ html.invite-returning .monogram-rule {
 }
 
 .secret-caps {
-  margin: clamp(16px, 5.5vh, 58px) 0 0;
+  margin: clamp(8px, 2.6dvh, 58px) 0 0;
   font-family: "Bodoni Moda", serif;
-  font-size: 13px;
+  font-size: clamp(10px, 1.6vw, 13px);
   font-weight: 400;
-  letter-spacing: 6px;
+  letter-spacing: clamp(0.16em, 0.8vw, 0.42em);
   line-height: 1;
   text-transform: uppercase;
   color: #e4c79d;
@@ -2860,33 +2925,32 @@ html.invite-returning .monogram-rule {
   .monogram {
     width: auto;
     height: auto;
-    font-size: 64px;
+    font-size: clamp(46px, 8.6dvh, 68px);
   }
 
   .landing-body.is-open .monogram,
   html.invite-returning .monogram {
-    height: 144px;
-    font-size: 96px;
+    height: auto;
+    font-size: clamp(56px, 13dvh, 96px);
   }
 
   .monogram-rule {
-    width: 52px;
-    height: 74px;
+    width: clamp(36px, 6.4dvh, 52px);
+    height: clamp(50px, 9dvh, 74px);
     margin: 0 10px;
   }
 
   .landing-body.is-open .monogram-rule,
   html.invite-returning .monogram-rule {
-    width: 78px;
-    height: 111px;
-    margin: 0 15px;
+    width: clamp(46px, 9dvh, 78px);
+    height: clamp(64px, 12.5dvh, 111px);
+    margin: 0 clamp(8px, 2vw, 15px);
   }
 
   .names {
-    font-size: 17px;
-    letter-spacing: 5px;
+    font-size: clamp(15px, 4.4vw, 17px);
+    letter-spacing: 0.14em;
     width: auto;
-    white-space: normal;
   }
 
   .names .and {
@@ -2986,10 +3050,11 @@ html.invite-returning .monogram-rule {
   }
 
   .details-modal-close {
-    top: 6px;
-    right: 6px;
+    top: 10px;
+    right: 10px;
     width: 44px;
     height: 44px;
+    font-size: 30px;
   }
 
   .household-form input,
@@ -3053,5 +3118,20 @@ html.invite-returning .monogram-rule {
     width: min(720px, calc(100vw - 48px));
     max-width: 720px;
     max-height: none;
+  }
+}
+
+@media (max-height: 740px) {
+  .landing-body.is-open .invitation-gate,
+  html.invite-returning .invitation-gate {
+    justify-content: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .invite-sheet-calendar {
+    margin-top: 0.35em;
   }
 }

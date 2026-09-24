@@ -1,5 +1,5 @@
 import { json } from "../lib/http.js";
-import { lookupInvite, lookupInviteByName, listGuests, sheetConfigured } from "../lib/sheets.js";
+import { lookupInvite, lookupInviteByName, sheetConfigured } from "../lib/sheets.js";
 
 function invitePayload(invite, fallbackCode = "") {
   return {
@@ -19,16 +19,9 @@ export async function onRequestGet(context) {
   const last = (url.searchParams.get("last") || "").trim();
   const event = (url.searchParams.get("event") || "").trim().toLowerCase();
 
-  if (url.searchParams.get("warm")) {
-    if (sheetConfigured(context.env)) {
-      await listGuests(context.env).catch(() => {});
-    }
-    return json({ ok: true });
-  }
-
   if (!code && !(first && last)) return json({ found: false });
   if (!sheetConfigured(context.env)) {
-    return json({ found: false, error: "The Google Sheet connection is not set yet." }, 503);
+    return json({ found: false, error: "The guest list is not available." }, 503);
   }
 
   try {

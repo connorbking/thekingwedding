@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL, EVENTS, sortEvents } from "./config.js?v=cal1";
-import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party27";
+import { initHouseholdForm, openDetailsModal, closeDetailsModal } from "./form.js?v=party28";
 import { hideKey3d, initKey3d, playKeyUnlock, resetKey3d } from "./key3d.js?v=k7";
 import {
   findGuest,
@@ -19,6 +19,17 @@ const form = document.querySelector("[data-code-form]");
 const householdForm = document.querySelector("[data-household-form]");
 const detailsModal = document.querySelector("[data-details-modal]");
 const errorNode = document.querySelector("[data-code-error]");
+
+function nameFieldMessage() {
+  const first = form.firstName.value.trim();
+  const last = form.lastName.value.trim();
+  form.firstName.classList.toggle("is-invalid", !first);
+  form.lastName.classList.toggle("is-invalid", !last);
+  if (!first && !last) return "Please enter your first and last name.";
+  if (!first) return "Please enter your first name.";
+  if (!last) return "Please enter your last name.";
+  return "";
+}
 
 function missingMessage() {
   return `We couldn’t find that invitation. Please check the name on your card, or write us at ${CONTACT_EMAIL}.`;
@@ -50,35 +61,29 @@ function countLabel(count) {
   return `have sent you ${count} invitations.`;
 }
 
-const ART_V = "8";
+const ART_V = "10";
 const artUrl = (file) => `/public/envelopes/${file}?v=${ART_V}`;
 const ENVELOPE_ART = {
   como: {
-    body: artUrl("olive-env.png"),
-    closedFlap: artUrl("olive-env-closed-flap.png"),
-    openFlap: artUrl("olive-env-open-flap.png"),
-    opened: artUrl("open-olive.png"),
+    closed: artUrl("env-closed-olive.png"),
+    opened: artUrl("env-open-flap-olive.png"),
+    letter: artUrl("letter-olive-save-the-date.png"),
     seal: artUrl("olive-seal.png"),
     sealBroken: artUrl("olive-seal-broken.png"),
-    letter: artUrl("letter-insert1.png"),
   },
   jersey: {
-    body: artUrl("red-env.png"),
-    closedFlap: artUrl("red-env-closed-flap.png"),
-    openFlap: artUrl("red-env-open-flap.png"),
-    opened: artUrl("open-red.png"),
+    closed: artUrl("env-closed-red.png"),
+    opened: artUrl("env-open-flap-red.png"),
+    letter: artUrl("letter-red-save-the-date.png"),
     seal: artUrl("red-seal.png"),
     sealBroken: artUrl("red-seal-broken.png"),
-    letter: artUrl("letter-insert2.png"),
   },
   shower: {
-    body: artUrl("cream-env.png"),
-    closedFlap: artUrl("cream-env-closed-flap.png"),
-    openFlap: artUrl("cream-env-open-flap.png"),
-    opened: artUrl("cream-open.png"),
+    closed: artUrl("env-closed-cream.png"),
+    opened: artUrl("env-open-flap-cream.png"),
+    letter: artUrl("letter-cream-save-the-date.png"),
     seal: artUrl("cream-seal.png"),
     sealBroken: artUrl("cream-seal-broken.png"),
-    letter: artUrl("letter-insert3.png"),
   },
 };
 
@@ -96,33 +101,22 @@ function doorMarkup(eventKey, guest) {
     <div class="event-door envelope-link${openedEnvelopes.has(eventKey) ? " is-opened" : ""}" data-envelope data-event="${eventKey}" role="button" tabindex="0" aria-label="Open ${escapeHtml(event.shortTitle)}" aria-expanded="false">
       <span class="envelope envelope--${eventKey}">
         <span class="envelope-stack">
-          <img class="envelope-open-flap" src="${art.openFlap}" alt="">
-          <span class="envelope-sleeve">
-            <span class="envelope-letter">
-              <img class="envelope-letter-art" src="${art.letter}" alt="">
-            </span>
-          </span>
           <span class="envelope-crop">
-            <img class="envelope-body" src="${art.body}" alt="">
-            <img class="envelope-closed-flap" src="${art.closedFlap}" alt="">
+            <img class="envelope-body" src="${art.closed}" alt="">
             <img class="envelope-seal" src="${art.seal}" alt="">
             <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
           </span>
           <span class="envelope-open-scene">
-            <img class="envelope-opened" src="${art.opened}" alt="">
+            <img class="envelope-opened-env" src="${art.opened}" alt="">
+            <span class="letter-frame">
+            <img class="envelope-opened" src="${art.letter}" alt="">
             <span class="invite-sheet">
-              <span class="invite-sheet-head">
-                <span class="invite-sheet-script">Save the Date</span>
-              </span>
-              <span class="invite-sheet-body">
-                <span class="invite-sheet-names">Alyssa &amp; Connor</span>
-                <span class="invite-sheet-rule"></span>
-                <span class="invite-sheet-meta">${escapeHtml(event.weekday)}</span>
-                <span class="invite-sheet-meta">${escapeHtml(event.display)}</span>
-                <span class="invite-sheet-meta">${escapeHtml(event.place)}</span>
+              <button type="button" class="invite-sheet-back" data-close-letter aria-label="Close">&times;</button>
+              <span class="invite-sheet-actions">
                 ${event.calendar ? `<a class="invite-sheet-calendar" href="${escapeHtml(event.calendar)}" download><svg class="invite-sheet-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="1.5"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path></svg>Add to Calendar</a>` : ""}
-                <button type="button" class="invite-sheet-back" data-close-letter>back</button>
+                <span class="invite-sheet-soon">Check back soon for more details!</span>
               </span>
+            </span>
             </span>
           </span>
         </span>
@@ -176,13 +170,12 @@ function preloadImage(url) {
 }
 
 async function listInviteBgFiles(folder) {
-  const bust = Date.now();
   const jsonName = folder === "invite-bg-mobile" ? "invite-bg-mobile.json" : "invite-bg.json";
   const variant = folder === "invite-bg-mobile" ? "mobile" : "desktop";
-  const endpoints = [`/public/${jsonName}?t=${bust}`, `/api/invite-bg?variant=${variant}&t=${bust}`];
+  const endpoints = [`/public/${jsonName}`, `/api/invite-bg?variant=${variant}`];
   for (const endpoint of endpoints) {
     try {
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const response = await fetch(endpoint);
       if (!response.ok) continue;
       const data = await response.json();
       const files = Array.isArray(data) ? data : data.files;
@@ -493,7 +486,6 @@ function preloadInviteAssets(guest) {
       img.src = src;
     });
   });
-  discoverInviteBgs();
 }
 
 function cancelUnlock() {
@@ -528,6 +520,8 @@ function stopSong() {
 
 function startSong() {
   if (!song || prefersReducedMotion()) return;
+  const src = (INVITE_BG_MOBILE.matches && song.dataset.srcMobile) || song.dataset.src;
+  if (src && song.getAttribute("src") !== src) song.src = src;
   setSongMuted(false);
   try {
     song.currentTime = 0;
@@ -559,14 +553,49 @@ function hideIntroVideo() {
   document.body.classList.remove("is-intro");
 }
 
+let introVideoReady = null;
+
+function primeIntroFrame() {
+  const frame = document.querySelector(".intro-video-frame");
+  if (!frame || frame.getAttribute("src")) return;
+  const src = (INVITE_BG_MOBILE.matches && frame.dataset.srcMobile) || frame.dataset.src;
+  if (src) frame.src = src;
+}
+
 function primeIntroVideo() {
   const video = document.querySelector("[data-intro-video] video");
-  if (!video || video.dataset.primed === "true") return;
-  video.dataset.primed = "true";
+  if (!video) return Promise.resolve(false);
   video.muted = true;
   video.defaultMuted = true;
   video.playsInline = true;
-  if (video.readyState === 0) video.load();
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.preload = "auto";
+  if (introVideoReady) return introVideoReady;
+  const src = video.dataset.introSrc || video.getAttribute("src");
+  if (!src) return Promise.resolve(false);
+  introVideoReady = fetch(src)
+    .then((response) => {
+      if (!response.ok) throw new Error("intro video");
+      return response.blob();
+    })
+    .then(async (blob) => {
+      const file = blob.type ? blob : new Blob([blob], { type: "video/mp4" });
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.load();
+      const ready = await waitForVideo(video, 12000);
+      if (!ready) throw new Error("intro video decode");
+      primeIntroFrame();
+      return true;
+    })
+    .catch(() => {
+      if (video.src && video.src.startsWith("blob:")) URL.revokeObjectURL(video.src);
+      video.src = src;
+      video.load();
+      return waitForVideo(video, 8000).finally(() => primeIntroFrame());
+    });
+  return introVideoReady;
 }
 
 function waitForVideo(video, timeoutMs) {
@@ -619,12 +648,11 @@ function playIntroVideo() {
   const wrap = document.querySelector("[data-intro-video]");
   const video = wrap?.querySelector("video");
   if (!wrap || !video || prefersReducedMotion()) return Promise.resolve();
-  primeIntroVideo();
-  wrap.hidden = false;
-  document.body.classList.add("is-intro");
-  if (!song || song.paused) startSong();
-  return startIntroPlayback(video)
-    .then((playing) => {
+  return primeIntroVideo().then(() => {
+    wrap.hidden = false;
+    document.body.classList.add("is-intro");
+    if (!song || song.paused) startSong();
+    return startIntroPlayback(video).then((playing) => {
       if (!playing) return;
       const seconds = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 12;
       return new Promise((resolve) => {
@@ -638,10 +666,10 @@ function playIntroVideo() {
         video.addEventListener("error", done);
         const timer = window.setTimeout(done, seconds * 1000 + 2500);
       });
-    })
-    .finally(() => {
+    }).finally(() => {
       hideIntroVideo();
     });
+  });
 }
 
 async function playUnlockSequence() {
@@ -663,6 +691,7 @@ async function playUnlockSequence() {
   hideKey3d();
   document.body.classList.add("is-entering");
   await wait(900);
+  await primeIntroVideo();
   const intro = playIntroVideo();
   const slides = startInviteSlideshow();
   await intro;
@@ -676,9 +705,22 @@ findInvite?.addEventListener("click", () => {
   findInvite.classList.add("is-striking");
 });
 
+form?.addEventListener("input", () => {
+  const message = nameFieldMessage();
+  if (!errorNode) return;
+  if (message) errorNode.textContent = message;
+  else if (errorNode.textContent.startsWith("Please enter your first")) errorNode.textContent = "";
+});
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (form.dataset.unlocking === "true") return;
+  const nameMessage = nameFieldMessage();
+  if (nameMessage) {
+    if (errorNode) errorNode.textContent = nameMessage;
+    (form.firstName.classList.contains("is-invalid") ? form.firstName : form.lastName).focus();
+    return;
+  }
   if (errorNode) errorNode.textContent = "";
   if (findInvite) {
     findInvite.disabled = true;
@@ -726,9 +768,7 @@ form?.addEventListener("submit", async (event) => {
   }
 });
 
-fetch("/api/invite?warm=1").catch(() => {});
-discoverInviteBgs();
-primeIntroVideo();
+if (!prefersReducedMotion()) primeIntroVideo();
 
 function setReading(open) {
   household?.classList.toggle("is-reading", open);
@@ -803,10 +843,23 @@ function closeEnvelopes() {
   if (allEnvelopesOpened()) nudgeDetailsButton();
 }
 
-function openViewportReserve() {
-  return window.innerWidth < 640
-    ? Math.min(96, window.innerHeight * 0.1)
-    : Math.min(48, window.innerHeight * 0.06);
+function syncLetterFit() {
+  const mail = document.querySelector(".household-desk.is-reading .household-mail");
+  const mailSpace = mail ? Math.max(72, window.innerHeight - mail.getBoundingClientRect().top + 12) : 88;
+  const top = 10;
+  const height = Math.max(220, window.innerHeight - mailSpace - top);
+  const width = Math.max(180, window.innerWidth - 20);
+  document.documentElement.style.setProperty("--letter-max-h", `${Math.floor(height)}px`);
+  document.documentElement.style.setProperty("--letter-max-w", `${Math.floor(width)}px`);
+}
+
+function viewportCenter() {
+  const mail = document.querySelector(".household-desk.is-reading .household-mail");
+  const bottom = mail ? mail.getBoundingClientRect().top - 8 : window.innerHeight - 12;
+  return {
+    x: window.innerWidth / 2,
+    y: Math.max(80, bottom) / 2,
+  };
 }
 
 function readFocus(link, name) {
@@ -830,14 +883,6 @@ function openSceneBox(link) {
   scene.style.transform = previous.transform;
   scene.style.opacity = previous.opacity;
   return box.width && box.height ? box : null;
-}
-
-function viewportCenter() {
-  const reserve = openViewportReserve();
-  return {
-    x: window.innerWidth / 2,
-    y: (window.innerHeight - reserve) / 2,
-  };
 }
 
 function centerClosedEnvelope(link) {
@@ -868,7 +913,11 @@ function beginOpen(link) {
   if (!link.classList.contains("is-selected")) return;
   link.classList.add("is-opening", "is-opened");
   if (link.dataset.event) openedEnvelopes.add(link.dataset.event);
-  requestAnimationFrame(() => centerOpenLetter(link));
+  syncLetterFit();
+  requestAnimationFrame(() => {
+    syncLetterFit();
+    centerOpenLetter(link);
+  });
 }
 
 household?.addEventListener("keydown", (event) => {
@@ -880,6 +929,19 @@ household?.addEventListener("keydown", (event) => {
   link.click();
 });
 
+function openLetterBox() {
+  const img = household?.querySelector(".envelope-link.is-opening .letter-frame, .envelope-link.is-selected .letter-frame");
+  if (!img) return null;
+  const box = img.getBoundingClientRect();
+  return box.width && box.height ? box : null;
+}
+
+function eventHitsOpenLetter(event) {
+  const box = openLetterBox();
+  if (!box) return false;
+  return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+}
+
 household?.addEventListener("click", (event) => {
   if (event.button !== 0) return;
   if (event.target.closest(".invite-sheet-calendar")) return;
@@ -890,19 +952,22 @@ household?.addEventListener("click", (event) => {
     return;
   }
   const link = event.target.closest("[data-envelope]");
-  if (!link) return;
-  if (link.classList.contains("is-opening") || link.classList.contains("is-selected")) {
+  if (link && (link.classList.contains("is-opening") || link.classList.contains("is-selected"))) {
     if (guestEditInProgress()) return;
-    if (event.target.closest(".envelope-letter, .envelope-open-scene")) return;
+    if (eventHitsOpenLetter(event)) return;
+    event.stopPropagation();
     closeEnvelopes();
     return;
   }
+  if (!link) return;
+  event.stopPropagation();
   household.querySelectorAll("[data-envelope]").forEach((other) => {
     other.classList.toggle("is-selected", other === link);
     other.classList.toggle("is-away", other !== link);
     other.setAttribute("aria-expanded", other === link ? "true" : "false");
   });
   setReading(true);
+  syncLetterFit();
   if (prefersReducedMotion()) {
     beginOpen(link);
     return;
@@ -923,8 +988,8 @@ document.addEventListener("click", (event) => {
   if (!household?.classList.contains("is-reading")) return;
   if (detailsModal && !detailsModal.hidden) return;
   if (guestEditInProgress()) return;
-  if (event.target.closest("[data-not-you]")) return;
-  if (event.target.closest(".envelope-letter, .envelope-open-scene, .household-mail, [data-details-modal], [data-envelope]")) return;
+  if (event.target.closest("[data-not-you], [data-song-toggle], .household-mail, .invite-sheet-calendar, .invite-sheet-back")) return;
+  if (eventHitsOpenLetter(event)) return;
   closeEnvelopes();
 });
 
@@ -932,12 +997,47 @@ window.addEventListener("pagehide", closeEnvelopes);
 window.addEventListener("pageshow", (event) => {
   if (event.persisted) closeEnvelopes();
 });
+function fitSealedGate() {
+  const gate = document.querySelector("[data-gate-stage]");
+  if (!gate) return;
+  const busy =
+    document.body.classList.contains("is-open") ||
+    document.body.classList.contains("is-entering") ||
+    document.body.classList.contains("is-unlocking") ||
+    document.body.classList.contains("is-intro") ||
+    document.documentElement.classList.contains("invite-returning");
+  if (busy) {
+    gate.style.removeProperty("--gate-fit");
+    return;
+  }
+  if (document.activeElement?.closest(".name-form")) return;
+  gate.style.setProperty("--gate-fit", "1");
+  const available = window.innerHeight;
+  let needed = 0;
+  for (const child of gate.children) {
+    if (child.hidden) continue;
+    const style = getComputedStyle(child);
+    if (style.display === "none" || style.visibility === "hidden") continue;
+    needed += child.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+  }
+  const gateStyle = getComputedStyle(gate);
+  needed += parseFloat(gateStyle.paddingTop) + parseFloat(gateStyle.paddingBottom);
+  const fit = needed > 8 ? Math.min(1, (available - 6) / needed) : 1;
+  gate.style.setProperty("--gate-fit", String(Math.max(0.58, fit)));
+}
+
 window.addEventListener("resize", () => {
+  fitSealedGate();
+  if (household?.classList.contains("is-reading")) syncLetterFit();
   const selected = household?.querySelector(".envelope-link.is-selected");
   if (!selected) return;
   if (selected.classList.contains("is-opening")) centerOpenLetter(selected);
   else centerClosedEnvelope(selected);
 });
+
+fitSealedGate();
+document.fonts?.ready.then(() => fitSealedGate());
+window.visualViewport?.addEventListener("resize", () => fitSealedGate());
 
 document.querySelectorAll("[data-open-details]").forEach((el) => {
   el.addEventListener("click", () => openDetailsModal(detailsModal));

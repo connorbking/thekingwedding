@@ -1,151 +1,17 @@
 import { formatGuest, formatGroupCode } from "./format.js";
+import { markSheetMirrored } from "./sync.js";
 
 export const GUEST_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1VyFole7kJOnJjGnI07sDxjmlgYa2HUtrk9mxH46o7gE/edit?gid=338671760#gid=338671760";
 
-function webAppUrl(env) {
-  return String(env.GOOGLE_SHEETS_WEBAPP_URL || "").trim();
-}
-
-async function callSheet(env, { method = "POST", action, body }) {
-  const url = webAppUrl(env);
-  if (!url) {
-    const error = new Error("The Google Sheet connection is not set yet.");
-    error.status = 503;
-    throw error;
-  }
-
-  const target = new URL(url);
-  if (method === "GET" && action) target.searchParams.set("action", action);
-  if (method === "GET" && body) {
-    Object.entries(body).forEach(([key, value]) => {
-      if (value != null && value !== "") target.searchParams.set(key, String(value));
-    });
-  }
-
-  const payload = method === "GET" ? undefined : JSON.stringify({ action, ...body });
-  const headers = method === "GET" ? {} : { "Content-Type": "text/plain;charset=utf-8" };
-  let response;
-  try {
-    response = await fetch(target.toString(), {
-      method,
-      redirect: "manual",
-      signal: AbortSignal.timeout(20000),
-      headers,
-      body: payload,
-    });
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location) {
-        const error = new Error("The Google Sheet did not accept that request.");
-        error.status = 502;
-        throw error;
-      }
-      response = await fetch(location, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(20000),
-      });
-    }
-  } catch (error) {
-    if (error.status) throw error;
-    const wrapped = new Error("The guest list took too long to respond. Please try again.");
-    wrapped.status = 504;
-    throw wrapped;
-  }
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.ok === false || data.error) {
-    const error = new Error(data.error || "The Google Sheet did not accept that request.");
-    error.status = response.ok ? 502 : response.status;
-    throw error;
-  }
-  return data;
-}
+const RSVP_COLUMN = {
+  jersey: "rsvp_jersey",
+  como: "rsvp_como",
+  shower: "rsvp_shower",
+};
 
 export function sheetConfigured(env) {
-  return Boolean(webAppUrl(env));
-}
-
-export async function appendGuest(env, submission) {
-  const guests = Array.isArray(submission.guests) ? submission.guests : [];
-  const extras = guests.length > 1 ? guests.slice(1) : submission.extras || [];
-  const isRsvp = submission.kind === "rsvp";
-  const data = await callSheet(env, {
-    method: "POST",
-    body: {
-      action: guests.length ? "party" : "upsert",
-      kind: submission.kind || (isRsvp ? "rsvp" : "address"),
-      event: submission.event,
-      rsvp: submission.rsvp,
-      party: submission.party,
-      greeting: submission.party,
-      firstName: submission.firstName,
-      lastName: submission.lastName,
-      phone: submission.phone,
-      email: submission.email,
-      street: submission.street,
-      apt: submission.apt,
-      city: submission.city,
-      region: submission.region,
-      postal: submission.postal,
-      country: submission.country,
-      accessCode: submission.accessCode,
-      groupCode: submission.accessCode,
-      code: submission.accessCode,
-      additionalGuests: extras,
-      guests: guests.length ? guests : undefined,
-    },
-  });
-  if (data.updated === false) {
-    const error = new Error("We could not match that guest on the list, so the address was not saved.");
-    error.status = 502;
-    throw error;
-  }
-  return data;
-}
-
-function groupCode(row) {
-  return formatGroupCode(row.group_code || row.access_code);
-}
-
-function hasName(row) {
-  return Boolean(String(row.first_name || row.firstName || "").trim() || String(row.last_name || row.lastName || "").trim());
-}
-
-function fillDownParty(rows) {
-  const list = rows.map((row, index) => ({ ...row, _sheetIndex: index }));
-  let code = "";
-  let party = "";
-
-  for (const row of list) {
-    const currentParty = String(row.party || "").trim().toLowerCase();
-    const currentCode = groupCode(row);
-    if (currentParty && party && currentParty !== party && !currentCode) {
-      code = "";
-    }
-    if (currentParty) party = currentParty;
-    if (currentCode) {
-      code = currentCode;
-    } else if (code && hasName(row)) {
-      row.access_code = code;
-      row.group_code = code;
-    }
-  }
-
-  return list;
-}
-
-export async function listGuests(env) {
-  const data = await sheetList(env);
-  return {
-    ...data,
-    submissions: fillDownParty(data.submissions || []).map(formatGuest),
-  };
-}
-
-export async function deleteGuest(env, id) {
-  return callSheet(env, { method: "POST", action: "delete", body: { id } });
+  return Boolean(env.DB);
 }
 
 export function normalizePersonName(value) {
@@ -159,19 +25,12 @@ export function normalizePersonName(value) {
     .trim();
 }
 
-function namesMatch(row, first, last) {
-  return (
-    normalizePersonName(row.first_name || row.firstName) === first &&
-    normalizePersonName(row.last_name || row.lastName) === last
-  );
+function groupCode(row) {
+  return formatGroupCode(row.group_code || row.access_code);
 }
 
-function householdKey(row, index = 0) {
-  const code = groupCode(row);
-  if (code) return `code:${code}`;
-  const party = String(row.party || "").trim().toLowerCase();
-  if (party) return `party:${party}`;
-  return `solo:${row._sheetIndex ?? index}`;
+function hasName(row) {
+  return Boolean(String(row.first_name || row.firstName || "").trim() || String(row.last_name || row.lastName || "").trim());
 }
 
 function invitedToEvent(row, key) {
@@ -201,64 +60,207 @@ function partyRecord(party, event = "") {
     found: true,
     code,
     greeting: party.find((row) => row.party)?.party || "",
-    maxParty: Math.min(12, Math.max(members.length + 4, 2)),
+    maxParty: Math.max(members.length, 1),
     events,
     guests: members,
   };
 }
 
-function partyFromGuests(guests, code, event = "") {
-  const wanted = formatGroupCode(code);
-  return partyRecord(
-    guests.filter((row) => groupCode(row) === wanted && hasName(row)),
-    event
-  );
+function guestFromRow(row) {
+  const events = ["jersey", "como", "shower"].filter((key) => Number(row[`invite_${key}`]));
+  const rsvp = {
+    jersey: row.rsvp_jersey || "",
+    como: row.rsvp_como || "",
+    shower: row.rsvp_shower || "",
+  };
+  return formatGuest({
+    id: row.public_id,
+    party: row.party || "",
+    access_code: row.group_code || "",
+    group_code: row.group_code || "",
+    first_name: row.first_name || "",
+    last_name: row.last_name || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    street: row.street || "",
+    apt: row.apt || "",
+    city: row.city || "",
+    region: row.region || "",
+    postal: row.postal || "",
+    events,
+    event: events[0] || "",
+    jersey: events.includes("jersey"),
+    como: events.includes("como"),
+    shower: events.includes("shower"),
+    invite: {
+      jersey: events.includes("jersey"),
+      como: events.includes("como"),
+      shower: events.includes("shower"),
+    },
+    rsvp,
+    rsvp_jersey: rsvp.jersey,
+    rsvp_como: rsvp.como,
+    rsvp_shower: rsvp.shower,
+  });
 }
 
-const GUEST_CACHE_MS = 120000;
-let guestCache = { at: 0, data: null };
-
-async function sheetList(env) {
-  const now = Date.now();
-  if (guestCache.data && now - guestCache.at < GUEST_CACHE_MS) return guestCache.data;
-  const data = await callSheet(env, { method: "GET", action: "list" });
-  guestCache = { at: now, data };
-  return data;
+async function guestsByCode(env, code) {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM guests WHERE group_code = ? ORDER BY sort_order, rowid",
+  ).bind(code).all();
+  return (results || []).map(guestFromRow);
 }
 
-async function namedGuests(env) {
-  const data = await sheetList(env);
-  return fillDownParty(data.submissions || []).map(formatGuest).filter(hasName);
+export async function listGuests(env) {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM guests ORDER BY sort_order, rowid",
+  ).all();
+  return { submissions: (results || []).map(guestFromRow) };
+}
+
+export async function deleteGuest(env, id) {
+  const result = await env.DB.prepare("DELETE FROM guests WHERE public_id = ?").bind(id).run();
+  return { ok: (result.meta?.changes || 0) > 0 };
 }
 
 export async function lookupInvite(env, code, event = "") {
-  return partyFromGuests(await namedGuests(env), code, event);
+  const wanted = formatGroupCode(code);
+  if (!wanted || !env.DB) return { found: false };
+  return partyRecord(await guestsByCode(env, wanted), event);
 }
 
 export async function lookupInviteByName(env, firstName, lastName, event = "") {
   const first = normalizePersonName(firstName);
   const last = normalizePersonName(lastName);
-  if (!first || !last) return { found: false };
+  if (!first || !last || !env.DB) return { found: false };
 
-  try {
-    const direct = await callSheet(env, {
-      method: "GET",
-      action: "invite",
-      body: { first: firstName, last: lastName, event },
+  const { results } = await env.DB.prepare(
+    "SELECT group_code FROM guests WHERE first_key = ? AND last_key = ?",
+  ).bind(first, last).all();
+  const codes = [...new Set((results || []).map((row) => formatGroupCode(row.group_code)).filter(Boolean))];
+  if (!codes.length) return { found: false };
+  if (codes.length !== 1) return { found: true, ambiguous: true, byName: true };
+
+  return { ...partyRecord(await guestsByCode(env, codes[0]), event), byName: true };
+}
+
+function text(value) {
+  return String(value || "").trim();
+}
+
+function hasAddress(guest) {
+  return Boolean(text(guest.street || guest.street1) || text(guest.city) || text(guest.region || guest.state) || text(guest.postal || guest.zip));
+}
+
+export async function appendGuest(env, submission) {
+  const guests = Array.isArray(submission.guests) && submission.guests.length
+    ? submission.guests
+    : [submission];
+  const code = formatGroupCode(submission.accessCode || submission.groupCode || submission.code || "");
+  const isRsvp = submission.kind === "rsvp";
+  const event = text(submission.event).toLowerCase();
+  const rsvpColumn = RSVP_COLUMN[event];
+  let updated = 0;
+  const mirrored = [];
+
+  for (const guest of guests) {
+    const id = text(guest.id);
+    const first = normalizePersonName(guest.firstName || guest.first_name);
+    const last = normalizePersonName(guest.lastName || guest.last_name);
+    const row = id
+      ? await env.DB.prepare(
+        "SELECT public_id, group_code, first_key, last_key FROM guests WHERE public_id = ?",
+      ).bind(id).first()
+      : await env.DB.prepare(
+        "SELECT public_id, group_code, first_key, last_key FROM guests WHERE group_code = ? AND first_key = ? AND last_key = ?",
+      ).bind(code, first, last).first();
+
+    if (!row || (code && row.group_code !== code) || row.first_key !== first || row.last_key !== last) {
+      const error = new Error("Names on this invitation cannot be changed.");
+      error.status = 400;
+      throw error;
+    }
+
+    const sets = [];
+    const values = [];
+    const phone = text(guest.phone);
+    const email = text(guest.email);
+    if (phone) {
+      sets.push("phone = ?");
+      values.push(phone);
+    }
+    if (email) {
+      sets.push("email = ?");
+      values.push(email);
+    }
+    if (!isRsvp && hasAddress(guest)) {
+      sets.push("street = ?", "apt = ?", "city = ?", "region = ?", "postal = ?");
+      values.push(
+        text(guest.street || guest.street1),
+        text(guest.apt || guest.street2),
+        text(guest.city),
+        text(guest.region || guest.state),
+        text(guest.postal || guest.zip),
+      );
+    }
+    if (isRsvp && rsvpColumn && text(guest.rsvp)) {
+      sets.push(`${rsvpColumn} = ?`);
+      values.push(text(guest.rsvp));
+    }
+    if (!sets.length) {
+      updated += 1;
+      continue;
+    }
+    sets.push("touch = ?", "updated_at = ?");
+    values.push("site", new Date().toISOString());
+    values.push(row.public_id);
+    const result = await env.DB.prepare(
+      `UPDATE guests SET ${sets.join(", ")} WHERE public_id = ?`,
+    ).bind(...values).run();
+    updated += result.meta?.changes || 0;
+    mirrored.push({
+      id: row.public_id,
+      firstName: text(guest.firstName || guest.first_name),
+      lastName: text(guest.lastName || guest.last_name),
+      phone,
+      email,
+      street: text(guest.street || guest.street1),
+      apt: text(guest.apt || guest.street2),
+      city: text(guest.city),
+      region: text(guest.region || guest.state),
+      postal: text(guest.postal || guest.zip),
+      rsvp: text(guest.rsvp),
     });
-    if (direct.byName || direct.found || direct.ambiguous) return direct;
-  } catch {
-    // Older script versions only listed the sheet; fall through.
   }
 
-  const guests = await namedGuests(env);
-  const hits = guests.filter((row) => namesMatch(row, first, last));
-  if (!hits.length) return { found: false };
+  if (!updated) {
+    const error = new Error("We could not match that guest on the list, so the address was not saved.");
+    error.status = 502;
+    throw error;
+  }
+  return { ok: true, updated: true, guests: mirrored };
+}
 
-  const keys = [...new Set(hits.map((row) => householdKey(row)))];
-  if (keys.length !== 1) return { found: true, ambiguous: true };
-
-  const key = keys[0];
-  const party = guests.filter((row) => householdKey(row) === key);
-  return partyRecord(party, event);
+export async function mirrorGuestsToSheet(env, submission, guests) {
+  const url = env.GOOGLE_SHEETS_WEBAPP_URL;
+  if (!url || !guests?.length) return;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "contact",
+        kind: submission.kind || "",
+        event: submission.event || "",
+        accessCode: submission.accessCode || "",
+        guests,
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body.ok === false || body.error) return;
+    await markSheetMirrored(env, guests.map((guest) => guest.id));
+  } catch {
+    console.error("sheet mirror failed");
+  }
 }

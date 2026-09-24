@@ -348,6 +348,38 @@ p {
   border-radius: 2px;
 }
 
+.address-form:not(.household-form) input:-webkit-autofill,
+.address-form:not(.household-form) input:-webkit-autofill:hover,
+.address-form:not(.household-form) input:-webkit-autofill:focus,
+.address-form:not(.household-form) input:-webkit-autofill:active,
+.address-form:not(.household-form) input:autofill,
+.address-form:not(.household-form) textarea:-webkit-autofill,
+.address-form:not(.household-form) textarea:-webkit-autofill:hover,
+.address-form:not(.household-form) textarea:-webkit-autofill:focus,
+.address-form:not(.household-form) textarea:autofill,
+.address-form:not(.household-form) select:-webkit-autofill,
+.address-form:not(.household-form) select:autofill {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.72) inset;
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.72) inset;
+  transition: background-color 99999s ease-out;
+}
+
+.band--wine .address-form input:-webkit-autofill,
+.band--wine .address-form input:-webkit-autofill:hover,
+.band--wine .address-form input:-webkit-autofill:focus,
+.band--wine .address-form input:-webkit-autofill:active,
+.band--wine .address-form input:autofill,
+.band--wine .address-form select:-webkit-autofill,
+.band--wine .address-form select:autofill {
+  background-color: rgba(251, 247, 239, 0.92) !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(251, 247, 239, 0.92) inset;
+  box-shadow: 0 0 0 1000px rgba(251, 247, 239, 0.92) inset;
+}
+
 .band--wine .address-form input,
 .band--wine .address-form select {
   background: rgba(251, 247, 239, 0.92);

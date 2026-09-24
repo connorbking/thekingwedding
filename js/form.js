@@ -193,16 +193,15 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
   const fields = `
-    <label>First Name <input name="memberFirst${index}" value="${escapeAttr(first)}" autocomplete="given-name" placeholder="First Name"></label>
-    <label>Last Name <input name="memberLast${index}" value="${escapeAttr(last)}" autocomplete="family-name" placeholder="Last Name"></label>
     <label>Phone <input name="memberPhone${index}" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(201) 555-0100" value="${escapeAttr(formatPhone(member.phone || ""))}"></label>
     <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
     ${showRsvp ? "" : memberAddressFields(index, member)}
   `;
+  const identity = `data-member-id="${escapeAttr(member.id || "")}" data-member-first="${escapeAttr(first)}" data-member-last="${escapeAttr(last)}"`;
 
   if (!showRsvp) {
     return `
-      <div class="party-member party-member--note" data-party-member data-letter-panel data-member-id="${escapeAttr(member.id || "")}">
+      <div class="party-member party-member--note" data-party-member data-letter-panel ${identity}>
         <div class="party-member-bar">
           <span class="party-member-index">Guest ${index + 1}</span>
           <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
@@ -222,7 +221,7 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const rsvp = memberRsvp(member, eventName);
   const checked = (value) => (rsvp === value ? "checked" : "");
   return `
-    <div class="party-member party-member--rsvp" data-party-member data-member-id="${escapeAttr(member.id || "")}">
+    <div class="party-member party-member--rsvp" data-party-member ${identity}>
       <p class="party-member-name" data-member-name>${escapeAttr(memberName(member) || "Guest")}</p>
       <button type="button" class="party-edit-toggle" data-edit-member aria-expanded="false" aria-label="Edit ${escapeAttr(memberName(member) || "guest")}">
         ${EDIT_ICON}${SAVE_ICON}
@@ -257,8 +256,8 @@ function collectExtras(form) {
 
 function collectMembers(form) {
   return [...form.querySelectorAll("[data-party-member]")].map((card) => {
-    const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
-    const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
+    const first = card.dataset.memberFirst || "";
+    const last = card.dataset.memberLast || "";
     const address = addressInputs(card);
     return {
       id: card.dataset.memberId || "",
@@ -497,12 +496,8 @@ function setMemberEditing(card, open) {
 
 function refreshMemberSummary(card) {
   if (!card?.matches?.("[data-party-member]")) return;
-  const name = card.querySelector("[data-member-name]");
-  const first = card.querySelector("input[name^='memberFirst']")?.value.trim() || "";
-  const last = card.querySelector("input[name^='memberLast']")?.value.trim() || "";
   const phone = formatPhone(card.querySelector("input[name^='memberPhone']")?.value || "");
   const email = card.querySelector("input[name^='memberEmail']")?.value.trim() || "";
-  if (name) name.textContent = `${first} ${last}`.trim() || "Guest";
   const contact = card.querySelector("[data-member-contact]");
   if (contact) contact.innerHTML = memberContactLine(phone, email, addressRecord(card));
   equalizeLetterPanels(card.closest("form"));
@@ -737,10 +732,8 @@ function bindForm(form, eventName, guest) {
     renderParty(form, guest, eventName);
     const submit = form.querySelector("[type='submit']");
     if (submit && form.dataset.formKind === "rsvp") submit.textContent = "Send RSVP";
-    else if (submit && form.dataset.household === "true") {
-      submit.textContent = "Confirm mailing details";
-    } else if (submit && !form.classList.contains("find-invite") && submit.classList.contains("btn")) {
-      submit.textContent = "Save our details";
+    else if (submit && !form.classList.contains("find-invite") && submit.classList.contains("btn")) {
+      submit.textContent = "Update our details";
     }
   } else if (form.dataset.formKind === "rsvp") {
     hideAddressFields(form);
@@ -775,7 +768,7 @@ function bindForm(form, eventName, guest) {
           ? "memberAddress"
           : editBtn.classList.contains("party-add-email")
             ? "memberEmail"
-            : "memberFirst";
+            : "memberPhone";
         card.querySelector(`input[name^='${focusName}']`)?.focus();
       }
     }
@@ -791,11 +784,6 @@ function bindForm(form, eventName, guest) {
   form.addEventListener("input", (inputEvent) => {
     if (inputEvent.target.matches("input[type='tel']")) {
       applyPhoneMask(inputEvent.target);
-    }
-    const button = form.querySelector("[type='submit']");
-    if (form.dataset.household === "true" && button?.classList.contains("is-saved")) {
-      button.textContent = "Confirm mailing details";
-      button.classList.remove("is-saved");
     }
     const card = inputEvent.target.closest("[data-party-member]");
     if (card) refreshMemberSummary(card);

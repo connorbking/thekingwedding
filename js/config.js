@@ -49,8 +49,8 @@ export function sortEvents(events) {
 }
 
 /**
- * Local fallbacks when the Google Sheet API is unavailable.
- * Live lookups use Group Code on the guest spreadsheet.
+ * Local fallback when the guest database is unavailable.
+ * Live lookups use the group code stored in D1.
  */
 export const GUEST_CODES = {
   DEMO: {
@@ -58,8 +58,8 @@ export const GUEST_CODES = {
     maxParty: 4,
     events: ["shower", "como", "jersey"],
     guests: [
-      { first_name: "Demo", last_name: "Guest" },
-      { first_name: "Plus", last_name: "One" },
+      { first_name: "Demo", last_name: "Guest", como: true, jersey: true, shower: true },
+      { first_name: "Plus", last_name: "One", como: true, jersey: true, shower: true },
     ],
   },
 };

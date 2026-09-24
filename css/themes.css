@@ -8,6 +8,12 @@ body[data-theme="como"] {
   --footer-image: url("/public/texture_jersey.png");
 }
 
+@media (max-width: 799px) {
+  body[data-theme="como"] {
+    --hero-image: url("/public/bg_como-mobile.jpg");
+  }
+}
+
 body[data-theme="jersey"] {
   --hero-image: url("/public/bg_jersey.png");
   --footer-image: url("/public/bg_jersey.png");
