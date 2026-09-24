@@ -15,8 +15,8 @@ function invitePayload(invite, fallbackCode = "") {
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const code = (url.searchParams.get("code") || "").trim().toUpperCase();
-  const first = (url.searchParams.get("first") || "").trim();
-  const last = (url.searchParams.get("last") || "").trim();
+  const first = (url.searchParams.get("first") || "").trim().slice(0, 40);
+  const last = (url.searchParams.get("last") || "").trim().slice(0, 40);
   const event = (url.searchParams.get("event") || "").trim().toLowerCase();
 
   if (!code && !(first && last)) return json({ found: false });

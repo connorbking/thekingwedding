@@ -1,7 +1,7 @@
 import { initRouter } from "./router.js";
 import { initEnvelope } from "./envelope.js";
 import { initCountdown } from "./countdown.js";
-import { initAddressForm } from "./form.js?v=party28";
+import { initAddressForm } from "./form.js?v=party30";
 import {
   resolveGuest,
   guestCanAccess,

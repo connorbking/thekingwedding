@@ -13,11 +13,11 @@ function extraRowTemplate(index) {
     <div class="guest-row" data-guest-row>
       <label>
         <span>First Name</span>
-        <input type="text" name="guestFirst${index}" autocomplete="off">
+        <input type="text" name="guestFirst${index}" maxlength="40" autocomplete="off">
       </label>
       <label>
         <span>Last Name</span>
-        <input type="text" name="guestLast${index}" autocomplete="off">
+        <input type="text" name="guestLast${index}" maxlength="40" autocomplete="off">
       </label>
       <button type="button" class="guest-remove" data-remove-guest aria-label="Remove guest">&times;</button>
     </div>
@@ -35,7 +35,7 @@ function memberName(member) {
 
 function phoneDigits(value) {
   let digits = String(value || "").replace(/\D/g, "");
-  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  if (digits.startsWith("1")) digits = digits.slice(1);
   return digits.slice(0, 10);
 }
 
@@ -176,15 +176,15 @@ function memberAddressFields(index, member) {
   return `
     <div class="party-member-address">
       <label class="address-lookup">Street address
-        <input name="memberAddress${index}" type="text" autocomplete="off" placeholder="Start typing your address..." aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
+        <input name="memberAddress${index}" type="text" maxlength="120" autocomplete="off" placeholder="Start typing your address..." aria-autocomplete="list" aria-controls="address-suggestions-${index}" value="${escapeAttr(search)}">
       </label>
       <ul class="address-suggestions" id="address-suggestions-${index}" data-address-suggestions hidden></ul>
-      <label>Apartment / unit (optional) <input name="memberApt${index}" autocomplete="address-line2" placeholder="Apartment or unit" value="${escapeAttr(apt)}"></label>
-      <input type="hidden" name="memberStreet${index}" value="${escapeAttr(street)}">
-      <input type="hidden" name="memberCity${index}" value="${escapeAttr(city)}">
-      <input type="hidden" name="memberRegion${index}" value="${escapeAttr(region)}">
-      <input type="hidden" name="memberPostal${index}" value="${escapeAttr(postal)}">
-      <input type="hidden" name="memberCountry${index}" value="${escapeAttr(country)}">
+      <label>Apartment / unit (optional) <input name="memberApt${index}" maxlength="40" autocomplete="address-line2" placeholder="Apartment or unit" value="${escapeAttr(apt)}"></label>
+      <input type="hidden" name="memberStreet${index}" maxlength="40" value="${escapeAttr(street)}">
+      <input type="hidden" name="memberCity${index}" maxlength="40" value="${escapeAttr(city)}">
+      <input type="hidden" name="memberRegion${index}" maxlength="40" value="${escapeAttr(region)}">
+      <input type="hidden" name="memberPostal${index}" maxlength="10" value="${escapeAttr(postal)}">
+      <input type="hidden" name="memberCountry${index}" maxlength="40" value="${escapeAttr(country)}">
     </div>
   `;
 }
@@ -193,8 +193,8 @@ function memberTemplate(index, member, eventName, showRsvp = false) {
   const first = member.first_name || member.firstName || "";
   const last = member.last_name || member.lastName || "";
   const fields = `
-    <label>Phone <input name="memberPhone${index}" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(201) 555-0100" value="${escapeAttr(formatPhone(member.phone || ""))}"></label>
-    <label>Email <input name="memberEmail${index}" type="email" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
+    <label>Phone <input name="memberPhone${index}" type="tel" inputmode="numeric" maxlength="14" autocomplete="tel" placeholder="(201) 555-0100" value="${escapeAttr(formatPhone(member.phone || ""))}"></label>
+    <label>Email <input name="memberEmail${index}" type="email" maxlength="40" value="${escapeAttr(member.email || "")}" autocomplete="email" placeholder="Email"></label>
     ${showRsvp ? "" : memberAddressFields(index, member)}
   `;
   const identity = `data-member-id="${escapeAttr(member.id || "")}" data-member-first="${escapeAttr(first)}" data-member-last="${escapeAttr(last)}"`;
@@ -369,12 +369,13 @@ function applyAddress(scope, suggestion) {
     if (!allowEmpty && (value == null || value === "")) return;
     input.value = value ?? "";
   };
-  set(fields.street, suggestion.street);
-  set(fields.city, suggestion.city);
-  set(fields.region, suggestion.region);
-  set(fields.postal, suggestion.postal);
-  set(fields.country, suggestion.country || "United States");
-  set(fields.apt, suggestion.apt || "", true);
+  const clip = (value, max) => String(value ?? "").trim().slice(0, max);
+  set(fields.street, clip(suggestion.street, 40));
+  set(fields.city, clip(suggestion.city, 40));
+  set(fields.region, clip(suggestion.region, 40));
+  set(fields.postal, clip(suggestion.postal, 10));
+  set(fields.country, clip(suggestion.country || "United States", 40));
+  set(fields.apt, clip(suggestion.apt || "", 40), true);
   if (fields.search) fields.search.value = suggestion.label || composedAddress(scope);
 }
 
