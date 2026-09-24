@@ -20,6 +20,37 @@ const householdForm = document.querySelector("[data-household-form]");
 const detailsModal = document.querySelector("[data-details-modal]");
 const errorNode = document.querySelector("[data-code-error]");
 
+let nameAdvanceTimer = 0;
+
+function focusNextEmptyName(from) {
+  const fields = [form.firstName, form.lastName];
+  const next = fields.slice(fields.indexOf(from) + 1).find((field) => !field.value.trim());
+  if (next) next.focus();
+}
+
+function queueNameAdvance(from) {
+  window.clearTimeout(nameAdvanceTimer);
+  nameAdvanceTimer = window.setTimeout(() => {
+    if (form.dataset.unlocking === "true") return;
+    focusNextEmptyName(from);
+  }, 0);
+}
+
+[form.firstName, form.lastName].forEach((field) => {
+  field.addEventListener("input", (event) => {
+    const bulk =
+      event.inputType === "insertReplacementText" ||
+      event.inputType === "insertFromAutocomplete" ||
+      event.inputType === "insertFromPaste" ||
+      event.inputType === "insertFromDrop" ||
+      (event.data || "").length > 1;
+    if (bulk) queueNameAdvance(field);
+  });
+  field.addEventListener("animationstart", (event) => {
+    if (event.animationName === "name-autofill") queueNameAdvance(field);
+  });
+});
+
 function nameFieldMessage() {
   const first = form.firstName.value.trim();
   const last = form.lastName.value.trim();
@@ -518,23 +549,73 @@ function stopSong() {
   hideSongToggle();
 }
 
+function songSource() {
+  if (!song) return "";
+  return (INVITE_BG_MOBILE.matches && song.dataset.srcMobile) || song.dataset.src || "";
+}
+
+function songUses(src) {
+  if (!song || !src) return false;
+  const current = song.getAttribute("src") || song.src;
+  if (!current) return false;
+  try {
+    return new URL(current, location.href).pathname === new URL(src, location.href).pathname;
+  } catch {
+    return current === src;
+  }
+}
+
+function assignSongSource() {
+  const src = songSource();
+  if (!src || songUses(src)) return;
+  song.src = src;
+}
+
+function primeSong() {
+  if (!song || prefersReducedMotion() || song.dataset.primed === "1") return;
+  assignSongSource();
+  song.dataset.primed = "1";
+  song.muted = true;
+  song.play().then(() => {
+    if (song.dataset.playing === "1") return;
+    song.pause();
+    try {
+      song.currentTime = 0;
+    } catch {
+      /* The phone may not have a duration yet. */
+    }
+  }).catch(() => {
+    delete song.dataset.primed;
+  });
+}
+
 function startSong() {
   if (!song || prefersReducedMotion()) return;
-  const src = (INVITE_BG_MOBILE.matches && song.dataset.srcMobile) || song.dataset.src;
-  if (src && song.getAttribute("src") !== src) song.src = src;
+  song.dataset.playing = "1";
+  assignSongSource();
   setSongMuted(false);
-  try {
-    song.currentTime = 0;
-  } catch {
-    /* The file may still be loading. */
-  }
   if (songToggle) songToggle.hidden = false;
-  song.play().catch(() => hideSongToggle());
+  const play = () => {
+    try {
+      if (song.readyState >= 1) song.currentTime = 0;
+    } catch {
+      /* The file may still be loading. */
+    }
+    song.play().catch(() => {
+      if (songToggle) songToggle.hidden = false;
+    });
+  };
+  if (song.readyState >= 1) play();
+  else song.addEventListener("loadedmetadata", play, { once: true });
 }
 
 song?.addEventListener("ended", hideSongToggle);
 songToggle?.addEventListener("click", () => {
   if (!song) return;
+  if (song.paused) {
+    startSong();
+    return;
+  }
   setSongMuted(!song.muted);
 });
 
@@ -722,14 +803,19 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
   if (errorNode) errorNode.textContent = "";
+  primeSong();
   if (findInvite) {
     findInvite.disabled = true;
     findInvite.setAttribute("aria-busy", "true");
     findInvite.classList.add("is-loading");
   }
   form.dataset.unlocking = "true";
+  document.activeElement?.blur();
   try {
-    const guest = await findGuestByName(form.firstName.value, form.lastName.value);
+    const [guest] = await Promise.all([
+      findGuestByName(form.firstName.value, form.lastName.value),
+      wait(500),
+    ]);
     if (!guest) {
       if (errorNode) errorNode.textContent = missingMessage();
       return;
