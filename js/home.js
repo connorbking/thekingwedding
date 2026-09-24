@@ -571,42 +571,27 @@ function assignSongSource() {
   song.src = src;
 }
 
-function primeSong() {
-  if (!song || prefersReducedMotion() || song.dataset.primed === "1") return;
+function playSong() {
+  if (!song || prefersReducedMotion()) return;
   assignSongSource();
-  song.dataset.primed = "1";
-  song.muted = true;
-  song.play().then(() => {
-    if (song.dataset.playing === "1") return;
-    song.pause();
-    try {
-      song.currentTime = 0;
-    } catch {
-      /* The phone may not have a duration yet. */
-    }
-  }).catch(() => {
-    delete song.dataset.primed;
-  });
+  setSongMuted(false);
+  if (songToggle) songToggle.hidden = false;
+  const pending = song.play();
+  if (pending) {
+    pending.catch(() => {
+      if (songToggle) songToggle.hidden = false;
+    });
+  }
 }
 
 function startSong() {
   if (!song || prefersReducedMotion()) return;
-  song.dataset.playing = "1";
-  assignSongSource();
-  setSongMuted(false);
-  if (songToggle) songToggle.hidden = false;
-  const play = () => {
-    try {
-      if (song.readyState >= 1) song.currentTime = 0;
-    } catch {
-      /* The file may still be loading. */
-    }
-    song.play().catch(() => {
-      if (songToggle) songToggle.hidden = false;
-    });
-  };
-  if (song.readyState >= 1) play();
-  else song.addEventListener("loadedmetadata", play, { once: true });
+  if (!song.paused && songUses(songSource())) {
+    setSongMuted(false);
+    if (songToggle) songToggle.hidden = false;
+    return;
+  }
+  playSong();
 }
 
 song?.addEventListener("ended", hideSongToggle);
@@ -803,7 +788,7 @@ form?.addEventListener("submit", async (event) => {
     return;
   }
   if (errorNode) errorNode.textContent = "";
-  primeSong();
+  playSong();
   if (findInvite) {
     findInvite.disabled = true;
     findInvite.setAttribute("aria-busy", "true");
