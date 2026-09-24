@@ -270,10 +270,67 @@ function renderSubmissions() {
     .join("") || `<tr class="empty-row"><td colspan="7">No guests in this list.</td></tr>`;
 }
 
+function applyEventSettings(events = {}) {
+  EVENT_KEYS.forEach((key) => {
+    const row = events[key] || {};
+    const visible = document.querySelector(`[data-event-visible="${key}"]`);
+    const invite = document.querySelector(`[data-event-invite="${key}"]`);
+    if (visible) visible.checked = row.visible !== false;
+    if (invite) invite.checked = row.invite === true;
+  });
+}
+
+function readEventSettings() {
+  const events = {};
+  EVENT_KEYS.forEach((key) => {
+    events[key] = {
+      visible: Boolean(document.querySelector(`[data-event-visible="${key}"]`)?.checked),
+      invite: Boolean(document.querySelector(`[data-event-invite="${key}"]`)?.checked),
+    };
+  });
+  return events;
+}
+
+function setEventSwitchesDisabled(disabled) {
+  document.querySelectorAll("[data-event-visible], [data-event-invite]").forEach((input) => {
+    input.disabled = disabled;
+  });
+}
+
+let settingsSave = Promise.resolve();
+
+function saveEventSettings() {
+  const events = readEventSettings();
+  settingsSave = settingsSave
+    .catch(() => {})
+    .then(async () => {
+      setEventSwitchesDisabled(true);
+      try {
+        const data = await api("/api/admin/event-settings", {
+          method: "PUT",
+          body: JSON.stringify({ events }),
+        });
+        applyEventSettings(data.events);
+        showDeskError("");
+      } catch (error) {
+        const current = await api("/api/admin/event-settings");
+        applyEventSettings(current.events);
+        showDeskError(error.message || "The event switches could not be saved.");
+      } finally {
+        setEventSwitchesDisabled(false);
+      }
+    });
+  return settingsSave;
+}
+
 async function loadDesk() {
   showDeskError("");
-  const submissionData = await api("/api/admin/submissions");
+  const [submissionData, settings] = await Promise.all([
+    api("/api/admin/submissions"),
+    api("/api/admin/event-settings"),
+  ]);
   submissions = (submissionData.submissions || []).map(formatGuest);
+  applyEventSettings(settings.events);
   renderSubmissions();
   if (!submissions.length && submissionData.error) {
     showDeskError(submissionData.error);
@@ -339,6 +396,11 @@ headerLogin?.addEventListener("click", () => {
 });
 
 searchInput?.addEventListener("input", renderSubmissions);
+
+desk?.addEventListener("change", (event) => {
+  if (!event.target.closest("[data-event-visible], [data-event-invite]")) return;
+  saveEventSettings();
+});
 
 desk?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-filter-list]");

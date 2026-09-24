@@ -4,4 +4,4 @@ const child = (cmd, args) =>
   spawn(cmd, args, { stdio: "inherit", shell: true, cwd: process.cwd() });
 
 child("node", ["scripts/watch-invite-bg.mjs"]);
-child("npx", ["wrangler", "pages", "dev", ".", "--ip", "127.0.0.1", "--port", "8788"]);
+child("npx", ["wrangler", "pages", "dev", ".", "--ip", "localhost", "--port", "8788"]);

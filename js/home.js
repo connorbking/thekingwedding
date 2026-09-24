@@ -9,6 +9,7 @@ import {
   rememberGuest,
   markResetHome,
   consumeResetHome,
+  eventHref,
 } from "./guests.js?v=fresh1";
 
 const sealed = document.querySelector("[data-sealed]");
@@ -97,34 +98,85 @@ const artUrl = (file) => `/public/envelopes/${file}?v=${ART_V}`;
 const ENVELOPE_ART = {
   como: {
     closed: artUrl("env-closed-olive.png"),
-    opened: artUrl("env-open-flap-olive.png"),
-    letter: artUrl("letter-olive-save-the-date.png"),
+    saveTheDate: artUrl("letter-olive-save-the-date-env.png"),
+    invite: artUrl("letter-olive-youre-invited-env.png"),
     seal: artUrl("olive-seal.png"),
     sealBroken: artUrl("olive-seal-broken.png"),
   },
   jersey: {
     closed: artUrl("env-closed-red.png"),
-    opened: artUrl("env-open-flap-red.png"),
-    letter: artUrl("letter-red-save-the-date.png"),
+    saveTheDate: artUrl("letter-red-save-the-date-env.png"),
+    invite: artUrl("letter-red-youre-invited-env.png"),
     seal: artUrl("red-seal.png"),
     sealBroken: artUrl("red-seal-broken.png"),
   },
   shower: {
     closed: artUrl("env-closed-cream.png"),
-    opened: artUrl("env-open-flap-cream.png"),
-    letter: artUrl("letter-cream-save-the-date.png"),
+    saveTheDate: artUrl("letter-cream-save-the-date-env.png"),
+    invite: artUrl("letter-cream-youre-invited-env.png"),
     seal: artUrl("cream-seal.png"),
     sealBroken: artUrl("cream-seal-broken.png"),
   },
 };
 
+const EVENT_SETTING_KEYS = ["shower", "como", "jersey"];
+
+function defaultEventSettings() {
+  return Object.fromEntries(EVENT_SETTING_KEYS.map((key) => [key, { visible: true, invite: false }]));
+}
+
+let eventSettings = defaultEventSettings();
+
+async function loadEventSettings() {
+  const next = defaultEventSettings();
+  try {
+    const response = await fetch("/api/event-settings", { cache: "no-store" });
+    const data = await response.json();
+    EVENT_SETTING_KEYS.forEach((key) => {
+      const row = data.events?.[key];
+      if (!row) return;
+      next[key] = {
+        visible: row.visible !== false,
+        invite: row.invite === true,
+      };
+    });
+  } catch {
+    // Keep the save-the-date envelopes visible if the switches cannot be read.
+  }
+  eventSettings = next;
+}
+
+function envelopeShown(eventKey) {
+  return eventSettings[eventKey]?.visible !== false;
+}
+
+function inviteMode(eventKey) {
+  return eventSettings[eventKey]?.invite === true;
+}
+
+function letterSrc(eventKey) {
+  const art = ENVELOPE_ART[eventKey];
+  if (!art) return "";
+  return inviteMode(eventKey) ? art.invite : art.saveTheDate;
+}
+
 const openedEnvelopes = new Set();
 let openTimer = 0;
+
+function sheetActions(eventKey, guest, event) {
+  if (inviteMode(eventKey)) {
+    return `<a class="invite-sheet-calendar invite-sheet-open" href="${escapeHtml(eventHref(eventKey, guest.code))}">Open Event</a>`;
+  }
+  const calendar = event.calendar
+    ? `<a class="invite-sheet-calendar" href="${escapeHtml(event.calendar)}" download><svg class="invite-sheet-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="1.5"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path></svg>Add to Calendar</a>`
+    : "";
+  return `${calendar}<span class="invite-sheet-soon">Check back soon for more details!</span>`;
+}
 
 function doorMarkup(eventKey, guest) {
   const event = EVENTS[eventKey];
   const art = ENVELOPE_ART[eventKey];
-  if (!event || !art) return "";
+  if (!event || !art || !envelopeShown(eventKey)) return "";
   const invitedMembers = (guest.members || []).filter((member) => memberInvited(member, eventKey));
   if (!invitedMembers.length) return "";
   const region = event.region || event.place;
@@ -138,14 +190,12 @@ function doorMarkup(eventKey, guest) {
             <img class="envelope-seal envelope-seal--broken" src="${art.sealBroken}" alt="">
           </span>
           <span class="envelope-open-scene">
-            <img class="envelope-opened-env" src="${art.opened}" alt="">
             <span class="letter-frame">
-            <img class="envelope-opened" src="${art.letter}" alt="">
+            <img class="envelope-opened" src="${letterSrc(eventKey)}" alt="">
             <span class="invite-sheet">
               <button type="button" class="invite-sheet-back" data-close-letter aria-label="Close">&times;</button>
               <span class="invite-sheet-actions">
-                ${event.calendar ? `<a class="invite-sheet-calendar" href="${escapeHtml(event.calendar)}" download><svg class="invite-sheet-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="1.5"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path></svg>Add to Calendar</a>` : ""}
-                <span class="invite-sheet-soon">Check back soon for more details!</span>
+                ${sheetActions(eventKey, guest, event)}
               </span>
             </span>
             </span>
@@ -410,6 +460,7 @@ INVITE_BG_MOBILE.addEventListener("change", () => {
 });
 
 async function showHousehold(guest, { arrive = false } = {}) {
+  await loadEventSettings();
   hideKey3d();
   const staging = arrive && !prefersReducedMotion();
   document.body.classList.toggle("is-arriving", staging);
@@ -427,10 +478,9 @@ async function showHousehold(guest, { arrive = false } = {}) {
   }
 
   const shown = sortEvents(guest.events)
-    .filter((key) => key !== "shower")
     .filter((key) => doorMarkup(key, guest));
   shown.forEach((key) => {
-    const src = ENVELOPE_ART[key]?.opened;
+    const src = letterSrc(key);
     if (!src) return;
     const preload = new Image();
     preload.src = src;
@@ -440,7 +490,7 @@ async function showHousehold(guest, { arrive = false } = {}) {
   startEnvelopeWiggle();
 
   const doors = household.querySelector("[data-event-doors]");
-  const nextKey = shown.join("|");
+  const nextKey = shown.map((key) => `${key}:${inviteMode(key) ? "invite" : "date"}`).join("|");
   const envelopeOpen = Boolean(household.querySelector("[data-envelope].is-opening, [data-envelope].is-selected"));
   const alreadyShown = Boolean(doors?.dataset.doors && doors.dataset.doors === nextKey);
 
@@ -504,12 +554,11 @@ function lockCenter() {
 
 function preloadInviteAssets(guest) {
   const keys = sortEvents(guest.events)
-    .filter((key) => key !== "shower")
     .filter((key) => doorMarkup(key, guest));
   keys.forEach((key) => {
     const art = ENVELOPE_ART[key];
     if (!art) return;
-    Object.values(art).forEach((src) => {
+    [art.closed, art.seal, art.sealBroken, letterSrc(key)].forEach((src) => {
       if (typeof src !== "string") return;
       const img = new Image();
       img.src = src;
@@ -803,6 +852,7 @@ form?.addEventListener("submit", async (event) => {
       if (errorNode) errorNode.textContent = missingMessage();
       return;
     }
+    await loadEventSettings();
     preloadInviteAssets(guest);
     const played = await playUnlockSequence();
     if (!played) return;

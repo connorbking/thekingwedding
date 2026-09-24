@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/shared.css?v=20260907j">
-  <link rel="stylesheet" href="/css/admin.css?v=20260907v">
+  <link rel="stylesheet" href="/css/admin.css?v=20260924a">
 </head>
 <body class="admin">
   <div class="admin-shell">
@@ -61,6 +61,16 @@
             <button type="button" data-filter-list="shower" data-filter-rsvp="Yes"><strong data-stat-rsvp="shower-Yes">0</strong><span>Yes</span></button>
             <button type="button" data-filter-list="shower" data-filter-rsvp="No"><strong data-stat-rsvp="shower-No">0</strong><span>No</span></button>
           </div>
+          <div class="event-controls">
+            <label class="switch-row">
+              <span>Show envelope</span>
+              <input type="checkbox" data-event-visible="shower" checked>
+            </label>
+            <label class="switch-row">
+              <span>Full invite</span>
+              <input type="checkbox" data-event-invite="shower">
+            </label>
+          </div>
         </article>
         <article class="event-card event-card--como" data-event-card="como">
           <p class="eyebrow">September 11, 2027</p>
@@ -73,6 +83,16 @@
             <button type="button" data-filter-list="como" data-filter-rsvp="Yes"><strong data-stat-rsvp="como-Yes">0</strong><span>Yes</span></button>
             <button type="button" data-filter-list="como" data-filter-rsvp="No"><strong data-stat-rsvp="como-No">0</strong><span>No</span></button>
           </div>
+          <div class="event-controls">
+            <label class="switch-row">
+              <span>Show envelope</span>
+              <input type="checkbox" data-event-visible="como" checked>
+            </label>
+            <label class="switch-row">
+              <span>Full invite</span>
+              <input type="checkbox" data-event-invite="como">
+            </label>
+          </div>
         </article>
         <article class="event-card" data-event-card="jersey">
           <p class="eyebrow">October 2, 2027</p>
@@ -84,6 +104,16 @@
           <div class="event-rsvps">
             <button type="button" data-filter-list="jersey" data-filter-rsvp="Yes"><strong data-stat-rsvp="jersey-Yes">0</strong><span>Yes</span></button>
             <button type="button" data-filter-list="jersey" data-filter-rsvp="No"><strong data-stat-rsvp="jersey-No">0</strong><span>No</span></button>
+          </div>
+          <div class="event-controls">
+            <label class="switch-row">
+              <span>Show envelope</span>
+              <input type="checkbox" data-event-visible="jersey" checked>
+            </label>
+            <label class="switch-row">
+              <span>Full invite</span>
+              <input type="checkbox" data-event-invite="jersey">
+            </label>
           </div>
         </article>
       </div>
@@ -112,6 +142,6 @@
       </section>
     </section>
   </div>
-  <script type="module" src="/js/admin.js?v=20260907v"></script>
+  <script type="module" src="/js/admin.js?v=20260924a"></script>
 </body>
 </html>
