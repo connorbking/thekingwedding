@@ -13,5 +13,6 @@ local/
 *.xlsx
 *.xls
 
-# Source model is over GitHub's 100 MB limit
+# Design sources, not used by the site
 public/key.obj
+public/working-files/
