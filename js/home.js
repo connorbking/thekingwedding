@@ -875,10 +875,30 @@ async function revealGuest(guest) {
   return true;
 }
 
+let codeGuest = null;
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (document.documentElement.classList.contains("code-arrival")) return;
   if (form.dataset.unlocking === "true") return;
+  if (document.documentElement.classList.contains("code-arrival")) {
+    stopOpenInviteNudge();
+    if (errorNode) errorNode.textContent = "";
+    markUnlocking();
+    try {
+      const [guest] = await Promise.all([codeGuest, wait(500)]);
+      if (!guest) {
+        if (errorNode) errorNode.textContent = missingMessage();
+        return;
+      }
+      await revealGuest(guest);
+    } catch (error) {
+      showLookupError(error);
+    } finally {
+      clearUnlocking();
+      if (!document.body.classList.contains("is-open")) startOpenInviteNudge();
+    }
+    return;
+  }
   const nameMessage = nameFieldMessage();
   if (nameMessage) {
     if (errorNode) errorNode.textContent = nameMessage;
@@ -903,37 +923,6 @@ form?.addEventListener("submit", async (event) => {
     clearUnlocking();
   }
 });
-
-const CODE_LANDING_PAUSE = 1500;
-
-async function arriveFromCode(code) {
-  initKey3d();
-  let manual = false;
-  const markManual = () => {
-    if (document.documentElement.classList.contains("code-arrival")) return;
-    manual = true;
-  };
-  form?.addEventListener("submit", markManual);
-  try {
-    const [guest] = await Promise.all([findGuest(code), wait(CODE_LANDING_PAUSE)]);
-    if (manual || form?.dataset.unlocking === "true") return;
-    if (!guest) {
-      document.documentElement.classList.remove("code-arrival");
-      if (errorNode) errorNode.textContent = missingMessage();
-      return;
-    }
-    if (errorNode) errorNode.textContent = "";
-    markUnlocking();
-    await revealGuest(guest);
-  } catch (error) {
-    if (manual || form?.dataset.unlocking === "true") return;
-    document.documentElement.classList.remove("code-arrival");
-    showLookupError(error);
-  } finally {
-    form?.removeEventListener("submit", markManual);
-    if (!manual) clearUnlocking();
-  }
-}
 
 if (!prefersReducedMotion()) primeIntroVideo();
 
@@ -995,6 +984,30 @@ function runWiggleHints() {
 function startEnvelopeWiggle() {
   if (wiggleTimer) return;
   wiggleTimer = window.setInterval(runWiggleHints, 5000);
+}
+
+let openInviteNudge = 0;
+
+function nudgeOpenInvite() {
+  if (prefersReducedMotion()) return;
+  if (!document.documentElement.classList.contains("code-arrival")) return;
+  if (form?.dataset.unlocking === "true") return;
+  if (!findInvite || findInvite.disabled) return;
+  findInvite.classList.remove("is-wiggling");
+  void findInvite.offsetWidth;
+  findInvite.classList.add("is-wiggling");
+}
+
+function stopOpenInviteNudge() {
+  window.clearInterval(openInviteNudge);
+  openInviteNudge = 0;
+  findInvite?.classList.remove("is-wiggling");
+}
+
+function startOpenInviteNudge() {
+  if (openInviteNudge || prefersReducedMotion()) return;
+  stopOpenInviteNudge();
+  openInviteNudge = window.setInterval(nudgeOpenInvite, 5000);
 }
 
 function closeEnvelopes() {
@@ -1280,7 +1293,9 @@ const stored = readStoredGuest();
 const arrivalCode = params.get("code");
 if (arrivalCode && !params.get("gate")) {
   document.documentElement.classList.remove("invite-returning");
-  await arriveFromCode(arrivalCode);
+  initKey3d();
+  codeGuest = findGuest(arrivalCode);
+  startOpenInviteNudge();
 } else if (params.get("gate") || stored) {
   hideKey3d();
   const returning = await resolveGuest();

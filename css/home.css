@@ -500,7 +500,8 @@ html.invite-returning .household-count {
   animation: envelope-wiggle 0.8s ease;
 }
 
-.household-mail .find-invite.is-wiggling {
+.household-mail .find-invite.is-wiggling,
+.name-form .find-invite.is-wiggling {
   animation: details-wiggle-glow 0.85s ease;
 }
 
@@ -939,7 +940,8 @@ html.invite-returning .household-count {
   .envelope-link.is-opening .envelope-open-scene,
   .envelope-link.is-opening .invite-sheet,
   .envelope-link:not(.is-opening):not(.is-selected):not(.is-opened) .envelope.is-wiggling,
-  .household-mail .find-invite.is-wiggling {
+  .household-mail .find-invite.is-wiggling,
+  .name-form .find-invite.is-wiggling {
     animation: none;
   }
 
@@ -2551,7 +2553,8 @@ html.invite-returning .monogram-rule {
 }
 
 html.code-arrival .name-fields,
-html.code-arrival .name-form .find-invite {
+html:not(.code-arrival) .find-invite-code,
+html.code-arrival .find-invite-name {
   display: none;
 }
 
